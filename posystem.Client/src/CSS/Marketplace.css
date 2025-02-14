@@ -1,0 +1,281 @@
+/* Reset body and html to allow full-page layout */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #f8f8f8; /* Same as .home-container */
+}
+
+/* The container for everything */
+.home-container {
+  /* No fixed height here—allow it to grow as needed. */
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  /* We'll use normal document scrolling. */
+  background-color: #f8f8f8;
+  position: relative;
+}
+
+/* ----------------------------------------
+   FIXED HEADER (at the top)
+---------------------------------------- */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px; /* adjust as needed */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.logo img {
+  height: 40px; /* or your preferred size */
+  width: auto;
+}
+
+.search-bar {
+    position: relative;
+    flex: 1;
+    max-width: 600px;
+    margin: 0 1rem;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 0.5rem 2.5rem 0.5rem 1rem; /* Add space on the right for the icon */
+    border-radius: 20px;
+    border: 2px solid #ccc;
+    background-color: white;
+    color: black;
+    outline: none;
+}
+
+.search-bar input:focus {
+    border: 2px solid purple;
+}
+
+.search-bar button {
+    position: absolute;
+    right: 10px; /* Position icon inside input */
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem; /* Make icon size more visible */
+    color: purple;
+}
+
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* ----------------------------------------
+   FIXED SIDEBAR (below header)
+---------------------------------------- */
+.sidebar {
+  position: fixed;
+  top: 64px; /* same as header height */
+  left: 0;
+  width: 250px; /* fixed sidebar width */
+  bottom: 0;
+  background-color: #fff;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Create New Listing button */
+.create-listing-btn {
+  width: 90%;
+  padding: 0.75rem;
+  background-color: #f0f8ff;
+  color: #0066ff;
+  border: none;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+.create-listing-btn:hover {
+  background-color: #daecfc;
+  transition: background-color 0.2s;
+}
+.create-listing-btn:active {
+  background-color: #a9d1fc;
+  transition: background-color 0s;
+}
+
+/* Sidebar nav items */
+.main-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.main-nav li {
+  margin-bottom: 0.5rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  padding: 0.25rem 0.5rem;
+}
+.nav-item:hover {
+  background-color: #f0f0f0;
+}
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+.nav-text {
+  font-size: 0.95rem;
+}
+
+/* Categories in sidebar */
+.categories {
+  margin-top: 1rem;
+}
+.categories-heading {
+  border-top: 2px solid #eee;
+  font-size: 1.5rem;
+  color: #666;
+  font-weight: 600;
+  margin-top: 1rem;
+  padding-top: 0.4rem;
+  width: 95%;
+}
+.categories ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.categories li {
+  margin-bottom: 0.5rem;
+}
+
+/* ----------------------------------------
+   MAIN CONTENT (to the right of sidebar)
+---------------------------------------- */
+.main-content {
+  /* Push this content to the right of the fixed sidebar */
+  margin-left: 250px; /* same as .sidebar width */
+  margin-top: 64px;   /* push below fixed header */
+  padding: 2rem;
+  /* Let this grow and scroll with the page. */
+}
+
+.main-content h2 {
+  margin: 0 0 1rem 0.3rem;
+}
+
+/* The grid of products */
+.products {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* Default 6 columns */
+    gap: 1.5rem; /* Increased spacing between products */
+    width: 100%;
+}
+
+/* Adjust columns for different screen sizes */
+@media (max-width: 1200px) {
+    .products {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .products {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .products {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 400px) {
+    .products {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+
+/* Product card styling */
+.product-card {
+  background-color: #f8f8f8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, border 0.2s;
+}
+.product-card:hover {
+  background-color: #e0e0e0;
+  border: 1px solid #d3d2d2;
+}
+.product-card:active {
+  background-color: #afafaf;
+  transition: background-color 0s;
+}
+
+.product-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: darkgray;
+  border-radius: 4px;
+}
+
+.product-info {
+  margin: 0rem 0rem 1rem 0.5rem;
+}
+.price {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #000;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0rem;
+  line-height: 1.2;
+}
+
+  
