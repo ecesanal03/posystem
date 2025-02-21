@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import PropTypes from 'prop-types';
-import {Box, Button, Menu, MenuItem} from '@mui/material';
+import {Box, Button, Menu, MenuItem, Paper, Card, CardMedia, CardContent} from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import { createTheme, keyframes } from '@mui/material/styles';
+import { experimentalStyled as styled } from '@mui/material/styles';
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -32,6 +34,34 @@ import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import { Link } from "react-router-dom";
+
+const products = [
+  { id: 1, name: "Smartphone", price: "$699", image: "https://via.placeholder.com/300" },
+  { id: 2, name: "Headphones", price: "$199", image: "https://via.placeholder.com/300" },
+  { id: 3, name: "Gaming Console", price: "$499", image: "https://via.placeholder.com/300" },
+  { id: 4, name: "Smartwatch", price: "$249", image: "https://via.placeholder.com/300" },
+  { id: 5, name: "Laptop", price: "$999", image: "https://via.placeholder.com/300" },
+  { id: 6, name: "Camera", price: "$599", image: "/mnt/data/image.png" },
+  { id: 7, name: "Tablet", price: "$399", image: "https://via.placeholder.com/300" },
+  { id: 8, name: "Monitor", price: "$299", image: "https://via.placeholder.com/300" },
+  { id: 9, name: "Keyboard", price: "$99", image: "https://via.placeholder.com/300" },
+  { id: 10, name: "Mouse", price: "$49", image: "https://via.placeholder.com/300" },
+  { id: 11, name: "Speaker", price: "$149", image: "https://via.placeholder.com/300" },
+  { id: 12, name: "VR Headset", price: "$799", image: "https://via.placeholder.com/300" },
+  { id: 13, name: "Smartphone", price: "$699", image: "https://via.placeholder.com/300" },
+  { id: 14, name: "Headphones", price: "$199", image: "https://via.placeholder.com/300" },
+  { id: 15, name: "Gaming Console", price: "$499", image: "https://via.placeholder.com/300" },
+  { id: 16, name: "Smartwatch", price: "$249", image: "https://via.placeholder.com/300" },
+  { id: 17, name: "Laptop", price: "$999", image: "https://via.placeholder.com/300" },
+  { id: 18, name: "Camera", price: "$599", image: "/mnt/data/image.png" },
+  { id: 19, name: "Tablet", price: "$399", image: "https://via.placeholder.com/300" },
+  { id: 20, name: "Monitor", price: "$299", image: "https://via.placeholder.com/300" },
+  { id: 21, name: "Keyboard", price: "$99", image: "https://via.placeholder.com/300" },
+  { id: 22, name: "Mouse", price: "$49", image: "https://via.placeholder.com/300" },
+  { id: 23, name: "Speaker", price: "$149", image: "https://via.placeholder.com/300" },
+  { id: 24, name: "VR Headset", price: "$799", image: "https://via.placeholder.com/300" },
+];
+
 
 const NAVIGATION = [
   {
@@ -222,18 +252,54 @@ function ToolbarActionsSearch() {
   );
 }
 
+// const Item = styled(Paper)(({ theme }) => ({
+//   backgroundColor: '#fff',
+//   ...theme.typography.body2,
+//   padding: theme.spacing(2),
+//   textAlign: 'center',
+//   color: theme.palette.text.secondary,
+//   ...theme.applyStyles('dark', {
+//     backgroundColor: '#1A2027',
+//   }),
+// }));
+
 function PageContent({ pathname }) {
   return (
-    <Box
-      sx={{
-        py: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-      }}
-    >
-      <Typography>Dashboard content for {pathname}</Typography>
+    <Box sx={{ flexGrow: 1, p: 4}}>
+      <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>For You</Typography>
+      <Grid container spacing={4}>
+        {products.map((product) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg:3 }} key={product.id}>
+            <Card
+              sx={{
+                width: "100%",
+                height: 350,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                mx: "auto",
+                boxShadow: 3,
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                '&:hover': {
+                  transform: "scale(1.05)",
+                  boxShadow: 6,
+                },
+              }}
+            >
+              <CardMedia
+                component="img"
+                image={product.image}
+                alt={product.name}
+                sx={{ objectFit: "contain", height: 200, backgroundColor: "#f5f5f5" }}
+              />
+              <CardContent sx={{ textAlign: "center" }}>
+                <Typography variant="h6" gutterBottom>{product.name}</Typography>
+                <Typography variant="body1" color="primary">{product.price}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 }
