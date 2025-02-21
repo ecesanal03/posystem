@@ -1,78 +1,149 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import '../CSS/Login.css';
+import * as React from 'react';
+import {
+  Button,
+  FormControl,
+  FormControlLabel,
+  Checkbox,
+  InputLabel,
+  OutlinedInput,
+  TextField,
+  InputAdornment,
+  Link,
+  Alert,
+  IconButton,
+} from '@mui/material';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { AppProvider } from '@toolpad/core/AppProvider';
+import { SignInPage } from '@toolpad/core/SignInPage';
+import { useTheme } from '@mui/material/styles';
 
-const SignInProto = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+const providers = [{ id: 'credentials', name: 'Email and Password' }];
 
-  const [showPassword, setShowPassword] = useState(false);
+function CustomEmailField() {
+  return (
+    <TextField
+      id="input-with-icon-textfield"
+      label="Email"
+      name="email"
+      type="email"
+      size="small"
+      required
+      fullWidth
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <AccountCircle fontSize="inherit" />
+            </InputAdornment>
+          ),
+        },
+      }}
+      variant="outlined"
+    />
+  );
+}
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
+function CustomPasswordField() {
+  const [showPassword, setShowPassword] = React.useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
   };
 
   return (
-    <div className="signin-container">
-      <div className="image-box">
-        <img src="https://shorturl.at/woo7A" alt="jpeg" className="image" />
-      </div>
-      <div className="signin-box">
-        <h1>Sign In To Your Account</h1>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input
-              type="text"
-              id="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group password-group">
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <span className="toggle-password" onClick={togglePasswordVisibility}>
-              {showPassword ? '👁️' : '🙈'}
-            </span>
-          </div>
-
-          <button type="submit" className="continue-button">
-            Sign In
-          </button>
-        </form>
-
-        <div className="signup-link">
-          Don't have an account? <Link to="/signup-proto">Create one</Link>
-        </div>
-      </div>
-    </div>
+    <FormControl sx={{ my: 2 }} fullWidth variant="outlined">
+      <InputLabel size="small" htmlFor="outlined-adornment-password">
+        Password
+      </InputLabel>
+      <OutlinedInput
+        id="outlined-adornment-password"
+        type={showPassword ? 'text' : 'password'}
+        name="password"
+        size="small"
+        endAdornment={
+          <InputAdornment position="end">
+            <IconButton
+              aria-label="toggle password visibility"
+              onClick={handleClickShowPassword}
+              onMouseDown={handleMouseDownPassword}
+              edge="end"
+              size="small"
+            >
+              {showPassword ? (
+                <VisibilityOff fontSize="inherit" />
+              ) : (
+                <Visibility fontSize="inherit" />
+              )}
+            </IconButton>
+          </InputAdornment>
+        }
+        label="Password"
+      />
+    </FormControl>
   );
-};
+}
 
-export default SignInProto;
+function CustomButton() {
+  return (
+    <Button
+      type="submit"
+      variant="outlined"
+      color="info"
+      size="small"
+      disableElevation
+      fullWidth
+      sx={{ my: 2 }}
+    >
+      Log In
+    </Button>
+  );
+}
+
+function SignUpLink() {
+  return (
+    <Link href="/" variant="body2">
+      Sign up
+    </Link>
+  );
+}
+
+function ForgotPasswordLink() {
+  return (
+    <Link href="/" variant="body2">
+      Forgot password?
+    </Link>
+  );
+}
+
+function Title() {
+  return <h2 style={{ marginBottom: 8 }}>Login</h2>;
+}
+
+
+export default function SlotsSignIn() {
+  const theme = useTheme();
+  return (
+    <AppProvider theme={theme}>
+      <SignInPage
+        signIn={(provider, formData) =>
+          alert(
+            `Logging in with "${provider.name}" and credentials: ${formData.get('email')}, ${formData.get('password')}, and checkbox value: ${formData.get('tandc')}`,
+          )
+        }
+        slots={{
+          title: Title,
+          emailField: CustomEmailField,
+          passwordField: CustomPasswordField,
+          submitButton: CustomButton,
+          signUpLink: SignUpLink,
+          forgotPasswordLink: ForgotPasswordLink,
+        }}
+        providers={providers}
+      />
+    </AppProvider>
+  );
+}

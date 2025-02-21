@@ -1,129 +1,277 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import '../CSS/Marketplace.css';
+import React, { useState } from "react";
+import PropTypes from 'prop-types';
+import {Box, Button, Menu, MenuItem} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import { createTheme, keyframes } from '@mui/material/styles';
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import CheckroomIcon from '@mui/icons-material/Checkroom';
+import IconButton from "@mui/material/IconButton";
+import SearchIcon from "@mui/icons-material/Search";
+import TextField from "@mui/material/TextField";
+import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import PianoOutlinedIcon from '@mui/icons-material/PianoOutlined';
+import CableIcon from '@mui/icons-material/Cable';
+import DiamondOutlinedIcon from '@mui/icons-material/DiamondOutlined';
+import SportsFootballOutlinedIcon from '@mui/icons-material/SportsFootballOutlined';
+import DirectionsCarFilledOutlinedIcon from '@mui/icons-material/DirectionsCarFilledOutlined';
+import LocalFloristOutlinedIcon from '@mui/icons-material/LocalFloristOutlined';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import BookOutlinedIcon from '@mui/icons-material/BookOutlined';
+import PetsOutlinedIcon from '@mui/icons-material/PetsOutlined';
+import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import FaceRetouchingNaturalOutlinedIcon from '@mui/icons-material/FaceRetouchingNaturalOutlined';
+import QueueMusicOutlinedIcon from '@mui/icons-material/QueueMusicOutlined';
+import ToysOutlinedIcon from '@mui/icons-material/ToysOutlined';
+import AddIcon from '@mui/icons-material/Add';
+import { AppProvider } from '@toolpad/core/AppProvider';
+import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
+import { useDemoRouter } from '@toolpad/core/internal';
+import { Link } from "react-router-dom";
 
-const Marketplace = () => {
-  // Mock data for demonstration
-  const forYouItems = [
-    { id: 1, price: 350, title: 'Focusrite Clarett 2 pre' },
-    { id: 2, price: 0, title: 'Free sectional couch' },
-    { id: 3, price: 3000, title: 'Piano' },
-    { id: 4, price: 875, title: 'Antique Pump Organ' },
-    { id: 5, price: 300, title: 'Quail Cage' },
-    { id: 6, price: 120, title: 'Prismatic Evolution Binders and Stickers' },
-    { id: 7, price: 350, title: 'Focusrite Clarett 2 pre' },
-    { id: 8, price: 0, title: 'Free sectional couch' },
-    { id: 9, price: 3000, title: 'Piano' },
-    { id: 10, price: 875, title: 'Antique Pump Organ' },
-    { id: 11, price: 300, title: 'Quail Cage' },
-    { id: 12, price: 120, title: 'Prismatic Evolution Binders and Stickers' },
-  ];
+const NAVIGATION = [
+  {
+    kind: 'header',
+    title: 'New Listing',
+  },
+  {
+    kind: 'action',
+    title: 'Create A Listing',
+    icon: <AddIcon />,
+  },
+  {
+    kind: 'divider',
+  },
+  {
+    kind: 'header',
+    title: 'Categories',
+  },
+  {
+    segment: 'electronics',
+    title: 'Electronics',
+    icon: <CableIcon />,
+  },
+  {
+    segment: 'clothing',
+    title: 'Clothing',
+    icon: <CheckroomIcon />,
+  },
+  {
+    segment: 'collectibles',
+    title: 'Collectibles',
+    icon: <HourglassBottomIcon />,
+  },
+  {
+    segment: 'jewelry',
+    title: 'Jewelry',
+    icon: <DiamondOutlinedIcon />,
+  },
+  {
+    segment: 'sporting-goods',
+    title: 'Sporting Goods',
+    icon: <SportsFootballOutlinedIcon />,
+  },
+  {
+    segment: 'instruments',
+    title: 'Instruments',
+    icon: <PianoOutlinedIcon />,
+  },
+  {
+    segment: 'motor',
+    title: 'Motor Vehicles',
+    icon: <DirectionsCarFilledOutlinedIcon />,
+  },
+  {
+    segment: 'gardening',
+    title: 'Gardening',
+    icon: <LocalFloristOutlinedIcon />,
+  },
+  {
+    segment: 'home',
+    title: 'Home & Furniture',
+    icon: <HomeOutlinedIcon />,
+  },
+  {
+    segment: 'books',
+    title: 'Books & Media',
+    icon: <BookOutlinedIcon />,
+  },
+  {
+    segment: 'pet',
+    title: 'Pet Supplies',
+    icon: <PetsOutlinedIcon />,
+  },
+  {
+    segment: 'arts',
+    title: 'Arts & Crafts',
+    icon: <DrawOutlinedIcon />,
+  },
+  {
+    segment: 'beauty',
+    title: 'Beauty & Health',
+    icon: <FaceRetouchingNaturalOutlinedIcon />,
+  },
+  {
+    segment: 'toys',
+    title: 'Toys & Games',
+    icon: <ToysOutlinedIcon />,
+  },
+  {
+    segment: 'music',
+    title: 'Music',
+    icon: <QueueMusicOutlinedIcon />,
+  },
+];
 
-  // Create 4 rows of items by repeating the array
-  const repeatedItems = [
-    ...forYouItems,
-    ...forYouItems.map(item => ({...item, id: item.id + 6})),
-    ...forYouItems.map(item => ({...item, id: item.id + 12})),
-    ...forYouItems.map(item => ({...item, id: item.id + 18}))
-  ];
+const demoTheme = createTheme({
+  cssVariables: {
+    colorSchemeSelector: 'data-toolpad-color-scheme',
+  },
+  colorSchemes: { light: true, dark: true },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 600,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
+});
 
-  const categories = [
-    { id: 1, name: 'Electronics', icon: '📱' },
-    { id: 2, name: 'Clothing', icon: '👕' },
-    { id: 3, name: 'Collectibles', icon: '🏺' },
-    { id: 4, name: 'Jewelry', icon: '💍' },
-    { id: 5, name: 'Sporting Goods', icon: '⚽' },
-    { id: 6, name: 'Instruments', icon: '🎸' },
-    { id: 7, name: 'Motor', icon: '🚗' },
-    { id: 8, name: 'Gardening', icon: '🌱' },
-    { id: 9, name: 'Home & Furniture', icon: '🏠' },
-    { id: 10, name: 'Books & Media', icon: '📚' },
-    { id: 11, name: 'Pet Supplies', icon: '🐾' },
-    { id: 12, name: 'Art & Crafts', icon: '🎨' },
-    { id: 13, name: 'Beauty & Health', icon: '💄' },
-    { id: 14, name: 'Toys', icon: '🧸' },
-    { id: 15, name: 'Video Games', icon: '🎮' },
-    { id: 16, name: 'Music', icon: '🎵' }
-  ];
+function ToolbarActionsSearch() {
 
-  const sidebarItems = [
-    { id: 1, name: 'Selling', icon: '🏷️', path: '/selling' },
-    { id: 2, name: 'Orders', icon: '📦', path: '/orders' },
-    { id: 3, name: 'Wishlist', icon: '❤️', path: '/wishlist' }
-  ];
+  //manage account menu
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleAccountMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  }
+
+  const handleAccountMenuClose = () => {
+    setAnchorEl(null);
+  }
 
   return (
-    <div className="home-container">
-      {/* Fixed header */}
-      <header className="header">
-        <div className="logo">
-          <img src="/images/Logo.jpg" alt="Logo" />
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Tooltip title="Search" enterDelay={1000}>
+        <div>
+          <IconButton
+            type="button"
+            aria-label="search"
+            sx={{
+              display: { xs: "inline", md: "none" },
+            }}
+          >
+            <SearchIcon />
+          </IconButton>
         </div>
-        <div className="search-bar">
-          <input type="text" placeholder="Search..." />
-          <button type="submit" aria-label="Search">🔍</button>
-        </div>
-        <div className="header-actions">
-          <Link to="/account">Account</Link>
-          <Link to="/notifications">🔔</Link>
-          <Link to="/cart">🛒</Link>
-        </div>
-      </header>
+      </Tooltip>
 
-      {/* Fixed sidebar */}
-      <aside className="sidebar">
-        <Link to="/create-listing">
-          <button className="create-listing-btn">+ Create New Listing</button>
-        </Link>
+      <TextField
+        label="Search"
+        variant="outlined"
+        size="small"
+        slotProps={{
+          input: {
+            endAdornment: (
+              <IconButton type="button" aria-label="search" size="small">
+                <SearchIcon />
+              </IconButton>
+            ),
+            sx: { pr: 0.5 },
+          },
+        }}
+        sx={{ display: { xs: "none", md: "inline-block" }, mr: 1 }}
+      />
 
-        <nav className="main-nav">
-          <ul>
-            {sidebarItems.map(item => (
-              <li key={item.id}>
-                <Link to={item.path} className="nav-item">
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-text">{item.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      {/* Account Icon with Dropdown */}
+      <Tooltip title="Account">
+        <IconButton color="primary" onClick={handleAccountMenuClick}>
+          <AccountCircleIcon />
+        </IconButton>
+      </Tooltip>
 
-        <div className="categories">
-          <h2 className="categories-heading">Categories</h2>
-          <ul>
-            {categories.map(category => (
-              <li key={category.id}>
-                <Link to={`/category/${category.name.toLowerCase()}`} className="nav-item">
-                  <span className="nav-icon">{category.icon}</span>
-                  <span className="nav-text">{category.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </aside>
+      {/* Account Dropdown Menu */}
+      <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleAccountMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+        <MenuItem component={Link} to="/login">Login</MenuItem>
+        <MenuItem component={Link} to="/signup">Signup</MenuItem>
+      </Menu>
 
-      {/* Main content to the right of the sidebar */}
-      <main className="main-content">
-        <h2>For You</h2>
-        <div className="products">
-          {repeatedItems.map(item => (
-            <div key={item.id} className="product-card">
-              <div className="product-image"></div>
-              <div className="product-info">
-                <span className="price">
-                  {item.price === 0 ? 'FREE' : '$' + item.price}
-                </span>
-                <span className="title">{item.title}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
+      {/* Shopping Cart Icon */}
+      <Tooltip title="Shopping Cart">
+        <IconButton color="primary">
+          <ShoppingCartIcon />
+        </IconButton>
+      </Tooltip>
+
+      {/* Theme Switcher */}
+      <ThemeSwitcher />
+    </Stack>
   );
+}
+
+function PageContent({ pathname }) {
+  return (
+    <Box
+      sx={{
+        py: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+      }}
+    >
+      <Typography>Dashboard content for {pathname}</Typography>
+    </Box>
+  );
+}
+
+PageContent.propTypes = {
+  pathname: PropTypes.string.isRequired,
 };
 
-export default Marketplace;
+function Marketplace(props) {
+  const { window } = props;
 
+  const router = useDemoRouter('/page');
+
+  // Remove this const when copying and pasting into your project.
+  const demoWindow = window !== undefined ? window() : undefined;
+
+  return (
+    // preview-start
+    <AppProvider
+      navigation={NAVIGATION}
+      branding={{ 
+        title: 'Marketplace',
+        logo: <img src="https://shorturl.at/woo7A" alt="jpeg" />
+      }}
+      router={router}
+      theme={demoTheme}
+      window={demoWindow}
+    >
+      <DashboardLayout slots={{
+        toolbarActions: ToolbarActionsSearch,
+      }}>
+        <PageContent pathname={router.pathname} />
+      </DashboardLayout>
+    </AppProvider>
+    // preview-end
+  );
+}
+
+
+
+export default Marketplace;
