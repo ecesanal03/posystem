@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from 'prop-types';
-import {Box, Button, Menu, MenuItem, Paper, Card, CardMedia, CardContent} from '@mui/material';
+import {Box, Button, Menu, MenuItem, Paper, Card, CardMedia, CardContent, InputAdornment} from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import { createTheme, keyframes } from '@mui/material/styles';
@@ -188,7 +188,7 @@ function ToolbarActionsSearch() {
   }
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center">
+    <Stack direction="row" >
       <Tooltip title="Search" enterDelay={1000}>
         <div>
           <IconButton
@@ -217,12 +217,17 @@ function ToolbarActionsSearch() {
             sx: { pr: 0.5 },
           },
         }}
-        sx={{ display: { xs: "none", md: "inline-block" }, mr: 1 }}
+        sx={{ 
+          flexGrow: 1, 
+          mr: 40,
+          maxWidth: "700px",
+          minWidth: "500px", 
+        }}
       />
 
       {/* Account Icon with Dropdown */}
       <Tooltip title="Account">
-        <IconButton color="primary" onClick={handleAccountMenuClick}>
+        <IconButton color="primary" onClick={handleAccountMenuClick} >
           <AccountCircleIcon />
         </IconButton>
       </Tooltip>
@@ -273,7 +278,7 @@ function PageContent({ pathname }) {
             <Card
               sx={{
                 width: "100%",
-                height: 350,
+                height: 300,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
