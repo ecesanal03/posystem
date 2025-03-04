@@ -74,3 +74,16 @@ Note: This project does not contain actual frontend or backend code but instead 
 - xUnit or NUnit for unit testing.
 - Moq for mocking dependencies.
 - FluentAssertions for better test readability.
+
+
+# How to run
+Since the backend and the frontend are not connected we have to run them seperatly.
+
+- To run the frontend:
+  * cd posystem.Client
+  * npm run dev
+
+- To run backend backend:
+  * cd posystem
+  * dotnet build
+  * dotnet run (after build)  
