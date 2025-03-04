@@ -1,23 +1,76 @@
-# web
+# Project Structure
 
-.NET 8.0 Empty Web Template
+This project consists of five main sub-projects:
 
-[![](https://raw.githubusercontent.com/ServiceStack/Assets/master/csharp-templates/web.png)](http://web.web-templates.io/)
+- posystem (Main entry point)
+- posystem.Client (Frontend)
+- posystem.ServiceInterface (Backend logic and services)
+- posystem.ServiceModel (Data models and DTOs)
+- posystem.Tests (Unit testing)
 
-> Browse [source code](https://github.com/NetCoreTemplates/web), view live demo [web.web-templates.io](http://web.web-templates.io) and install with [dotnet-new](https://docs.servicestack.net/dotnet-new):
+In C#, referencing a project means linking one project to another within a solution, allowing the referencing project to access the code, classes, and methods of the referenced project.
 
-    $ dotnet tool install -g x
+# posystem
+- This serves as the starting project when the application is executed.
+- It acts as the root of the project and contains the solution configuration.
+- Responsibilities include:
+  * Configuring application startup logic.
+  * Managing dependency injection and middleware.
+  * Setting up database connections (if applicable).
+  * Defining the Dockerfile for containerization and deployment.
+  * Referencing all other sub-projects (posystem.Client, posystem.ServiceInterface, etc.).
 
-    $ x new web ProjectName
+Note: This project does not contain actual frontend or backend code but instead acts as the glue that ties everything together.
 
-Alternatively write new project files directly into an empty repository, using the Directory Name as the ProjectName:
+# posystem.Client
+- This project contains all frontend-related logic and UI components.
+- This is where the UI will be built.
+- Responsibilities:
+  * Communicating with the backend via APIs.
+  * Handling user interactions.
+  * Displaying data retrieved from the backend.
+  * Sending user inputs to the backend for processing.
 
-    $ git clone https://github.com/<User>/<ProjectName>.git
-    $ cd <ProjectName>
-    $ x new web
+# posystem.ServiceInterface
+- This project is responsible for handling the business logic of the application.
+- It serves as the API layer that communicates between the frontend (posystem.Client) and the database models (posystem.ServiceModel).
+- Responsibilities:
+  * Implementing business logic and functionalities.
+  * Exposing RESTful for frontend interaction.
+  * Processing and validating requests from the client.
+  * Interacting with posystem.ServiceModel to fetch and manipulate data.
 
-### Update Server TypeScript DTOs
+📌 Key Notes:
+- This project references posystem.ServiceModel, meaning it has access to data models without needing to make direct queries to the database.
+- API controllers are typically defined here (e.g., using ASP.NET Core Web API).
 
-Run the dtos package.json script to update your server dtos:
+# posystem.ServiceModel
+- This project is dedicated to data handling and serves as the data access layer.
+- It contains:
+  * Data Transfer Objects (DTOs): Used to transfer data efficiently transfer between posystem.ServiceModel (data layer) and posystem.ServiceInterface (backend/business logic).
+  * Entity Models: Defines the structure of the database tables.
+  * Repositories: Handles queries to the database (if using Repository Pattern).
+  * Mappers: Used to transform raw database data into structured objects (e.g., AutoMapper).
 
-    $ x scripts dtos
+📌 Why use DTOs here?
+1. Prevent Direct Database Access from Business Logic
+- posystem.ServiceInterface does not directly fetch data from the database.
+- Instead, it requests data from posystem.ServiceModel, which fetches the required data and returns DTOs.
+- This ensures that the backend only receives necessary and processed data.
+
+2. Enhance Security & Performance
+- Sensitive fields (like passwords) are omitted before sending data from posystem.ServiceModel to posystem.ServiceInterface.
+- DTOs help avoid unnecessary data fetching, improving API efficiency.
+
+# posystem.Test
+- This project contains unit tests and integration tests to ensure application stability.
+- Responsibilities:
+  * Testing business logic in posystem.ServiceInterface.
+  * Validating API responses.
+  * Ensuring data consistency in posystem.ServiceModel.
+  * Performing mock tests for external dependencies.
+
+📌 Commonly Used Testing Frameworks:
+- xUnit or NUnit for unit testing.
+- Moq for mocking dependencies.
+- FluentAssertions for better test readability.
