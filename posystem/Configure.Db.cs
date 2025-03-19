@@ -15,7 +15,7 @@ public class ConfigureDb : IHostingStartup
         .ConfigureServices((context, services) => {
             services.AddSingleton<IDbConnectionFactory>(new OrmLiteConnectionFactory(
                 context.Configuration.GetConnectionString("DefaultConnection")
-                ?? "Server=localhost;User Id=root;Password=Qweasdzxc1$;Database=posystemdb;Pooling=true;MinPoolSize=0;MaxPoolSize=200",
+                ?? "Server=cougarcatalogdb.co3uc2om093h.us-east-1.rds.amazonaws.com;User Id=admin;Password=Cougarcatalog2025$;Database=cougarcatalogdb;Pooling=true;MinPoolSize=0;MaxPoolSize=200",
                 MySqlDialect.Provider));
         })
         .ConfigureAppHost(appHost => {
