@@ -8,7 +8,7 @@ public class ConfigureCors : IHostingStartup
         .ConfigureServices(services =>
         {
             services.AddCors(options => {
-                options.AddDefaultPolicy(policy => {
+                options.AddPolicy("AllowAll", policy => {
                     policy.AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
@@ -22,7 +22,7 @@ public class ConfigureCors : IHostingStartup
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
-            app.UseCors();
+            app.UseCors("AllowAll");
             next(app);
         };
     }        

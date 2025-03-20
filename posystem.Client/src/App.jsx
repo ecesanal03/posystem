@@ -7,6 +7,8 @@ import Login from "./Pages/Login";
 import CredentialsSignInPage from "./Pages/Signup";
 import Marketplace from "./Pages/Marketplace";
 import AccountDetailsPage from "./Pages/CreateCustomerAccount";
+import AccountDetails from './Pages/CustomerAccountDetails';
+import ShoppingCart from './Pages/ShoppingCart';
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<CredentialsSignInPage />} />
         <Route path="/create-account" element={<AccountDetailsPage />} />
+        <Route path="/account" element={<AccountDetails />} />
+        <Route path="/cart" element={<ShoppingCart />} />
       </Routes>
     </Router>
   );
