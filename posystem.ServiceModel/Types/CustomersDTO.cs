@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace posystem.ServiceModel.Types
 {
-    [Route("/customers", "POST")]
-    public class CustomersDTO : IGet, IReturn<CustomerResponse>
+    [Route("/customers/registration", "POST")]
+    public class RegistrationDTO : IGet, IReturn<RegistrationResponse>
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; }
@@ -26,8 +26,22 @@ namespace posystem.ServiceModel.Types
         public string Country { get; set; }
     }
 
-    public class CustomerResponse
+    public class RegistrationResponse
     {
         public required string Result { get; set; }
+    }
+
+    [Route("/customers/login", "POST")]
+    public class LoginRequestDTO : IReturn<LoginResponse>
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class LoginResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } 
+        public string Token { get; set; }
     }
 }

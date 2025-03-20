@@ -3,6 +3,9 @@ import { Container, Grid, Paper, Typography, TextField, Button, Tabs, Tab, Box, 
 import { AccountCircle, ArrowBack } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom'; // Using useNavigate for React Router v6
 import { useState } from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'; // Import DatePicker
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const AccountDetails = () => {
   const [activeTab, setActiveTab] = React.useState(0);
@@ -33,6 +36,13 @@ const AccountDetails = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
+    }));
+  };
+
+  const handleDateChange = (newDate) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      DateOfBirth: newDate,
     }));
   };
 
@@ -131,6 +141,17 @@ const AccountDetails = () => {
                     </Grid>
                     <Grid item xs={12} >
                         <TextField fullWidth label="Country" value="United States" variant="outlined" disabled />
+                    </Grid>
+                    {/* Date of Birth Picker */}
+                    <Grid item xs={12}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                            label="Date of Birth"
+                            value={formData.DateOfBirth}
+                            onChange={handleDateChange}
+                            renderInput={(params) => <TextField {...params} fullWidth />}
+                        />
+                        </LocalizationProvider>
                     </Grid>
                   <Grid item xs={12}></Grid>
                   <Grid item xs={12}>

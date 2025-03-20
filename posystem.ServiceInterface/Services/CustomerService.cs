@@ -9,6 +9,9 @@ using ServiceStack;
 using ServiceStack.Data;
 using posystem.ServiceModel.Types;
 using posystem.ServiceModel.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 
 namespace posystem.ServiceInterface.Services
 {
@@ -22,7 +25,7 @@ namespace posystem.ServiceInterface.Services
         }
 
         //Method to insert a new customer into the database
-        public object Post(CustomersDTO request)
+        public object Post(RegistrationDTO request)
         {
             try
             {
@@ -58,7 +61,7 @@ namespace posystem.ServiceInterface.Services
 
                     db.Insert(newCustomer);
 
-                    return new CustomerResponse { Result = "Customer created successfully." };
+                    return new RegistrationResponse { Result = "Customer created successfully." };
                 }
             }
             catch (Exception ex)
@@ -68,7 +71,7 @@ namespace posystem.ServiceInterface.Services
         }
 
         // Method to update an existing customer
-        public object Put(CustomersDTO request)
+        public object Put(RegistrationDTO request)
         {
             using (var db = _dbConnectionFactory.OpenDbConnection())
             {
@@ -102,5 +105,44 @@ namespace posystem.ServiceInterface.Services
                 return new { Message = "Customer updated successfully." };
             }
         }
+
+        //Method to login a customer
+        public object Post(LoginRequestDTO request)
+        {
+            using (var db = _dbConnectionFactory.OpenDbConnection())
+            {
+                // Fetch the customer by email
+                var customer = db.Single<Customers>(x => x.Email == request.Email);
+
+                if (customer == null)
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "Invalid email or password"
+                    };
+                }
+
+                // Verify the password
+                if (!BCrypt.Net.BCrypt.Verify(request.Password, customer.Password_Hash))
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "Invalid email or password"
+                    };
+                }
+
+                var token = TokenService.GenerateJwtTokenForLogin(customer);  
+
+                return new LoginResponse
+                {
+                    Success = true,
+                    Message = "Login successful",
+                    Token = token  // Return the token in the response
+                };
+            }
+        }
+
     }
 }
