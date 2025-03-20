@@ -2,6 +2,22 @@ import * as React from 'react';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { SignInPage } from '@toolpad/core/SignInPage';
 import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import CssBaseline from '@mui/material/CssBaseline';
+import Divider from '@mui/material/Divider';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormLabel from '@mui/material/FormLabel';
+import FormControl from '@mui/material/FormControl';
+import Link from '@mui/material/Link';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import Stack from '@mui/material/Stack';
+import MuiCard from '@mui/material/Card';
+import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+
 
 // preview-start
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
@@ -21,14 +37,47 @@ const signIn = async (provider, formData) => {
 
 export default function CredentialsSignInPage() {
   const theme = useTheme();
+  const navigate = useNavigate()
+
+  const handleSignIn = async (provider, formData) => {
+    await signIn(provider, formData); // Sign in logic
+    navigate('/create-account'); // Redirect to CreateCustomerAccount page after sign-in
+  };
+
   return (
     // preview-start
     <AppProvider theme={theme}>
       <SignInPage
-        signIn={signIn}
+        signIn={handleSignIn}
         providers={providers}
-        slotProps={{ emailField: { autoFocus: false } }}
-      />
+        slotProps={{
+          emailField: { autoFocus: false },
+        }}
+      >
+        {/* Custom Fields */}
+        <TextField
+          label="Full Name"
+          name="fullName"
+          variant="outlined"
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Phone Number"
+          name="phone"
+          variant="outlined"
+          fullWidth
+          margin="normal"
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          type="submit"
+          sx={{ marginTop: 2 }}
+        >
+          Sign In
+        </Button>
+      </SignInPage>
     </AppProvider>
     // preview-end
   );

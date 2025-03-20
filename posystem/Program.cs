@@ -1,9 +1,13 @@
 using posystem.ServiceInterface;
+using posystem.ServiceInterface.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 services.AddServiceStack(typeof(MyServices).Assembly);
+
+// Registering the EmployeeService with Dependency Injection
+builder.Services.AddTransient<EmployeeService>();
 
 var app = builder.Build();
 

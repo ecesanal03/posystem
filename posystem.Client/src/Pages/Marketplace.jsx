@@ -271,7 +271,7 @@ function ToolbarActionsSearch() {
 function PageContent({ pathname }) {
   return (
     <Box sx={{ flexGrow: 1, p: 4}}>
-      <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>For You</Typography>
+      <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>Featured</Typography>
       <Grid container spacing={4}>
         {products.map((product) => (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg:3 }} key={product.id}>

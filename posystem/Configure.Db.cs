@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using posystem.ServiceInterface.Services;
 using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.DataAnnotations;
@@ -19,7 +20,8 @@ public class ConfigureDb : IHostingStartup
                 MySqlDialect.Provider));
         })
         .ConfigureAppHost(appHost => {
-            // Enable built-in Database Admin UI at /admin-ui/database
-            // appHost.Plugins.Add(new AdminDatabaseFeature());
+            // Retrieve the EmployeeService from DI and insert a role manager when the application starts
+            var employeeService = appHost.Resolve<EmployeeService>();
+            employeeService.InsertManager("Alex", "Orwell", "alex.orwell@gmail.com", "SecurePassword123!");
         });
 }
