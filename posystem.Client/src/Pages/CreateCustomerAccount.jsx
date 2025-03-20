@@ -1,19 +1,25 @@
 import * as React from 'react';
 import { TextField, Button, Box, Typography, Grid, Card, CardContent, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function AccountDetailsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { email, password } = location.state || {}; // Retrieve the email and password from the state
   const [formData, setFormData] = useState({
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    phone: '',
-    address1: '',
-    address2: '',
-    city: '',
-    zipCode: '',
-    country: '',
-    state: '',
+    FirstName: '',
+    MiddleName: '',
+    LastName: '',
+    Email: email,
+    Password: password,
+    PhoneNumber: '',
+    AddressLineOne: '',
+    AddressLineTwo: '',
+    City: '',
+    State: '',
+    ZipCode: '',
+    Country: '',
   });
 
   const handleChange = (event) => {
@@ -24,10 +30,39 @@ export default function AccountDetailsPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!formData.Email || !formData.Password ) {
+        alert('Please enter email and password.');
+        return;
+      }
+
     console.log('Account Details Submitted:', formData);
-    // You can handle form submission here, like sending data to your backend
+
+    // Send the data to the backend using fetch
+    try {
+      const response = await fetch('http://localhost:5001/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register customer');
+      }
+
+      const result = await response.json();
+      console.log('Customer registered:', result);
+      alert(result.Message || 'Customer registered successfully');
+      
+      navigate('/');
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
   const states = [
@@ -62,8 +97,8 @@ export default function AccountDetailsPage() {
             <Grid item xs={12} md={6}>
                 <TextField
                   label="First Name"
-                  name="fullName"
-                  value={formData.firstName}
+                  name="FirstName"
+                  value={formData.FirstName}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -73,8 +108,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12} md={6}>
                 <TextField
                   label="Middle Name"
-                  name="middleName"
-                  value={formData.middleName}
+                  name="MiddleName"
+                  value={formData.MiddleName}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -83,7 +118,7 @@ export default function AccountDetailsPage() {
               <Grid item xs={12}>
                 <TextField
                   label="Last Name"
-                  name="lastName"
+                  name="LastName"
                   value={formData.LastName}
                   onChange={handleChange}
                   variant="outlined"
@@ -94,8 +129,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12}>
                 <TextField
                   label="Phone Number"
-                  name="phone"
-                  value={formData.phone}
+                  name="PhoneNumber"
+                  value={formData.PhoneNumber}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -105,8 +140,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12}>
                 <TextField
                   label="Address Line 1"
-                  name="address"
-                  value={formData.address}
+                  name="AddressLineOne"
+                  value={formData.AddressLineOne}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -116,8 +151,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12}>
                 <TextField
                   label="Address Line 2"
-                  name="address2"
-                  value={formData.address2}
+                  name="AddressLineTwo"
+                  value={formData.AddressLineTwo}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -126,8 +161,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12} md={6}>
                 <TextField
                   label="City"
-                  name="city"
-                  value={formData.city}
+                  name="City"
+                  value={formData.City}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -137,8 +172,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12} md={6}>
                 <TextField
                   label="Zip Code"
-                  name="zipCode"
-                  value={formData.zipCode}
+                  name="ZipCode"
+                  value={formData.ZipCode}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -148,8 +183,8 @@ export default function AccountDetailsPage() {
               <Grid item xs={12} md={6}>
                 <TextField
                   label="Country"
-                  name="country"
-                  value={formData.country}
+                  name="Country"
+                  value={formData.Country}
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
@@ -162,8 +197,8 @@ export default function AccountDetailsPage() {
                   <InputLabel>State</InputLabel>
                   <Select
                     label="State"
-                    name="state"
-                    value={formData.state}
+                    name="State"
+                    value={formData.State}
                     onChange={handleChange}
                   >
                     {states.map((state) => (

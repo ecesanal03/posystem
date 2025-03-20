@@ -20,8 +20,8 @@ public class ConfigureDb : IHostingStartup
                 MySqlDialect.Provider));
         })
         .ConfigureAppHost(appHost => {
-            // Retrieve the EmployeeService from DI and insert a role manager when the application starts
-            var employeeService = appHost.Resolve<EmployeeService>();
-            employeeService.InsertManager("Alex", "Orwell", "alex.orwell@gmail.com", "SecurePassword123!");
+            // Retrieve the EmployeeService from DI and insert a role manager when the application starts UNCOMMENT WHEN NEEDED
+            //var employeeService = appHost.Resolve<EmployeeService>();
+            //employeeService.InsertManager("Alex", "Orwell", "alex.orwell@gmail.com", "SecurePassword123!");
         });
 }

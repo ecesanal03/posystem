@@ -5,9 +5,12 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 services.AddServiceStack(typeof(MyServices).Assembly);
+services.AddServiceStack(typeof(CustomerService).Assembly);
+services.AddServiceStack(typeof(EmployeeService).Assembly);
 
 // Registering the EmployeeService with Dependency Injection
-builder.Services.AddTransient<EmployeeService>();
+//builder.Services.AddTransient<EmployeeService>();
+//builder.Services.AddTransient<CustomerService>();
 
 var app = builder.Build();
 

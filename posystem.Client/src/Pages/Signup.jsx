@@ -23,25 +23,33 @@ import { useNavigate } from 'react-router-dom';
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
 // preview-end
 
-const signIn = async (provider, formData) => {
-  const promise = new Promise((resolve) => {
-    setTimeout(() => {
-      alert(
-        `Signing in with "${provider.name}" and credentials: ${formData.get('email')}, ${formData.get('password')}`,
-      );
-      resolve();
-    }, 300);
-  });
-  return promise;
-};
+// const signIn = async (provider, formData) => {
+//   const promise = new Promise((resolve) => {
+//     setTimeout(() => {
+//       alert(
+//         `Signing in with "${provider.name}" and credentials: ${formData.get('email')}, ${formData.get('password')}`,
+//       );
+//       resolve();
+//     }, 300);
+//   });
+//   return promise;
+// };
 
 export default function CredentialsSignInPage() {
   const theme = useTheme();
   const navigate = useNavigate()
 
   const handleSignIn = async (provider, formData) => {
-    await signIn(provider, formData); // Sign in logic
-    navigate('/create-account'); // Redirect to CreateCustomerAccount page after sign-in
+    // Get the email and password from the form data
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    if (!email || !password) {
+      alert('Please enter email and password.');
+      return;
+    }
+
+    navigate('/create-account', { state: { email, password } });
   };
 
   return (
@@ -54,29 +62,6 @@ export default function CredentialsSignInPage() {
           emailField: { autoFocus: false },
         }}
       >
-        {/* Custom Fields */}
-        <TextField
-          label="Full Name"
-          name="fullName"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Phone Number"
-          name="phone"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          sx={{ marginTop: 2 }}
-        >
-          Sign In
-        </Button>
       </SignInPage>
     </AppProvider>
     // preview-end

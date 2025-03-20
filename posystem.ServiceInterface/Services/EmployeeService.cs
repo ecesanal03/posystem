@@ -11,7 +11,7 @@ using BCrypt.Net;
 
 namespace posystem.ServiceInterface.Services
 {
-    public class EmployeeService
+    public class EmployeeService : Service
     {
         private readonly IDbConnectionFactory _dbConnectionFactory;
 

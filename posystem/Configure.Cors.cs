@@ -9,12 +9,9 @@ public class ConfigureCors : IHostingStartup
         {
             services.AddCors(options => {
                 options.AddDefaultPolicy(policy => {
-                    policy.WithOrigins([
-                        "http://localhost:5000", "https://localhost:5001", 
-                        "https://localhost:5173", "http://localhost:5173",
-                    ])
-                    .AllowCredentials()
-                    .WithHeaders(["Content-Type", "Allow", "Authorization"])
+                    policy.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
                     .SetPreflightMaxAge(TimeSpan.FromHours(1));
                 });
             });
