@@ -9,6 +9,11 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Configure.Mq.cs" />
+    <Compile Remove="Configure.Redis.cs" />
+  </ItemGroup>
+
     <ItemGroup>
         <ContainerLabel Include="service" Value="posystem" />
     </ItemGroup>

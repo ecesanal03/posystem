@@ -13,19 +13,20 @@ import CheckroomIcon from '@mui/icons-material/Checkroom';
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import TextField from "@mui/material/TextField";
-import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
-import PianoOutlinedIcon from '@mui/icons-material/PianoOutlined';
-import CableIcon from '@mui/icons-material/Cable';
-import DiamondOutlinedIcon from '@mui/icons-material/DiamondOutlined';
-import SportsFootballOutlinedIcon from '@mui/icons-material/SportsFootballOutlined';
-import DirectionsCarFilledOutlinedIcon from '@mui/icons-material/DirectionsCarFilledOutlined';
-import LocalFloristOutlinedIcon from '@mui/icons-material/LocalFloristOutlined';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import BookOutlinedIcon from '@mui/icons-material/BookOutlined';
-import PetsOutlinedIcon from '@mui/icons-material/PetsOutlined';
-import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import SubjectIcon from '@mui/icons-material/Subject';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
+import ScienceIcon from '@mui/icons-material/Science';
+import StarRateIcon from '@mui/icons-material/StarRate';
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
+import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
+import MoodIcon from '@mui/icons-material/Mood';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import SchoolIcon from '@mui/icons-material/School';
 import FaceRetouchingNaturalOutlinedIcon from '@mui/icons-material/FaceRetouchingNaturalOutlined';
 import QueueMusicOutlinedIcon from '@mui/icons-material/QueueMusicOutlined';
 import ToysOutlinedIcon from '@mui/icons-material/ToysOutlined';
@@ -33,127 +34,91 @@ import AddIcon from '@mui/icons-material/Add';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const products = [
-  { id: 1, name: "Smartphone", price: "$699", image: "https://via.placeholder.com/300" },
-  { id: 2, name: "Headphones", price: "$199", image: "https://via.placeholder.com/300" },
-  { id: 3, name: "Gaming Console", price: "$499", image: "https://via.placeholder.com/300" },
-  { id: 4, name: "Smartwatch", price: "$249", image: "https://via.placeholder.com/300" },
-  { id: 5, name: "Laptop", price: "$999", image: "https://via.placeholder.com/300" },
-  { id: 6, name: "Camera", price: "$599", image: "/mnt/data/image.png" },
-  { id: 7, name: "Tablet", price: "$399", image: "https://via.placeholder.com/300" },
-  { id: 8, name: "Monitor", price: "$299", image: "https://via.placeholder.com/300" },
-  { id: 9, name: "Keyboard", price: "$99", image: "https://via.placeholder.com/300" },
-  { id: 10, name: "Mouse", price: "$49", image: "https://via.placeholder.com/300" },
-  { id: 11, name: "Speaker", price: "$149", image: "https://via.placeholder.com/300" },
-  { id: 12, name: "VR Headset", price: "$799", image: "https://via.placeholder.com/300" },
-  { id: 13, name: "Smartphone", price: "$699", image: "https://via.placeholder.com/300" },
-  { id: 14, name: "Headphones", price: "$199", image: "https://via.placeholder.com/300" },
-  { id: 15, name: "Gaming Console", price: "$499", image: "https://via.placeholder.com/300" },
-  { id: 16, name: "Smartwatch", price: "$249", image: "https://via.placeholder.com/300" },
-  { id: 17, name: "Laptop", price: "$999", image: "https://via.placeholder.com/300" },
-  { id: 18, name: "Camera", price: "$599", image: "/mnt/data/image.png" },
-  { id: 19, name: "Tablet", price: "$399", image: "https://via.placeholder.com/300" },
-  { id: 20, name: "Monitor", price: "$299", image: "https://via.placeholder.com/300" },
-  { id: 21, name: "Keyboard", price: "$99", image: "https://via.placeholder.com/300" },
-  { id: 22, name: "Mouse", price: "$49", image: "https://via.placeholder.com/300" },
-  { id: 23, name: "Speaker", price: "$149", image: "https://via.placeholder.com/300" },
-  { id: 24, name: "VR Headset", price: "$799", image: "https://via.placeholder.com/300" },
+  { id: 1, name: "The Great Gatsby", price: "$10.99", image: "https://upload.wikimedia.org/wikipedia/commons/7/7a/The_Great_Gatsby_Cover_1925_Retouched.jpg" },
+  { id: 2, name: "1984", price: "$8.99", image: "https://via.placeholder.com/300" },
+  { id: 3, name: "To Kill a Mockingbird", price: "$12.99", image: "https://via.placeholder.com/300" },
+  { id: 4, name: "Moby Dick", price: "$14.99", image: "https://via.placeholder.com/300" },
+  { id: 5, name: "War and Peace", price: "$18.99", image: "https://via.placeholder.com/300" },
+  { id: 6, name: "Pride and Prejudice", price: "$9.99", image: "https://via.placeholder.com/300" },
+  { id: 7, name: "The Catcher in the Rye", price: "$11.99", image: "https://via.placeholder.com/300" },
+  { id: 8, name: "The Hobbit", price: "$13.99", image: "https://via.placeholder.com/300" },
+  { id: 9, name: "Brave New World", price: "$10.49", image: "https://via.placeholder.com/300" },
+  { id: 10, name: "The Odyssey", price: "$15.99", image: "https://via.placeholder.com/300" },
+  { id: 11, name: "Crime and Punishment", price: "$12.49", image: "https://via.placeholder.com/300" },
+  { id: 12, name: "The Brothers Karamazov", price: "$16.99", image: "https://via.placeholder.com/300" },
+  { id: 13, name: "Catch-22", price: "$13.49", image: "https://via.placeholder.com/300" },
+  { id: 14, name: "Animal Farm", price: "$7.99", image: "https://via.placeholder.com/300" },
+  { id: 15, name: "The Divine Comedy", price: "$19.99", image: "https://via.placeholder.com/300" },
 ];
 
 
 const NAVIGATION = [
   {
     kind: 'header',
-    title: 'New Listing',
-  },
-  {
-    kind: 'action',
-    title: 'Create A Listing',
-    icon: <AddIcon />,
-  },
-  {
-    kind: 'divider',
-  },
-  {
-    kind: 'header',
     title: 'Categories',
   },
   {
-    segment: 'electronics',
-    title: 'Electronics',
-    icon: <CableIcon />,
+    segment: 'fiction',
+    title: 'Fiction',
+    icon: <MenuBookIcon />,
   },
   {
-    segment: 'clothing',
-    title: 'Clothing',
-    icon: <CheckroomIcon />,
+    segment: 'non-fiction',
+    title: 'Non-fiction',
+    icon: <SubjectIcon />,
   },
   {
-    segment: 'collectibles',
-    title: 'Collectibles',
-    icon: <HourglassBottomIcon />,
+    segment: 'mystery',
+    title: 'Mystery',
+    icon: <AutoStoriesIcon />,
   },
   {
-    segment: 'jewelry',
-    title: 'Jewelry',
-    icon: <DiamondOutlinedIcon />,
+    segment: 'romance',
+    title: 'Romance',
+    icon: <StarRateIcon />,
   },
   {
-    segment: 'sporting-goods',
-    title: 'Sporting Goods',
-    icon: <SportsFootballOutlinedIcon />,
+    segment: 'science-fiction',
+    title: 'Science Fiction',
+    icon: <ScienceIcon />,
   },
   {
-    segment: 'instruments',
-    title: 'Instruments',
-    icon: <PianoOutlinedIcon />,
+    segment: 'fantasy',
+    title: 'Fantasy',
+    icon: <MoodIcon />,
   },
   {
-    segment: 'motor',
-    title: 'Motor Vehicles',
-    icon: <DirectionsCarFilledOutlinedIcon />,
+    segment: 'biography',
+    title: 'Biography',
+    icon: <LocalLibraryIcon />,
   },
   {
-    segment: 'gardening',
-    title: 'Gardening',
-    icon: <LocalFloristOutlinedIcon />,
+    segment: 'history',
+    title: 'History',
+    icon: <HistoryEduIcon />,
   },
   {
-    segment: 'home',
-    title: 'Home & Furniture',
-    icon: <HomeOutlinedIcon />,
+    segment: 'self-help',
+    title: 'Self-Help',
+    icon: <PsychologyIcon />,
   },
   {
-    segment: 'books',
-    title: 'Books & Media',
-    icon: <BookOutlinedIcon />,
+    segment: 'poetry',
+    title: 'Poetry',
+    icon: <SchoolIcon />,
   },
   {
-    segment: 'pet',
-    title: 'Pet Supplies',
-    icon: <PetsOutlinedIcon />,
+    segment: 'thriller',
+    title: 'Thriller',
+    icon: <WhatshotIcon />,
   },
   {
-    segment: 'arts',
-    title: 'Arts & Crafts',
-    icon: <DrawOutlinedIcon />,
-  },
-  {
-    segment: 'beauty',
-    title: 'Beauty & Health',
-    icon: <FaceRetouchingNaturalOutlinedIcon />,
-  },
-  {
-    segment: 'toys',
-    title: 'Toys & Games',
-    icon: <ToysOutlinedIcon />,
-  },
-  {
-    segment: 'music',
-    title: 'Music',
-    icon: <QueueMusicOutlinedIcon />,
+    segment: 'young-adult',
+    title: 'Young Adult',
+    icon: <PsychologyAltIcon />,
   },
 ];
 
@@ -174,7 +139,7 @@ const demoTheme = createTheme({
 });
 
 function ToolbarActionsSearch() {
-
+  const navigate = useNavigate();
   //manage account menu
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -186,6 +151,15 @@ function ToolbarActionsSearch() {
   const handleAccountMenuClose = () => {
     setAnchorEl(null);
   }
+
+  // Check if the user is logged in
+  const isLoggedIn = Boolean(localStorage.getItem('authToken'));
+
+  // Log out the user
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');  // Clear the token
+    navigate('/login');  // Redirect to login page
+  };
 
   return (
     <Stack direction="row" >
@@ -227,26 +201,44 @@ function ToolbarActionsSearch() {
 
       {/* Account Icon with Dropdown */}
       <Tooltip title="Account">
-        <IconButton color="primary" onClick={handleAccountMenuClick} >
+        <IconButton color="primary" onClick={handleAccountMenuClick}>
           <AccountCircleIcon />
         </IconButton>
       </Tooltip>
 
       {/* Account Dropdown Menu */}
       <Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleAccountMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-        <MenuItem component={Link} to="/login">Login</MenuItem>
-        <MenuItem component={Link} to="/signup">Signup</MenuItem>
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleAccountMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        {isLoggedIn ? (
+          <>
+            <MenuItem component={Link} to="/account">Account Details</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </>
+        ) : (
+          <>
+            <MenuItem component={Link} to="/login">Login</MenuItem>
+            <MenuItem component={Link} to="/signup">Signup</MenuItem>
+          </>
+        )}
       </Menu>
 
-      {/* Shopping Cart Icon */}
+      {/* Cart Icon */}
       <Tooltip title="Shopping Cart">
-        <IconButton color="primary">
+        <IconButton
+          color="primary"
+          onClick={() => {
+            if (!isLoggedIn) {
+              alert("Please create an account to view the cart.");
+            } else {
+              navigate("/cart");
+            }
+          }}
+        >
           <ShoppingCartIcon />
         </IconButton>
       </Tooltip>
@@ -271,7 +263,7 @@ function ToolbarActionsSearch() {
 function PageContent({ pathname }) {
   return (
     <Box sx={{ flexGrow: 1, p: 4}}>
-      <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>For You</Typography>
+      <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>Featured</Typography>
       <Grid container spacing={4}>
         {products.map((product) => (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg:3 }} key={product.id}>
@@ -326,8 +318,8 @@ function Marketplace(props) {
     <AppProvider
       navigation={NAVIGATION}
       branding={{ 
-        title: 'Marketplace',
-        logo: <img src="https://shorturl.at/woo7A" alt="jpeg" />
+        title: 'Cougar Catalog',
+        logo: <img src="src/assets/logo.png" alt="png" />
       }}
       router={router}
       theme={demoTheme}

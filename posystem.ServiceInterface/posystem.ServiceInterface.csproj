@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="ServiceStack" Version="8.*" />
+    <PackageReference Include="ServiceStack.OrmLite" Version="8.6.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
   </ItemGroup>
 
   <ItemGroup>
