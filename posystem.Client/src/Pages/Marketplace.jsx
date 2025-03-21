@@ -152,6 +152,15 @@ function ToolbarActionsSearch() {
     setAnchorEl(null);
   }
 
+  // Check if the user is logged in
+  const isLoggedIn = Boolean(localStorage.getItem('authToken'));
+
+  // Log out the user
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');  // Clear the token
+    navigate('/login');  // Redirect to login page
+  };
+
   return (
     <Stack direction="row" >
       <Tooltip title="Search" enterDelay={1000}>
@@ -192,26 +201,44 @@ function ToolbarActionsSearch() {
 
       {/* Account Icon with Dropdown */}
       <Tooltip title="Account">
-        <IconButton color="primary" onClick={handleAccountMenuClick} >
+        <IconButton color="primary" onClick={handleAccountMenuClick}>
           <AccountCircleIcon />
         </IconButton>
       </Tooltip>
 
       {/* Account Dropdown Menu */}
       <Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleAccountMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-        <MenuItem component={Link} to="/login">Login</MenuItem>
-        <MenuItem component={Link} to="/signup">Signup</MenuItem>
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleAccountMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        {isLoggedIn ? (
+          <>
+            <MenuItem component={Link} to="/account">Account Details</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </>
+        ) : (
+          <>
+            <MenuItem component={Link} to="/login">Login</MenuItem>
+            <MenuItem component={Link} to="/signup">Signup</MenuItem>
+          </>
+        )}
       </Menu>
 
-      {/* Shopping Cart Icon */}
+      {/* Cart Icon */}
       <Tooltip title="Shopping Cart">
-        <IconButton color="primary" onClick={() => navigate("/cart")} >
+        <IconButton
+          color="primary"
+          onClick={() => {
+            if (!isLoggedIn) {
+              alert("Please create an account to view the cart.");
+            } else {
+              navigate("/cart");
+            }
+          }}
+        >
           <ShoppingCartIcon />
         </IconButton>
       </Tooltip>

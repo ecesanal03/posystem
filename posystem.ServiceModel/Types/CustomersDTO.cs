@@ -29,6 +29,8 @@ namespace posystem.ServiceModel.Types
     public class RegistrationResponse
     {
         public required string Result { get; set; }
+        public string Message { get; set; }
+        public string Token { get; set; }
     }
 
     [Route("/customers/login", "POST")]

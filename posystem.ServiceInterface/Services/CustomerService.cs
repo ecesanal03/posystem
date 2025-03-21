@@ -61,7 +61,10 @@ namespace posystem.ServiceInterface.Services
 
                     db.Insert(newCustomer);
 
-                    return new RegistrationResponse { Result = "Customer created successfully." };
+                    // After successful registration, generate JWT token
+                    var token = TokenService.GenerateJwtToken(request.Email);
+
+                    return new RegistrationResponse { Result = "Customer created successfully.", Token = token };
                 }
             }
             catch (Exception ex)
@@ -133,7 +136,7 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
-                var token = TokenService.GenerateJwtTokenForLogin(customer);  
+                var token = TokenService.GenerateJwtToken(request.Email);  
 
                 return new LoginResponse
                 {

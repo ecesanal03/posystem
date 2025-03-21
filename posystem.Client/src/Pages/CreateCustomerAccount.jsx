@@ -58,6 +58,11 @@ export default function AccountDetailsPage() {
       console.log('Customer registered:', result);
       alert(result.Message || 'Customer registered successfully');
       
+      // Store the JWT token in localStorage 
+      if (result.Token) {
+        localStorage.setItem('authToken', result.Token);  // Store the token
+      }
+
       navigate('/');
 
     } catch (error) {
