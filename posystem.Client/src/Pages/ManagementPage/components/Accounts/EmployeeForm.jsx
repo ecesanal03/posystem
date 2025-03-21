@@ -15,9 +15,8 @@ import {
   Switch,
   FormControlLabel
 } from '@mui/material';
-import { Save as SaveIcon, Close as CloseIcon } from '@mui/icons-material';
 
-const EmployeeForm = ({ employee, onSave, onCancel }) => {
+const EmployeeForm = ({ employee, onSave }) => {
   const isEditing = !!employee;
   
   const [formData, setFormData] = useState({
@@ -323,37 +322,6 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
           />
         </Grid>
       </Grid>
-      
-      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 2 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          startIcon={<SaveIcon />}
-          sx={{
-            bgcolor: '#4caf50',
-            '&:hover': { bgcolor: '#388e3c' }
-          }}
-        >
-          {isEditing ? 'Update Employee' : 'Add Employee'}
-        </Button>
-        
-        <Button
-          variant="outlined"
-          onClick={onCancel}
-          startIcon={<CloseIcon />}
-          sx={{
-            color: '#ff6b6b',
-            borderColor: '#ff6b6b',
-            '&:hover': {
-              bgcolor: 'rgba(255, 107, 107, 0.1)',
-              borderColor: '#ff6b6b'
-            }
-          }}
-        >
-          Cancel
-        </Button>
-      </Box>
     </Paper>
   );
 };

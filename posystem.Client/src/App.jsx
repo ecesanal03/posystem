@@ -1,7 +1,4 @@
-import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import Login from "./Pages/Login";
 import CredentialsSignInPage from "./Pages/Signup";
@@ -9,6 +6,7 @@ import Marketplace from "./Pages/Marketplace";
 import AccountDetailsPage from "./Pages/CreateCustomerAccount";
 import AccountDetails from './Pages/CustomerAccountDetails';
 import ShoppingCart from './Pages/ShoppingCart';
+import ManagementPage from "./Pages/ManagementPage/index";
 
 // PrivateRoute component that checks if the user is logged in
 const PrivateRoute = ({ element }) => {
@@ -33,6 +31,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<CredentialsSignInPage />} />
         <Route path="/create-account" element={<AccountDetailsPage />} />
+        <Route path="/EmployeePortal" element={<ManagementPage />} />
 
         {/* Protected Routes */}
         <Route path="/account" element={<PrivateRoute element={<AccountDetails />} />} />

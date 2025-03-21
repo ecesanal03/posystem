@@ -41,9 +41,7 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
       bgcolor: '#2A2D2A', 
       borderRadius: 1, 
       border: '1px solid #61677A',
-      width: '100%',
-      maxWidth: '1200px',
-      mx: 'auto'
+      width: '100%'
     }}>
       <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
         <Table stickyHeader>
