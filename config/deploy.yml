@@ -2,7 +2,7 @@
 service: posystem
 
 # Name of the container image.
-image: my-user/posystem
+image: ghcr.io/ecesanal03/posystem
 
 # Required for use of ASP.NET Core with Kamal-Proxy.
 env:
