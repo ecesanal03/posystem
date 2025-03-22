@@ -12,7 +12,7 @@ services.AddServiceStack(typeof(EmployeeService).Assembly);
 //builder.Services.AddTransient<EmployeeService>();
 //builder.Services.AddTransient<CustomerService>();
 
-//test for deployment
+//test for deployment #2
 
 var app = builder.Build();
 
