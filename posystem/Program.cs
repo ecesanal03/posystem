@@ -12,6 +12,8 @@ services.AddServiceStack(typeof(EmployeeService).Assembly);
 //builder.Services.AddTransient<EmployeeService>();
 //builder.Services.AddTransient<CustomerService>();
 
+//test for deployment
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
