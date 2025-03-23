@@ -24,11 +24,11 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           borderRadius: 1,
           bgcolor: 'rgba(97, 103, 122, 0.1)'
         }}>
-          {newBook.image ? (
+          {newBook.Cover_Image ? (
             <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
               <img 
-                src={typeof newBook.image === 'string' ? newBook.image : URL.createObjectURL(newBook.image)} 
-                alt={newBook.title || 'Book cover'} 
+                src={typeof newBook.Cover_Image === 'string' ? newBook.Cover_Image : URL.createObjectURL(newBook.Cover_Image)} 
+                alt={newBook.Title || 'Book cover'} 
                 style={{ 
                   width: '100%', 
                   maxHeight: 250, 
@@ -40,7 +40,7 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
                 display: 'flex', 
                 justifyContent: 'center', 
                 mt: 2,
-                gap: 2
+                gap: 2 
               }}>
                 <Button 
                   component="label" 
@@ -112,14 +112,14 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <TextField
-              name="title"
+              name="Title"
               label="Title"
-              value={newBook.title}
+              value={newBook.Title}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.title}
-              helperText={validationErrors.title}
+              error={!!validationErrors.Title}
+              helperText={validationErrors.Title}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -133,14 +133,14 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12}>
             <TextField
-              name="author"
+              name="Author"
               label="Author"
-              value={newBook.author}
+              value={newBook.Author}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.author}
-              helperText={validationErrors.author}
+              error={!!validationErrors.Author}
+              helperText={validationErrors.Author}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -154,14 +154,14 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              name="isbn"
+              name="ISBN"
               label="ISBN"
-              value={newBook.isbn}
+              value={newBook.ISBN}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.isbn}
-              helperText={validationErrors.isbn}
+              error={!!validationErrors.ISBN}
+              helperText={validationErrors.ISBN}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -175,11 +175,13 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              name="supplier_id"
-              label="Supplier ID"
-              value={newBook.supplier_id}
+              name="Supplier_Id"
+              label="Supplier ID (Optional)"
+              value={newBook.Supplier_Id}
               onChange={handleNewBookChange}
               fullWidth
+              error={!!validationErrors.Supplier_Id}
+              helperText={validationErrors.Supplier_Id || "Format: 00000000-0000-0000-0000-000000000000"}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -193,15 +195,15 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              name="price"
+              name="Price"
               label="Price"
               type="number"
-              value={newBook.price}
+              value={newBook.Price}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.price}
-              helperText={validationErrors.price}
+              error={!!validationErrors.Price}
+              helperText={validationErrors.Price}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -215,15 +217,15 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              name="units"
+              name="Units"
               label="Units"
               type="number"
-              value={newBook.units}
+              value={newBook.Units}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.units}
-              helperText={validationErrors.units}
+              error={!!validationErrors.Units}
+              helperText={validationErrors.Units}
               InputLabelProps={{ shrink: true }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -237,9 +239,9 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
           </Grid>
           <Grid item xs={12}>
             <TextField
-              name="description"
+              name="Description"
               label="Description"
-              value={newBook.description}
+              value={newBook.Description}
               onChange={handleNewBookChange}
               fullWidth
               multiline
@@ -263,16 +265,15 @@ const BookForm = ({ newBook, handleNewBookChange, handleImageChange, validationE
 
 BookForm.propTypes = {
   newBook: PropTypes.shape({
-    title: PropTypes.string,
-    author: PropTypes.string,
-    distributor: PropTypes.string,
-    isbn: PropTypes.string,
-    supplier_id: PropTypes.string,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    units: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    description: PropTypes.string,
-    discount_id: PropTypes.string,
-    image: PropTypes.any
+    Title: PropTypes.string,
+    Author: PropTypes.string,
+    ISBN: PropTypes.string,
+    Supplier_Id: PropTypes.string,
+    Price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    Units: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    Description: PropTypes.string,
+    Discount_Id: PropTypes.string,
+    Cover_Image: PropTypes.any
   }).isRequired,
   handleNewBookChange: PropTypes.func.isRequired,
   handleImageChange: PropTypes.func.isRequired,

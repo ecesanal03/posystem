@@ -1,88 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   TextField,
   Button,
-  Grid,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   InputAdornment,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  UploadFile as UploadFileIcon,
 } from '@mui/icons-material'; 
 
 import BookForm from './BookForm';
+import BookTable from './BookTable';
+import bookApi from '../../../../api/bookApi';
 
 const BookSection = () => {
   // Books data state
-  const [books, setBooks] = useState([
-    { 
-      id: 1, 
-      title: 'To Kill a Mockingbird', 
-      author: 'Harper Lee', 
-      isbn: '9780061120084', 
-      supplier_id: '1', 
-      price: 12.99, 
-      units: 42, 
-      description: 'A classic novel about racial injustice in the American South.',
-      added_at: new Date('2023-09-15'),
-      image: 'https://m.media-amazon.com/images/I/71FxgtFKcQL._AC_UF1000,1000_QL80_.jpg'
-    },
-    { 
-      id: 2, 
-      title: 'The Great Gatsby', 
-      author: 'F. Scott Fitzgerald', 
-      isbn: '9780743273565', 
-      supplier_id: '2', 
-      price: 14.50, 
-      units: 28, 
-      description: 'A portrait of the Jazz Age in all of its decadence and excess.',
-      added_at: new Date('2023-10-22'),
-      image: 'https://m.media-amazon.com/images/I/71FxgtFKcQL._AC_UF1000,1000_QL80_.jpg'
-    },
-    { 
-      id: 3, 
-      title: 'Harry Potter and the Sorcerer\'s Stone', 
-      author: 'J.K. Rowling', 
-      isbn: '9780590353427', 
-      supplier_id: '3', 
-      price: 24.99, 
-      units: 67, 
-      description: 'The first book in the Harry Potter series, introducing young wizard Harry Potter.',
-      added_at: new Date('2023-11-10'),
-      image: 'https://m.media-amazon.com/images/I/71FxgtFKcQL._AC_UF1000,1000_QL80_.jpg'
-    },
-  ]);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  // We'll leave totalCount for future pagination implementation
+  const [, setTotalCount] = useState(0);
   
   // Form state
   const [filter, setFilter] = useState('');
   const [newBook, setNewBook] = useState({ 
-    title: '', 
-    author: '', 
-    distributor: '', 
-    price: '', 
-    units: '', 
-    description: '', 
-    isbn: '',
-    supplier_id: '',
-    discount_id: '',
-    image: null 
+    Title: '', 
+    Author: '', 
+    Price: '', 
+    Units: '', 
+    Description: '', 
+    ISBN: '',
+    Supplier_Id: '',
+    Discount_Id: '',
+    Cover_Image: null 
   });
 
   // UI state
@@ -92,6 +51,36 @@ const BookSection = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isEditingBook, setIsEditingBook] = useState(false);
   const [bookToEdit, setBookToEdit] = useState(null);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+
+  // Fetch books on component mount and when filter changes
+  useEffect(() => {
+    fetchBooks();
+  }, [filter]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {};
+      if (filter) {
+        params.searchTerm = filter;
+      }
+      
+      const response = await bookApi.getBooks(params);
+      
+      if (response.books) {
+        setBooks(response.books);
+        setTotalCount(response.totalCount);
+      }
+    } catch (err) {
+      console.error('Failed to fetch books:', err);
+      setError('Failed to load books. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFilterChange = (e) => {
     setFilter(e.target.value);
@@ -104,42 +93,66 @@ const BookSection = () => {
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setNewBook((prev) => ({ ...prev, image: e.target.files[0] }));
+      setNewBook((prev) => ({ ...prev, Cover_Image: e.target.files[0] }));
     }
   };
 
   const validateBook = (book) => {
     const errors = {};
     
-    // Check required fields based on Book model
-    if (!book.title.trim()) errors.title = 'Title is required';
-    if (!book.author.trim()) errors.author = 'Author is required';
-    if (!book.isbn.trim()) errors.isbn = 'ISBN is required';
-    if (!book.price || isNaN(parseFloat(book.price)) || parseFloat(book.price) <= 0) 
-      errors.price = 'Valid price is required';
-    if (!book.units || isNaN(parseInt(book.units)) || parseInt(book.units) < 0) 
-      errors.units = 'Valid units count is required';
+    if (!book.Title?.trim()) errors.Title = 'Title is required';
+    if (!book.Author?.trim()) errors.Author = 'Author is required';
+    if (!book.ISBN?.trim()) errors.ISBN = 'ISBN is required';
+    if (!book.Price || isNaN(parseFloat(book.Price)) || parseFloat(book.Price) <= 0) 
+      errors.Price = 'Valid price is required';
+    if (!book.Units || isNaN(parseInt(book.Units)) || parseInt(book.Units) < 0) 
+      errors.Units = 'Valid units count is required';
+    
+    // Validate Supplier_Id format if provided
+    if (book.Supplier_Id && book.Supplier_Id.trim() !== '') {
+      if (formatGuid(book.Supplier_Id) === null) {
+        errors.Supplier_Id = 'Invalid Supplier ID format';
+      }
+    }
     
     return errors;
   };
 
-  const handleEditBook = (book) => {
-    setBookToEdit(book);
-    setNewBook({
-      title: book.title,
-      author: book.author,
-      distributor: book.distributor || '',
-      price: book.price.toString(),
-      units: book.units.toString(),
-      description: book.description || '',
-      isbn: book.isbn || '',
-      supplier_id: book.supplier_id || '',
-      discount_id: book.discount_id || '',
-      image: book.image || null
-    });
-    setIsEditingBook(true);
-    setShowAddForm(true);
-    setValidationErrors({});
+  const handleEditBook = async (book) => {
+    try {
+      setLoading(true);
+      // Fetch the complete book details for editing
+      const response = await bookApi.getBook(book.id);
+      
+      if (response && response.book) {
+        const bookDetails = response.book;
+        
+        setBookToEdit(bookDetails);
+        setNewBook({
+          Title: bookDetails.title,
+          Author: bookDetails.author,
+          Price: bookDetails.price.toString(),
+          Units: bookDetails.units.toString(),
+          Description: bookDetails.description || '',
+          ISBN: bookDetails.isbn || '',
+          Supplier_Id: bookDetails.supplierId || '',
+          Discount_Id: bookDetails.discountId || '',
+          Cover_Image: bookDetails.coverImage || null
+        });
+        setIsEditingBook(true);
+        setShowAddForm(true);
+        setValidationErrors({});
+      }
+    } catch (err) {
+      console.error('Failed to fetch book details:', err);
+      setNotification({
+        open: true,
+        message: 'Failed to load book details for editing.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteBook = (book) => {
@@ -147,11 +160,39 @@ const BookSection = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteBook = () => {
+  const confirmDeleteBook = async () => {
     if (itemToDelete) {
-      setBooks((prev) => prev.filter((book) => book.id !== itemToDelete.id));
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
+      try {
+        setLoading(true);
+        const response = await bookApi.deleteBook(itemToDelete.id);
+        
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Book deleted successfully',
+            severity: 'success'
+          });
+          // Refresh the book list
+          fetchBooks();
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to delete book',
+            severity: 'error'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to delete book:', err);
+        setNotification({
+          open: true,
+          message: 'Failed to delete book. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
+      }
     }
   };
 
@@ -160,91 +201,132 @@ const BookSection = () => {
     setIsEditingBook(false);
     setBookToEdit(null);
     setNewBook({ 
-      title: '', 
-      author: '', 
-      distributor: '', 
-      price: '', 
-      units: '', 
-      description: '', 
-      isbn: '',
-      supplier_id: '',
-      discount_id: '',
-      image: null 
+      Title: '', 
+      Author: '', 
+      Price: '', 
+      Units: '', 
+      Description: '', 
+      ISBN: '',
+      Supplier_Id: '',
+      Discount_Id: '',
+      Cover_Image: null 
     });
     setValidationErrors({});
   };
 
-  const addBook = () => {
+  // Helper function to validate and format GUID
+  const formatGuid = (input) => {
+    if (!input || input.trim() === '') return null;
+    
+    // If it's already a valid GUID with hyphens, return it
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input)) {
+      return input;
+    }
+    
+    // If it's a valid GUID without hyphens, format it
+    if (/^[0-9a-f]{32}$/i.test(input)) {
+      return `${input.substring(0, 8)}-${input.substring(8, 12)}-${input.substring(12, 16)}-${input.substring(16, 20)}-${input.substring(20)}`;
+    }
+    
+    // For "00000000" type inputs, expand to full zero GUID
+    if (/^0+$/.test(input) && input.length <= 8) {
+      return "00000000-0000-0000-0000-000000000000";
+    }
+    
+    // If not a recognizable GUID format, return null
+    return null;
+  };
+
+  const handleAddOrUpdateBook = async () => {
     if (showAddForm) {
       // Validate required fields
       const errors = validateBook(newBook);
       setValidationErrors(errors);
       
-      // If there are validation errors, don't add/update the book
       if (Object.keys(errors).length > 0) {
         return;
       }
       
-      // All validation passed, add or update the book
-      const numericPrice = parseFloat(newBook.price);
-      const numericUnits = parseInt(newBook.units);
+      // Prepare book data
+      const bookData = {
+        title: newBook.Title,
+        author: newBook.Author,
+        isbn: newBook.ISBN,
+        price: parseFloat(newBook.Price),
+        units: parseInt(newBook.Units),
+        description: newBook.Description || '',
+        supplierId: formatGuid(newBook.Supplier_Id),
+        discountId: formatGuid(newBook.Discount_Id),
+        image: newBook.Cover_Image
+      };
       
-      if (isEditingBook && bookToEdit) {
-        // Update existing book
-        const updatedBook = {
-          ...bookToEdit,
-          title: newBook.title,
-          author: newBook.author,
-          distributor: newBook.distributor || 'Unknown',
-          price: numericPrice,
-          units: numericUnits,
-          description: newBook.description,
-          isbn: newBook.isbn,
-          supplier_id: newBook.supplier_id,
-          discount_id: newBook.discount_id,
-          image: newBook.image,
-          updated_at: new Date()
-        };
+      try {
+        setLoading(true);
+        let response;
         
-        setBooks((prev) => prev.map((book) => 
-          book.id === bookToEdit.id ? updatedBook : book
-        ));
+        if (isEditingBook && bookToEdit) {
+          // Update existing book
+          response = await bookApi.updateBook(bookToEdit.id, bookData);
+          if (response && response.success) {
+            setNotification({
+              open: true,
+              message: 'Book updated successfully',
+              severity: 'success'
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: response.message || 'Failed to update book',
+              severity: 'error'
+            });
+          }
+        } else {
+          // Add new book
+          response = await bookApi.createBook(bookData);
+          if (response && response.success) {
+            setNotification({
+              open: true,
+              message: 'Book added successfully',
+              severity: 'success'
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: response.message || 'Failed to add book',
+              severity: 'error'
+            });
+          }
+        }
+        
+        // Refresh the book list
+        fetchBooks();
+        
+        // Reset form
+        setNewBook({ 
+          Title: '', 
+          Author: '', 
+          Price: '', 
+          Units: '', 
+          Description: '', 
+          ISBN: '',
+          Supplier_Id: '',
+          Discount_Id: '',
+          Cover_Image: null 
+        });
+        setValidationErrors({});
+        setShowAddForm(false);
         setIsEditingBook(false);
         setBookToEdit(null);
-      } else {
-        // Add new book
-        const bookToAdd = {
-          id: books.length + 1,
-          title: newBook.title,
-          author: newBook.author,
-          distributor: newBook.distributor || 'Unknown',
-          price: numericPrice,
-          units: numericUnits,
-          description: newBook.description,
-          isbn: newBook.isbn,
-          supplier_id: newBook.supplier_id,
-          discount_id: newBook.discount_id,
-          added_at: new Date()
-        };
-        
-        setBooks((prev) => [...prev, bookToAdd]);
+      } catch (err) {
+        console.error('Failed to save book:', err);
+        setNotification({
+          open: true,
+          message: 'Failed to save book. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      // Reset form
-      setNewBook({ 
-        title: '', 
-        author: '', 
-        distributor: '', 
-        price: '', 
-        units: '', 
-        description: '', 
-        isbn: '',
-        supplier_id: '',
-        discount_id: '',
-        image: null 
-      });
-      setValidationErrors({});
-      setShowAddForm(false);
     } else {
       // Show the form for adding a new book
       setIsEditingBook(false);
@@ -254,15 +336,28 @@ const BookSection = () => {
     }
   };
 
-  const filteredBooks = books.filter((book) =>
-    book.title.toLowerCase().includes(filter.toLowerCase()) ||
-    book.author.toLowerCase().includes(filter.toLowerCase()) ||
-    (book.distributor && book.distributor.toLowerCase().includes(filter.toLowerCase())) ||
-    (book.isbn && book.isbn.toLowerCase().includes(filter.toLowerCase()))
-  );
+  const handleCloseNotification = () => {
+    setNotification(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Box sx={{ p: 2 }}> 
+      {/* Notification Snackbar */}
+      <Snackbar 
+        open={notification.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity} 
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+
       {/* Book Add Form */}
       {showAddForm && (
         <Paper elevation={0} sx={{ 
@@ -321,6 +416,7 @@ const BookSection = () => {
                 variant="outlined"
                 size="medium"
                 onClick={handleCancel}
+                disabled={loading}
                 sx={{ 
                   minWidth: 100,
                   borderColor: '#61677A',
@@ -337,7 +433,8 @@ const BookSection = () => {
             <Button
               variant="contained"
               size="medium"
-              onClick={addBook}
+              onClick={handleAddOrUpdateBook}
+              disabled={loading}
               sx={{ 
                 ml: 2,
                 minWidth: 120,
@@ -348,87 +445,38 @@ const BookSection = () => {
                 }
               }}
             >
-              {isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'
+              )}
             </Button>
           </Box>
         </Box>
       </Paper>
 
-      {/* Table with lighter background */}
-      <Paper elevation={2} sx={{ bgcolor: '#2A2D2A', borderRadius: 1, border: '1px solid #61677A' }}>
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
-          <Table stickyHeader>
-            <TableHead sx={{ borderBottom: '3px solid #61677A' }}>
-              <TableRow>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Title</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Author</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>ISBN</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Supplier ID</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Price</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Units</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Added Date</TableCell>
-                <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredBooks.map((book) => (
-                <TableRow key={book.id} sx={{ 
-                  '&:last-child td, &:last-child th': { 
-                    border: 0 
-                  },
-                  '& td': {
-                    borderColor: '#61677A'
-                  }
-                }}>
-                  <TableCell>{book.title}</TableCell>
-                  <TableCell>{book.author}</TableCell>
-                  <TableCell>{book.isbn || 'N/A'}</TableCell>
-                  <TableCell>{book.supplier_id || 'N/A'}</TableCell>
-                  <TableCell>${book.price.toFixed(2)}</TableCell>
-                  <TableCell>{book.units}</TableCell>
-                  <TableCell>{book.added_at ? new Date(book.added_at).toLocaleDateString() : 'N/A'}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex' }}>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleEditBook(book)}
-                        sx={{ 
-                          color: '#6D7386',
-                          mr: 1,
-                          '&:hover': { 
-                            bgcolor: 'rgba(109, 115, 134, 0.1)' 
-                          }
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleDeleteBook(book)}
-                        sx={{ 
-                          color: '#ff6b6b',
-                          '&:hover': { 
-                            bgcolor: 'rgba(255, 107, 107, 0.1)' 
-                          }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredBooks.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    No books found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      {/* Loading state */}
+      {loading && !showAddForm && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      
+      {/* Error message */}
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Book Table */}
+      {!loading && !error && (
+        <BookTable 
+          books={books} 
+          onEdit={handleEditBook} 
+          onDelete={handleDeleteBook} 
+        />
+      )}
 
       {/* Delete Book Confirmation Dialog */}
       <Dialog
@@ -452,6 +500,7 @@ const BookSection = () => {
         <DialogActions>
           <Button 
             onClick={() => setDeleteDialogOpen(false)}
+            disabled={loading}
             sx={{ 
               color: '#D8D9DA',
               '&:hover': { bgcolor: 'rgba(216, 217, 218, 0.1)' }
@@ -461,12 +510,13 @@ const BookSection = () => {
           </Button>
           <Button 
             onClick={confirmDeleteBook}
+            disabled={loading}
             sx={{ 
               color: '#ff6b6b',
               '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.1)' }
             }}
           >
-            Delete
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
