@@ -2,15 +2,13 @@ import * as React from 'react';
 import {
   Button,
   FormControl,
-  FormControlLabel,
-  Checkbox,
   InputLabel,
   OutlinedInput,
-  TextField,
   InputAdornment,
+  IconButton,
+  TextField,
   Link,
   Alert,
-  IconButton,
 } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import Visibility from '@mui/icons-material/Visibility';
@@ -18,6 +16,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { SignInPage } from '@toolpad/core/SignInPage';
 import { useTheme } from '@mui/material/styles';
+import { useState } from 'react';
 
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
 
@@ -123,17 +122,52 @@ function Title() {
   return <h2 style={{ marginBottom: 8 }}>Login</h2>;
 }
 
-
 export default function SlotsSignIn() {
   const theme = useTheme();
+  const [error, setError] = useState(null);
+
+  const signIn = async (provider, formData) => {
+    try {
+      // Extract email and password from formData
+      const email = formData.get('email');
+      const password = formData.get('password');
+
+      // Make the POST request to the backend
+      const response = await fetch('https://localhost:5001/customers/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed. Please check your credentials.');
+      }
+
+      const data = await response.json();
+
+      // If login is successful
+      if (data.success) {
+        console.log('Login successful:', data.token);
+        
+        alert(data.Message || 'Loged in successfully');
+        localStorage.setItem('authToken', data.token);
+        // Navigate to a different page (e.g., the dashboard)
+        window.location.href = '/'; // Replace with your dashboard URL
+      } else {
+        // If login fails, display the error message
+        setError(data.message);
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <AppProvider theme={theme}>
       <SignInPage
-        signIn={(provider, formData) =>
-          alert(
-            `Logging in with "${provider.name}" and credentials: ${formData.get('email')}, ${formData.get('password')}, and checkbox value: ${formData.get('tandc')}`,
-          )
-        }
+        signIn={signIn}
         slots={{
           title: Title,
           emailField: CustomEmailField,
@@ -144,6 +178,12 @@ export default function SlotsSignIn() {
         }}
         providers={providers}
       />
+      {error && (
+        <Alert severity="error" sx={{ my: 2 }}>
+          {error}
+        </Alert>
+      )}
     </AppProvider>
   );
 }
+

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using posystem.ServiceInterface.Services;
 using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.DataAnnotations;
@@ -15,11 +16,12 @@ public class ConfigureDb : IHostingStartup
         .ConfigureServices((context, services) => {
             services.AddSingleton<IDbConnectionFactory>(new OrmLiteConnectionFactory(
                 context.Configuration.GetConnectionString("DefaultConnection")
-                ?? "Server=localhost;User Id=root;Password=Qweasdzxc1$;Database=posystemdb;Pooling=true;MinPoolSize=0;MaxPoolSize=200",
+                ?? "Server=cougarcatalogdb.co3uc2om093h.us-east-1.rds.amazonaws.com;User Id=admin;Password=Cougarcatalog2025$;Database=cougarcatalogdb;Pooling=true;MinPoolSize=0;MaxPoolSize=200",
                 MySqlDialect.Provider));
         })
         .ConfigureAppHost(appHost => {
-            // Enable built-in Database Admin UI at /admin-ui/database
-            // appHost.Plugins.Add(new AdminDatabaseFeature());
+            // Retrieve the EmployeeService from DI and insert a role manager when the application starts UNCOMMENT WHEN NEEDED
+            //var employeeService = appHost.Resolve<EmployeeService>();
+            //employeeService.InsertManager("Alex", "Orwell", "alex.orwell@gmail.com", "SecurePassword123!");
         });
 }
