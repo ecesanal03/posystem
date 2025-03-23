@@ -7,6 +7,7 @@ import AccountDetailsPage from "./Pages/CreateCustomerAccount";
 import AccountDetails from './Pages/CustomerAccountDetails';
 import ShoppingCart from './Pages/ShoppingCart';
 import ManagementPage from "./Pages/ManagementPage/index";
+import ReportsPage from "./Pages/Reports";
 
 // PrivateRoute component that checks if the user is logged in
 const PrivateRoute = ({ element }) => {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/signup" element={<CredentialsSignInPage />} />
         <Route path="/create-account" element={<AccountDetailsPage />} />
         <Route path="/EmployeePortal" element={<ManagementPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
 
         {/* Protected Routes */}
         <Route path="/account" element={<PrivateRoute element={<AccountDetails />} />} />
