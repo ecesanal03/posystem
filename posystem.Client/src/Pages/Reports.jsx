@@ -192,7 +192,7 @@ function ReportsPage() {
               <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#2A2A2A' }}>
                 <Box
                   component="img"
-                  src="https://shorturl.at/woo7A"
+                  src="src/assets/logo.png"
                   alt="Store Logo"
                   sx={{ 
                     width: 80, 
