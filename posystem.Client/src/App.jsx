@@ -35,6 +35,8 @@ export default function App() {
         <Route path="/signup" element={<CredentialsSignInPage />} />
         <Route path="/create-account" element={<AccountDetailsPage />} />
         <Route path="/employeelogin" element={<EmployeeLogin />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/bookdetails" element={<BookDetails />} />
 
         {/* Protected Routes */}
         <Route path="/account" element={<PrivateRoute element={<AccountDetails />} />} />
