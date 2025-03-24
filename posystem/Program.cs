@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 
-services.AddServiceStack(typeof(MyServices).Assembly);
+//services.AddServiceStack(typeof(MyServices).Assembly);
 services.AddServiceStack(typeof(CustomerService).Assembly);
 services.AddServiceStack(typeof(EmployeeService).Assembly);
 
