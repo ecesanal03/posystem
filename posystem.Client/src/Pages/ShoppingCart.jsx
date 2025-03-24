@@ -60,8 +60,8 @@ const ShoppingCart = () => {
                 <Paper sx={{ padding: 3, maxWidth: '100vh', margin: '0 auto' }}>
                 <Grid container justifyContent="center">
                     <img 
-                    src="src/assets/logo.png" 
-                    alt="Logo"
+                    src="/logo.png" 
+                    alt="png"
                     style={{ width: '150px', marginBottom: '20px' }}
                     />
                 </Grid>

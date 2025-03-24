@@ -1,4 +1,5 @@
 using posystem.ServiceInterface;
+using ServiceStack.Api.OpenApi;
 
 [assembly: HostingStartup(typeof(posystem.AppHost))]
 
@@ -22,6 +23,7 @@ public class AppHost() : AppHostBase("posystem"), IHostingStartup
 
     public override void Configure()
     {
+        Plugins.Add(new OpenApiFeature());
         // Configure ServiceStack, Run custom logic after ASP.NET Core Startup
         SetConfig(new HostConfig {
         });
