@@ -4,7 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <PublishProfile>DefaultContainer</PublishProfile>
     <UserSecretsId>3e99d906-4d45-401b-ac66-e7ab3b4f873d</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
@@ -34,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\posystem.Client\posystem.client.esproj" />
     <ProjectReference Include="..\posystem.ServiceInterface\posystem.ServiceInterface.csproj" />
     <ProjectReference Include="..\posystem.ServiceModel\posystem.ServiceModel.csproj" />
   </ItemGroup>

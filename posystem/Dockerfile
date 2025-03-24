@@ -4,8 +4,8 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER $APP_UID
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8090
+EXPOSE 5000
 
 
 # This stage is used to build the service project
@@ -13,7 +13,6 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["posystem/posystem.csproj", "posystem/"]
-COPY ["posystem.Client/posystem.client.esproj", "posystem.Client/"]
 COPY ["posystem.ServiceInterface/posystem.ServiceInterface.csproj", "posystem.ServiceInterface/"]
 COPY ["posystem.ServiceModel/posystem.ServiceModel.csproj", "posystem.ServiceModel/"]
 RUN dotnet restore "./posystem/posystem.csproj"
