@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@fontsource/inter": "^5.2.5",
     "@toolpad/core": "^0.12.0"
   }
 }
