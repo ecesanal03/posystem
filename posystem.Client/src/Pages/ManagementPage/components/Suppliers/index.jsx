@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Box, 
   TextField,
@@ -10,6 +10,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Search as SearchIcon
@@ -17,63 +20,51 @@ import {
 
 import SupplierForm from './SupplierForm';
 import SupplierTable from './SupplierTable';
+import supplierApi from '../../../../api/supplierAPI';
+
+// Helper function to format or validate GUIDs
+const formatGuid = (guidString) => {
+  if (!guidString || typeof guidString !== 'string' || !guidString.trim()) {
+    return null;
+  }
+  
+  // Check if the string is already in GUID format
+  const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (guidPattern.test(guidString.trim())) {
+    return guidString.trim();
+  }
+  
+  // Remove any non-hex characters
+  const cleanedString = guidString.replace(/[^0-9a-f]/gi, '').toLowerCase();
+  
+  // Check if we have 32 hex characters (GUID without dashes)
+  if (cleanedString.length !== 32) {
+    return null;
+  }
+  
+  // Format as a standard GUID
+  return `${cleanedString.slice(0, 8)}-${cleanedString.slice(8, 12)}-${cleanedString.slice(12, 16)}-${cleanedString.slice(16, 20)}-${cleanedString.slice(20)}`;
+};
 
 const SuppliersSection = () => {
   // Suppliers data state
-  const [suppliers, setSuppliers] = useState([
-    { 
-      id: 1, 
-      name: 'Penguin Random House', 
-      contact_person: 'Jennifer Miller', 
-      email: 'jmiller@prh.com', 
-      phone: '212-782-9000', 
-      address: '1745 Broadway',
-      city: 'New York', 
-      state: 'NY',
-      zip: '10019',
-      country: 'USA',
-      added_at: new Date('2023-10-15')
-    },
-    { 
-      id: 2, 
-      name: 'HarperCollins Publishers', 
-      contact_person: 'Michael Roberts', 
-      email: 'mroberts@harpercollins.com', 
-      phone: '212-207-7000', 
-      address: '195 Broadway',
-      city: 'New York', 
-      state: 'NY',
-      zip: '10007',
-      country: 'USA',
-      added_at: new Date('2023-11-22')
-    },
-    { 
-      id: 3, 
-      name: 'Scholastic Corporation', 
-      contact_person: 'Sarah Johnson', 
-      email: 'sjohnson@scholastic.com', 
-      phone: '800-724-6527', 
-      address: '557 Broadway',
-      city: 'New York', 
-      state: 'NY',
-      zip: '10012',
-      country: 'USA',
-      added_at: new Date('2024-01-08')
-    },
-  ]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [, setTotalCount] = useState(0);
   
   // Form state
   const [supplierFilter, setSupplierFilter] = useState('');
   const [newSupplier, setNewSupplier] = useState({
-    name: '',
-    contact_person: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: ''
+    SupplierName: '',
+    Email: '',
+    PhoneNumber: '',
+    AddressLineOne: '',
+    AddressLineTwo: '',
+    City: '',
+    State: '',
+    ZipCode: '',
+    Country: ''
   });
 
   // UI state
@@ -83,6 +74,52 @@ const SuppliersSection = () => {
   const [supplierToDelete, setSupplierToDelete] = useState(null);
   const [isEditingSupplier, setIsEditingSupplier] = useState(false);
   const [supplierToEdit, setSupplierToEdit] = useState(null);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+
+  // Create filteredSuppliers based on supplierFilter
+  const filteredSuppliers = useMemo(() => {
+    if (!supplierFilter) return suppliers;
+    
+    const searchTerm = supplierFilter.toLowerCase();
+    return suppliers.filter(supplier => 
+      (supplier.supplierName?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.email?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.phoneNumber?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.addressLineOne?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.city?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.state?.toLowerCase() || '').includes(searchTerm) ||
+      (supplier.country?.toLowerCase() || '').includes(searchTerm)
+    );
+  }, [suppliers, supplierFilter]);
+
+  // Fetch suppliers on component mount and when filter changes
+  useEffect(() => {
+    fetchSuppliers();
+  }, [supplierFilter]);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {};
+      if (supplierFilter) {
+        params.searchTerm = supplierFilter;
+      }
+
+      const response = await supplierApi.getSuppliers(params);
+
+      if (response.suppliers) {
+        setSuppliers(response.suppliers);
+        setTotalCount(response.totalCount);
+      }
+    } catch (err) {
+      console.error('Failed to fetch suppliers:', err);
+      setError('Failed to load suppliers. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSupplierFilterChange = (e) => {
     setSupplierFilter(e.target.value);
@@ -96,38 +133,63 @@ const SuppliersSection = () => {
   const validateSupplier = (supplier) => {
     const errors = {};
     
-    if (!supplier.name.trim()) errors.name = 'Name is required';
-    if (!supplier.contact_person.trim()) errors.contact_person = 'Contact person is required';
-    if (!supplier.email.trim()) errors.email = 'Email is required';
-    if (!supplier.phone.trim()) errors.phone = 'Phone is required';
-    if (!supplier.address.trim()) errors.address = 'Address is required';
-    if (!supplier.city.trim()) errors.city = 'City is required';
+    if (!supplier.SupplierName?.trim()) errors.SupplierName = 'Name is required';
+    if (!supplier.Email?.trim()) errors.Email = 'Email is required';
+    if (!supplier.PhoneNumber?.trim()) errors.PhoneNumber = 'Phone is required';
+    if (!supplier.AddressLineOne?.trim()) errors.AddressLineOne = 'Address is required';
+    if (!supplier.City?.trim()) errors.City = 'City is required';
+    if (!supplier.State?.trim()) errors.State = 'State is required';
+    if (!supplier.ZipCode?.trim()) errors.ZipCode = 'Zip code is required';
+    if (!supplier.Country?.trim()) errors.Country = 'Country is required';
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (supplier.email && !emailRegex.test(supplier.email)) {
-      errors.email = 'Valid email is required';
+    if (supplier.Email && !emailRegex.test(supplier.Email)) {
+      errors.Email = 'Valid email is required';
+    }
+    
+    // Validate any IDs in case we need to add Supplier_Id in the future
+    if (supplier.Id && !formatGuid(supplier.Id)) {
+      errors.Id = 'Valid GUID format required';
     }
     
     return errors;
   };
 
-  const handleEditSupplier = (supplier) => {
-    setSupplierToEdit(supplier);
-    setNewSupplier({
-      name: supplier.name,
-      contact_person: supplier.contact_person || '',
-      email: supplier.email || '',
-      phone: supplier.phone || '',
-      address: supplier.address || '',
-      city: supplier.city || '',
-      state: supplier.state || '',
-      zip: supplier.zip || '',
-      country: supplier.country || ''
-    });
-    setIsEditingSupplier(true);
-    setShowAddSupplierForm(true);
-    setSupplierValidationErrors({});
+  const handleEditSupplier = async (supplier) => {
+    try {
+      setLoading(true);
+      const response = await supplierApi.getSupplier(supplier.id);
+
+      if (response && response.supplier) {
+        const supplierDetails = response.supplier;
+
+        setSupplierToEdit(supplierDetails);
+        setNewSupplier({
+          SupplierName: supplierDetails.supplierName,
+          Email: supplierDetails.email,
+          PhoneNumber: supplierDetails.phoneNumber || '',
+          AddressLineOne: supplierDetails.addressLineOne,
+          AddressLineTwo: supplierDetails.addressLineTwo || '',
+          City: supplierDetails.city,
+          State: supplierDetails.state,
+          ZipCode: supplierDetails.zipCode,
+          Country: supplierDetails.country
+        });
+        setIsEditingSupplier(true);
+        setShowAddSupplierForm(true);
+        setSupplierValidationErrors({});
+      }
+    } catch (err) {
+      console.error('Failed to fetch supplier details:', err);
+      setNotification({
+        open: true,
+        message: 'Failed to load supplier details for editing.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteSupplier = (supplier) => {
@@ -135,11 +197,39 @@ const SuppliersSection = () => {
     setDeleteSupplierDialogOpen(true);
   };
 
-  const confirmDeleteSupplier = () => {
+  const confirmDeleteSupplier = async () => {
     if (supplierToDelete) {
-      setSuppliers((prev) => prev.filter((supplier) => supplier.id !== supplierToDelete.id));
-      setDeleteSupplierDialogOpen(false);
-      setSupplierToDelete(null);
+      try {
+        setLoading(true);
+        const response = await supplierApi.deleteSupplier(supplierToDelete.id);
+
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Supplier deleted successfully',
+            severity: 'success'
+          });
+          // Refresh the supplier list
+          fetchSuppliers();
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to delete supplier',
+            severity: 'error'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to delete supplier:', err);
+        setNotification({
+          open: true,
+          message: 'Failed to delete supplier. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
+        setDeleteSupplierDialogOpen(false);
+        setSupplierToDelete(null);
+      }
     }
   };
 
@@ -148,20 +238,20 @@ const SuppliersSection = () => {
     setIsEditingSupplier(false);
     setSupplierToEdit(null);
     setNewSupplier({
-      name: '',
-      contact_person: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zip: '',
-      country: ''
+      SupplierName: '',
+      Email: '',
+      PhoneNumber: '',
+      AddressLineOne: '',
+      AddressLineTwo: '',
+      City: '',
+      State: '',
+      ZipCode: '',
+      Country: ''
     });
     setSupplierValidationErrors({});
   };
 
-  const addSupplier = () => {
+  const handleAddOrUpdateSupplier = async () => {
     if (showAddSupplierForm) {
       // Validate required fields
       const errors = validateSupplier(newSupplier);
@@ -172,61 +262,99 @@ const SuppliersSection = () => {
         return;
       }
       
-      // All validation passed, add or update the supplier
-      if (isEditingSupplier && supplierToEdit) {
-        // Update existing supplier
-        const updatedSupplier = {
-          ...supplierToEdit,
-          name: newSupplier.name,
-          contact_person: newSupplier.contact_person,
-          email: newSupplier.email,
-          phone: newSupplier.phone,
-          address: newSupplier.address,
-          city: newSupplier.city,
-          state: newSupplier.state,
-          zip: newSupplier.zip,
-          country: newSupplier.country,
-          updated_at: new Date()
-        };
+      try {
+        setLoading(true);
         
-        setSuppliers((prev) => prev.map((supplier) => 
-          supplier.id === supplierToEdit.id ? updatedSupplier : supplier
-        ));
+        if (isEditingSupplier && supplierToEdit) {
+          // Update existing supplier via API
+          const updateRequest = {
+            Id: supplierToEdit.id,
+            SupplierName: newSupplier.SupplierName,
+            Email: newSupplier.Email,
+            PhoneNumber: newSupplier.PhoneNumber,
+            AddressLineOne: newSupplier.AddressLineOne,
+            AddressLineTwo: newSupplier.AddressLineTwo,
+            City: newSupplier.City,
+            State: newSupplier.State,
+            ZipCode: newSupplier.ZipCode,
+            Country: newSupplier.Country
+          };
+          
+          const response = await supplierApi.updateSupplier(updateRequest);
+          
+          if (response && response.success) {
+            setNotification({
+              open: true,
+              message: 'Supplier updated successfully',
+              severity: 'success'
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: response.message || 'Failed to update supplier',
+              severity: 'error'
+            });
+          }
+        } else {
+          // Add new supplier via API
+          const createRequest = {
+            SupplierName: newSupplier.SupplierName,
+            Email: newSupplier.Email,
+            PhoneNumber: newSupplier.PhoneNumber,
+            AddressLineOne: newSupplier.AddressLineOne,
+            AddressLineTwo: newSupplier.AddressLineTwo,
+            City: newSupplier.City,
+            State: newSupplier.State,
+            ZipCode: newSupplier.ZipCode,
+            Country: newSupplier.Country
+          };
+          
+          const response = await supplierApi.createSupplier(createRequest);
+          
+          if (response && response.success) {
+            setNotification({
+              open: true,
+              message: 'Supplier added successfully',
+              severity: 'success'
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: response.message || 'Failed to add supplier',
+              severity: 'error'
+            });
+          }
+        }
+        
+        // Refresh supplier list to get updated data
+        fetchSuppliers();
+        
+        // Reset form
+        setNewSupplier({
+          SupplierName: '',
+          Email: '',
+          PhoneNumber: '',
+          AddressLineOne: '',
+          AddressLineTwo: '',
+          City: '',
+          State: '',
+          ZipCode: '',
+          Country: ''
+        });
+        setSupplierValidationErrors({});
+        setShowAddSupplierForm(false);
         setIsEditingSupplier(false);
         setSupplierToEdit(null);
-      } else {
-        // Add new supplier
-        const supplierToAdd = {
-          id: suppliers.length + 1,
-          name: newSupplier.name,
-          contact_person: newSupplier.contact_person,
-          email: newSupplier.email,
-          phone: newSupplier.phone,
-          address: newSupplier.address,
-          city: newSupplier.city,
-          state: newSupplier.state,
-          zip: newSupplier.zip,
-          country: newSupplier.country,
-          added_at: new Date()
-        };
-        
-        setSuppliers((prev) => [...prev, supplierToAdd]);
+      } catch (err) {
+        console.error('Error saving supplier:', err);
+        setNotification({
+          open: true,
+          message: `Error saving supplier: ${err.message || 'Unknown error'}`,
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      // Reset form
-      setNewSupplier({
-        name: '',
-        contact_person: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-        country: ''
-      });
-      setSupplierValidationErrors({});
-      setShowAddSupplierForm(false);
     } else {
       // Show the form for adding a new supplier
       setIsEditingSupplier(false);
@@ -236,15 +364,28 @@ const SuppliersSection = () => {
     }
   };
 
-  const filteredSuppliers = suppliers.filter((supplier) =>
-    supplier.name.toLowerCase().includes(supplierFilter.toLowerCase()) ||
-    (supplier.contact_person && supplier.contact_person.toLowerCase().includes(supplierFilter.toLowerCase())) ||
-    (supplier.email && supplier.email.toLowerCase().includes(supplierFilter.toLowerCase())) ||
-    (supplier.country && supplier.country.toLowerCase().includes(supplierFilter.toLowerCase()))
-  );
+  const handleCloseNotification = () => {
+    setNotification(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Box sx={{ p: 2 }}> 
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+
       {/* Supplier Add Form */}
       {showAddSupplierForm && (
         <Paper elevation={0} sx={{ 
@@ -303,6 +444,7 @@ const SuppliersSection = () => {
                 variant="outlined"
                 size="medium"
                 onClick={handleSupplierCancel}
+                disabled={loading}
                 sx={{ 
                   minWidth: 100,
                   borderColor: '#61677A',
@@ -319,7 +461,8 @@ const SuppliersSection = () => {
             <Button
               variant="contained"
               size="medium"
-              onClick={addSupplier}
+              onClick={handleAddOrUpdateSupplier}
+              disabled={loading}
               sx={{ 
                 minWidth: 140,
                 bgcolor: '#61677A',
@@ -330,18 +473,38 @@ const SuppliersSection = () => {
                 ml: 2
               }}
             >
-              {isEditingSupplier ? 'UPDATE SUPPLIER' : 'ADD SUPPLIER'}
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                isEditingSupplier ? 'UPDATE SUPPLIER' : 'ADD SUPPLIER'
+              )}
             </Button>
           </Box>
         </Box>
       </Paper>
 
-      {/* Supplier Table - Using the SupplierTable component */}
-      <SupplierTable 
-        suppliers={filteredSuppliers} 
-        onEdit={handleEditSupplier} 
-        onDelete={handleDeleteSupplier} 
-      />
+      {/* Loading state */}
+      {loading && !showAddSupplierForm && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      
+      {/* Error message */}
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Supplier Table */}
+      {!loading && !error && (
+        <SupplierTable 
+          suppliers={filteredSuppliers} 
+          onEdit={handleEditSupplier} 
+          onDelete={handleDeleteSupplier} 
+        />
+      )}
 
       {/* Delete Supplier Confirmation Dialog */}
       <Dialog
@@ -359,12 +522,13 @@ const SuppliersSection = () => {
         <DialogTitle>Are You Sure?</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: '#D8D9DA' }}>
-            Deleting &ldquo;{supplierToDelete?.name}&rdquo; cannot be undone.
+            Deleting &ldquo;{supplierToDelete?.supplierName}&rdquo; cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button 
             onClick={() => setDeleteSupplierDialogOpen(false)}
+            disabled={loading}
             sx={{
               color: '#D8D9DA',
               '&:hover': { bgcolor: 'rgba(216, 217, 218, 0.1)' },
@@ -374,12 +538,13 @@ const SuppliersSection = () => {
           </Button>
           <Button 
             onClick={confirmDeleteSupplier}
+            disabled={loading}
             sx={{ 
               color: '#ff6b6b',
               '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.1)' }
             }}
           >
-            Delete
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
