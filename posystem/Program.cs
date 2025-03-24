@@ -2,7 +2,7 @@ using posystem.ServiceInterface;
 using posystem.ServiceInterface.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://0.0.0.0:8090");
+//builder.WebHost.UseUrls("http://0.0.0.0:8090");
 var services = builder.Services;
 
 services.AddServiceStack(typeof(MyServices).Assembly);
@@ -26,6 +26,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+// Configure ServiceStack License
+ServiceStack.LicenseUtils.RegisterLicense("TRIAL30WEB-e3JlZjpUUklBTDMwV0VCLG5hbWU6My8yNC8yMDI1IDIxMmYyMmEyYzc5NDRmZmQ4ZDIzOTZlZjcwNGYzZTBhLHR5cGU6VHJpYWwsbWV0YTowLGhhc2g6WGxLQmxRM2Q1V29EanVjUG1MTk9zd1RMemNWdjUwNXV0ODRVSjNKODBaaTdwWVpaRFRyQXJOWEZiV0NzN1Ivbkw1NUVXaERQbDZOLzIxUDhOY3ZIWWE5RjRkV3FVaEZla0MzbnJvR2FMTHgveEZZbnY3dHE0dHR5NkVyUE0xdG13b3IxYlFXOWE0Smp5MjJGMitUb3p3bnhxR0pXQWtJakRxYWhyRWNIZllnPSxleHBpcnk6MjAyNS0wNC0yM30=");
 
 app.UseServiceStack(new AppHost(), options => {
     options.MapEndpoints();
