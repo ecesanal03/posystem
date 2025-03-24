@@ -87,7 +87,7 @@ const AccountDetails = () => {
           {/* Sidebar */}
           <Grid item xs={12} md={3} sx={{ padding: 2 }}>
             <Paper sx={{ padding: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src="src/assets/logo.png" alt="logo" style={{ width: '150px', marginBottom: '20px' }} />
+              <img src="/logo.png" alt="png" style={{ width: '150px', marginBottom: '20px' }} />
               <Typography variant="h6">John Doe</Typography>
               <Typography variant="body2">johndoe@example.com</Typography>
             </Paper>

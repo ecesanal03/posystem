@@ -132,8 +132,12 @@ export default function SlotsSignIn() {
       const email = formData.get('email');
       const password = formData.get('password');
 
+
+      //FOR DEPLOYMNET: http://cougar-catalog-service/customers/login
+      //FOR LOCAL: https://localhost:5001/customers/login
+
       // Make the POST request to the backend
-      const response = await fetch('https://localhost:5001/customers/login', {
+      const response = await fetch('/customers/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
