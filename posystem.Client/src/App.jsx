@@ -4,8 +4,11 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import Login from "./Pages/Login";
-import Signup from "./Pages/Signup";
+import CredentialsSignInPage from "./Pages/Signup";
 import Marketplace from "./Pages/Marketplace";
+import AccountDetailsPage from "./Pages/CreateCustomerAccount";
+import Checkout from "./Pages/Checkout";
+import BookDetails from "./Pages/BookDetails";
 
 export default function App() {
   return (
@@ -13,7 +16,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Marketplace />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<CredentialsSignInPage />} />
+        <Route path="/create-account" element={<AccountDetailsPage />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/bookdetails" element={<BookDetails />} />
       </Routes>
     </Router>
   );
