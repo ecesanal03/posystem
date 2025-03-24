@@ -319,7 +319,7 @@ function Marketplace(props) {
       navigation={NAVIGATION}
       branding={{ 
         title: 'Cougar Catalog',
-        logo: <img src="src/assets/logo.png" alt="png" />
+        logo: <img src="/logo.png" alt="png" />
       }}
       router={router}
       theme={demoTheme}

@@ -42,7 +42,7 @@ export default function AccountDetailsPage() {
 
     // Send the data to the backend using fetch
     try {
-      const response = await fetch('https://localhost:5001/customers/registration', {
+      const response = await fetch('/customers/registration', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

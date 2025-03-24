@@ -2,9 +2,12 @@ using posystem.ServiceInterface;
 using posystem.ServiceInterface.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//builder.WebHost.UseUrls("http://0.0.0.0:8090"); //Comment this out for development
+
 var services = builder.Services;
 
-services.AddServiceStack(typeof(MyServices).Assembly);
+//services.AddServiceStack(typeof(MyServices).Assembly);
 services.AddServiceStack(typeof(CustomerService).Assembly);
 services.AddServiceStack(typeof(EmployeeService).Assembly);
 
@@ -29,5 +32,6 @@ app.UseStaticFiles();
 app.UseServiceStack(new AppHost(), options => {
     options.MapEndpoints();
 });
+
 
 app.Run();

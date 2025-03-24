@@ -1,10 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <PublishProfile>DefaultContainer</PublishProfile>
     <UserSecretsId>3e99d906-4d45-401b-ac66-e7ab3b4f873d</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
@@ -26,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="ServiceStack" Version="8.*" />
+    <PackageReference Include="ServiceStack.Api.OpenApi" Version="8.6.0" />
     <PackageReference Include="ServiceStack.Extensions" Version="8.*" />
     <PackageReference Include="ServiceStack.Jobs" Version="8.*" />
     <PackageReference Include="ServiceStack.Server" Version="8.*" />
@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\posystem.Client\posystem.client.esproj" />
     <ProjectReference Include="..\posystem.ServiceInterface\posystem.ServiceInterface.csproj" />
     <ProjectReference Include="..\posystem.ServiceModel\posystem.ServiceModel.csproj" />
   </ItemGroup>

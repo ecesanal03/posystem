@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import {
   Paper,
   TableContainer,
@@ -24,7 +25,6 @@ const BookTable = ({ books, onEdit, onDelete }) => {
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Supplier ID</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Price</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Units</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Discount ID</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Added Date</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}></TableCell>
             </TableRow>
@@ -43,11 +43,10 @@ const BookTable = ({ books, onEdit, onDelete }) => {
                   <TableCell>{book.title}</TableCell>
                   <TableCell>{book.author}</TableCell>
                   <TableCell>{book.isbn || 'N/A'}</TableCell>
-                  <TableCell>{book.supplier_id || 'N/A'}</TableCell>
+                  <TableCell>{book.supplier_Id ? book.supplier_Id.substring(0, 8) : 'N/A'}</TableCell>
                   <TableCell>${book.price.toFixed(2)}</TableCell>
                   <TableCell>{book.units}</TableCell>
-                  <TableCell>{book.discount_id || 'N/A'}</TableCell>
-                  <TableCell>{book.added_at ? new Date(book.added_at).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{book.added_At ? new Date(book.added_At).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex' }}>
                       <IconButton 
@@ -81,7 +80,7 @@ const BookTable = ({ books, onEdit, onDelete }) => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={8} align="center">
                   No books found
                 </TableCell>
               </TableRow>
@@ -91,6 +90,23 @@ const BookTable = ({ books, onEdit, onDelete }) => {
       </TableContainer>
     </Paper>
   );
+};
+
+BookTable.propTypes = {
+  books: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      author: PropTypes.string.isRequired,
+      isbn: PropTypes.string,
+      supplierId: PropTypes.string,
+      price: PropTypes.number.isRequired,
+      units: PropTypes.number.isRequired,
+      addedAt: PropTypes.string
+    })
+  ).isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired
 };
 
 export default BookTable; 

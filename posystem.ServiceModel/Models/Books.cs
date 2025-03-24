@@ -1,4 +1,5 @@
-﻿using ServiceStack.DataAnnotations;
+using ServiceStack;
+using ServiceStack.DataAnnotations;
 
 namespace posystem.ServiceModel.Models
 {
@@ -6,53 +7,89 @@ namespace posystem.ServiceModel.Models
     public class Books
     {
         [PrimaryKey]
+        [Required]
         public Guid Id { get; set; }
 
-        public string? AuthorFirstName { get; set; }
-        public string? AuthorMiddleName { get; set; }
-        public string? AuthorLastName { get; set; }
+        [Required]
+        [StringLength(200)]
+        [Index]
+        public string? Title { get; set; } = null!;
+        
+        [Required]
+        [StringLength(100)]
+        [Index]
+        public string? Author { get; set; } = null!;
+
+        [StringLength(20)]
+        [Index(Unique = true)]
         public string? ISBN { get; set; }
-        public decimal UnitPrice { get; set; }
-        public int StockLevel { get; set; }
+
+        [Required]
+        [DecimalLength(precision:10, scale:2)]
+        public decimal Price { get; set; }
+
+        [Default(0)]
+        public int Units { get; set; }
+
+        [StringLength(2000)]
+        [Input(Type = "textarea")]
         public string? Description { get; set; }
-        public byte[]? CoverImage { get; set; }
-        public DateTime AddedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+
+        [StringLength(int.MaxValue)]
+        [Input(Type = "file")]
+        public byte[]? Cover_Image { get; set; }
+
+        [Required]
+        [Default(typeof(DateTime), "GETUTCDATE()")]
+        public DateTime Added_At { get; set; }
+
+        [Required]
+        [Default(typeof(DateTime), "GETUTCDATE()")]
+        public DateTime Updated_At { get; set; }
 
         [References(typeof(Employees))]
-        public Guid? CreatedBy { get; set; }
+        [ForeignKey(typeof(Employees), OnDelete = "SET NULL")]
+        public Guid? Created_By { get; set; }
 
         [References(typeof(Employees))]
-        public Guid? UpdatedBy { get; set; }
+        [ForeignKey(typeof(Employees), OnDelete = "SET NULL")]
+        public Guid? Updated_By { get; set; }
 
         [References(typeof(Suppliers))]
-        public Guid? SupplierId { get; set; }
+        [ForeignKey(typeof(Suppliers), OnDelete = "SET NULL")]
+        public Guid? Supplier_Id { get; set; }
 
         [References(typeof(Discounts))]
-        public Guid? DiscountId { get; set; }
-
-        public string? Title { get; set; }
+        [ForeignKey(typeof(Discounts), OnDelete = "SET NULL")]
+        public Guid? Discount_Id { get; set; }
     }
 }
 
 
 
-// Id CHAR(36) PRIMARY KEY,
-// 	Author_FirstName VARCHAR(25) NOT NULL,
-// 	Author_MiddleName VARCHAR(25),
-// 	Author_LastName VARCHAR(25) NOT NULL,
-// 	ISBN VARCHAR(20) UNIQUE NOT NULL,
-// 	Unit_Price DECIMAL(10,2) NOT NULL,
-// 	Stock_Level INT NOT NULL,
-// 	Description TEXT NOT NULL,
-// 	Cover_Image BLOB,
-// 	Added_At TIMESTAMP DEFAULT NOW(),
-// 	Updated_At TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),-- add fk relationships
-// 	Created_By VARCHAR(25), -- FK to show which employee created the book
-// 	Updated_By VARCHAR(25), -- FK to show which employee updated the book
-// 	Supplier_Id CHAR(36) ,
-// 	Discount_Id CHAR(36) ,
-// 	CONSTRAINT fk_creator_employee FOREIGN KEY (Created_By) REFERENCES Employees(Id) ON DELETE SET NULL,
-// 	CONSTRAINT fk_updater_employee FOREIGN KEY (Updated_By) REFERENCES Employees(Id) ON DELETE SET NULL,
-// 	-- CONSTRAINT fk_supplier FOREIGN KEY (Supplier_Id) REFERENCES Suppliers(Id) ON DELETE SET NULL,
-//     CONSTRAINT fk_discount FOREIGN KEY (Discount_Id) REFERENCES Discounts(Id) ON DELETE SET NULL
+// CREATE TABLE `Books` (
+  // `Id` char(36) NOT NULL,
+  // `Author` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  // `ISBN` varchar(20) NOT NULL,
+  // `Price` decimal(10,2) NOT NULL,
+  // `Units` int NOT NULL,
+  // `Description` text NOT NULL,
+  // `Cover_Image` blob,
+  // `Added_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  // `Updated_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  // `Created_By` varchar(25) DEFAULT NULL,
+  // `Updated_By` varchar(25) DEFAULT NULL,
+  // `Supplier_Id` char(36) DEFAULT NULL,
+  // `Discount_Id` char(36) DEFAULT NULL,
+  // `Title` varchar(75) NOT NULL,
+  // PRIMARY KEY (`Id`),
+  // UNIQUE KEY `ISBN` (`ISBN`),
+  // KEY `fk_creator_employee` (`Created_By`),
+  // KEY `fk_updater_employee` (`Updated_By`),
+  // KEY `fk_discount` (`Discount_Id`),
+  // KEY `fk_supplier` (`Supplier_Id`),
+  // CONSTRAINT `fk_creator_employee` FOREIGN KEY (`Created_By`) REFERENCES `Employees` (`Id`) ON DELETE SET NULL,
+  // CONSTRAINT `fk_discount` FOREIGN KEY (`Discount_Id`) REFERENCES `Discounts` (`Id`) ON DELETE SET NULL,
+  // CONSTRAINT `fk_supplier` FOREIGN KEY (`Supplier_Id`) REFERENCES `Suppliers` (`Id`) ON DELETE SET NULL,
+  // CONSTRAINT `fk_updater_employee` FOREIGN KEY (`Updated_By`) REFERENCES `Employees` (`Id`) ON DELETE SET NULL
+// ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
