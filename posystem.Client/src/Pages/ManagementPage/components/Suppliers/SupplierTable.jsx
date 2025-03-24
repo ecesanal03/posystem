@@ -20,7 +20,6 @@ const SupplierTable = ({ suppliers, onEdit, onDelete }) => {
           <TableHead sx={{ borderBottom: '3px solid #61677A' }}>
             <TableRow>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Name</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Primary Contact</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Email</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Phone</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Address</TableCell>
@@ -39,20 +38,20 @@ const SupplierTable = ({ suppliers, onEdit, onDelete }) => {
                     borderColor: '#61677A'
                   }
                 }}>
-                  <TableCell>{supplier.name}</TableCell>
-                  <TableCell>{supplier.contact_person}</TableCell>
+                  <TableCell>{supplier.supplierName}</TableCell>
                   <TableCell>{supplier.email}</TableCell>
-                  <TableCell>{supplier.phone}</TableCell>
+                  <TableCell>{supplier.phoneNumber || 'N/A'}</TableCell>
                   <TableCell>
                     {[
-                      supplier.address, 
+                      supplier.addressLineOne, 
+                      supplier.addressLineTwo,
                       supplier.city, 
                       supplier.state, 
-                      supplier.zip,
+                      supplier.zipCode,
                       supplier.country
                     ].filter(Boolean).join(', ') || 'N/A'}
                   </TableCell>
-                  <TableCell>{supplier.added_at ? new Date(supplier.added_at).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{supplier.added_At ? new Date(supplier.added_At).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex' }}>
                       <IconButton 
@@ -86,7 +85,7 @@ const SupplierTable = ({ suppliers, onEdit, onDelete }) => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={6} align="center">
                   No suppliers found
                 </TableCell>
               </TableRow>
@@ -101,17 +100,17 @@ const SupplierTable = ({ suppliers, onEdit, onDelete }) => {
 SupplierTable.propTypes = {
   suppliers: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
-      contact_person: PropTypes.string,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      supplierName: PropTypes.string,
       email: PropTypes.string,
-      phone: PropTypes.string,
-      address: PropTypes.string,
+      phoneNumber: PropTypes.string,
+      addressLineOne: PropTypes.string,
+      addressLineTwo: PropTypes.string,
       city: PropTypes.string,
       state: PropTypes.string,
-      zip: PropTypes.string,
+      zipCode: PropTypes.string,
       country: PropTypes.string,
-      added_at: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
+      added_At: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
     })
   ).isRequired,
   onEdit: PropTypes.func.isRequired,
