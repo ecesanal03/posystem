@@ -10,6 +10,7 @@ import AccountDetails from './Pages/CustomerAccountDetails';
 import ShoppingCart from './Pages/ShoppingCart';
 import ManagementPage from "./Pages/ManagementPage/index";
 import EmployeeLogin from "./Pages/EmployeeLogin";
+import ReportsPage from './Pages/Reports';
 
 // PrivateRoute component that checks if the user is logged in
 const PrivateRoute = ({ element }) => {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/account" element={<PrivateRoute element={<AccountDetails />} />} />
         <Route path="/cart" element={<PrivateRoute element={<ShoppingCart />} />} />
         <Route path="/EmployeePortal" element={<PrivateRoute element={<ManagementPage />} />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Routes>
     </Router>
   );
