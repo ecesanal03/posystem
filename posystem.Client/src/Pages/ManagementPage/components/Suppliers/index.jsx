@@ -22,7 +22,13 @@ import SupplierForm from './SupplierForm';
 import SupplierTable from './SupplierTable';
 import supplierApi from '../../../../api/supplierAPI';
 
-// Helper function to format or validate GUIDs
+/**
+ * Helper function to format or validate GUIDs.
+ * Handles different GUID formats and validates their structure.
+ * 
+ * @param {string} guidString - The GUID string to format/validate
+ * @returns {string|null} Formatted GUID or null if invalid
+ */
 const formatGuid = (guidString) => {
   if (!guidString || typeof guidString !== 'string' || !guidString.trim()) {
     return null;
@@ -46,14 +52,33 @@ const formatGuid = (guidString) => {
   return `${cleanedString.slice(0, 8)}-${cleanedString.slice(8, 12)}-${cleanedString.slice(12, 16)}-${cleanedString.slice(16, 20)}-${cleanedString.slice(20)}`;
 };
 
+/**
+ * SuppliersSection Component
+ * 
+ * A comprehensive component for managing suppliers in the system.
+ * Provides functionality for:
+ * - Viewing a list of suppliers in a table format
+ * - Searching/filtering suppliers
+ * - Adding new suppliers
+ * - Editing existing suppliers
+ * - Deleting suppliers
+ * - Handling loading states and error messages
+ * 
+ * The component uses Material-UI for styling and includes:
+ * - A search bar for filtering suppliers
+ * - A form for adding/editing suppliers
+ * - A table displaying supplier information
+ * - Confirmation dialogs for destructive actions
+ * - Snackbar notifications for operation feedback
+ */
 const SuppliersSection = () => {
-  // Suppliers data state
+  // State management for suppliers data
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [, setTotalCount] = useState(0);
   
-  // Form state
+  // Form state management
   const [supplierFilter, setSupplierFilter] = useState('');
   const [newSupplier, setNewSupplier] = useState({
     SupplierName: '',
@@ -67,7 +92,7 @@ const SuppliersSection = () => {
     Country: ''
   });
 
-  // UI state
+  // UI state management
   const [showAddSupplierForm, setShowAddSupplierForm] = useState(false);
   const [supplierValidationErrors, setSupplierValidationErrors] = useState({});
   const [deleteSupplierDialogOpen, setDeleteSupplierDialogOpen] = useState(false);
@@ -76,7 +101,10 @@ const SuppliersSection = () => {
   const [supplierToEdit, setSupplierToEdit] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
 
-  // Create filteredSuppliers based on supplierFilter
+  /**
+   * Memoized filtered suppliers list based on search term.
+   * Filters suppliers by name, email, phone, address, city, state, or country.
+   */
   const filteredSuppliers = useMemo(() => {
     if (!supplierFilter) return suppliers;
     
@@ -92,11 +120,17 @@ const SuppliersSection = () => {
     );
   }, [suppliers, supplierFilter]);
 
-  // Fetch suppliers on component mount and when filter changes
+  /**
+   * Effect hook to fetch suppliers when component mounts or filter changes.
+   */
   useEffect(() => {
     fetchSuppliers();
   }, [supplierFilter]);
 
+  /**
+   * Fetches suppliers from the API with optional filtering.
+   * Updates the suppliers state and handles loading/error states.
+   */
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
@@ -121,15 +155,29 @@ const SuppliersSection = () => {
     }
   };
 
+  /**
+   * Handles changes to the search filter input.
+   * @param {Event} e - The change event
+   */
   const handleSupplierFilterChange = (e) => {
     setSupplierFilter(e.target.value);
   };
 
+  /**
+   * Handles changes to the new supplier form fields.
+   * @param {Event} e - The change event
+   */
   const handleNewSupplierChange = (e) => {
     const { name, value } = e.target;
     setNewSupplier((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Validates supplier data before submission.
+   * Checks required fields and email format.
+   * @param {Object} supplier - The supplier data to validate
+   * @returns {Object} Validation errors if any
+   */
   const validateSupplier = (supplier) => {
     const errors = {};
     
@@ -156,6 +204,11 @@ const SuppliersSection = () => {
     return errors;
   };
 
+  /**
+   * Handles editing an existing supplier.
+   * Fetches complete supplier details and populates the form.
+   * @param {Object} supplier - The supplier to edit
+   */
   const handleEditSupplier = async (supplier) => {
     try {
       setLoading(true);
@@ -192,11 +245,20 @@ const SuppliersSection = () => {
     }
   };
 
+  /**
+   * Initiates the supplier deletion process.
+   * Opens confirmation dialog.
+   * @param {Object} supplier - The supplier to delete
+   */
   const handleDeleteSupplier = (supplier) => {
     setSupplierToDelete(supplier);
     setDeleteSupplierDialogOpen(true);
   };
 
+  /**
+   * Confirms and executes supplier deletion.
+   * Handles success/error states and updates UI.
+   */
   const confirmDeleteSupplier = async () => {
     if (supplierToDelete) {
       try {
@@ -233,6 +295,10 @@ const SuppliersSection = () => {
     }
   };
 
+  /**
+   * Cancels the current form operation.
+   * Resets form state and validation errors.
+   */
   const handleSupplierCancel = () => {
     setShowAddSupplierForm(false);
     setIsEditingSupplier(false);
@@ -251,13 +317,16 @@ const SuppliersSection = () => {
     setSupplierValidationErrors({});
   };
 
+  /**
+   * Handles adding a new supplier or updating an existing one.
+   * Validates data, makes API call, and handles response.
+   */
   const handleAddOrUpdateSupplier = async () => {
     if (showAddSupplierForm) {
       // Validate required fields
       const errors = validateSupplier(newSupplier);
       setSupplierValidationErrors(errors);
       
-      // If there are validation errors, don't add/update the supplier
       if (Object.keys(errors).length > 0) {
         return;
       }
@@ -364,6 +433,9 @@ const SuppliersSection = () => {
     }
   };
 
+  /**
+   * Closes the notification snackbar.
+   */
   const handleCloseNotification = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
@@ -386,7 +458,7 @@ const SuppliersSection = () => {
         </Alert>
       </Snackbar>
 
-      {/* Supplier Add Form */}
+      {/* Supplier Add/Edit Form */}
       {showAddSupplierForm && (
         <Paper elevation={0} sx={{ 
           p: 3, 

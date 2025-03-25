@@ -11,15 +11,29 @@ using posystem.ServiceModel.Models;
 
 namespace posystem.ServiceInterface.Services
 {
+    /// <summary>
+    /// Service responsible for handling all supplier-related operations in the system.
+    /// This includes CRUD operations (Create, Read, Update, Delete) for suppliers.
+    /// Uses ServiceStack's ORM Lite for database operations.
+    /// </summary>
     public class SuppliersService : Service
     {
         private readonly IDbConnectionFactory _dbConnectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the SuppliersService.
+        /// </summary>
+        /// <param name="dbConnectionFactory">Database connection factory for ORM operations</param>
         public SuppliersService(IDbConnectionFactory dbConnectionFactory)
         {
             _dbConnectionFactory = dbConnectionFactory;
         }
 
+        /// <summary>
+        /// Retrieves a list of suppliers with optional filtering, sorting, and pagination.
+        /// </summary>
+        /// <param name="request">GetSuppliersDTO containing search parameters, sorting options, and pagination settings</param>
+        /// <returns>GetSuppliersResponse containing the list of suppliers and total count</returns>
         public async Task<GetSuppliersResponse> Get(GetSuppliersDTO request)
         {
             using var db = _dbConnectionFactory.OpenDbConnection();
@@ -84,6 +98,12 @@ namespace posystem.ServiceInterface.Services
             };
         }
 
+        /// <summary>
+        /// Retrieves a single supplier by their ID.
+        /// </summary>
+        /// <param name="request">GetSupplierDTO containing the supplier ID</param>
+        /// <returns>GetSupplierResponse containing the detailed supplier information</returns>
+        /// <exception cref="HttpError">Throws 404 if supplier is not found</exception>
         public async Task<GetSupplierResponse> Get(GetSupplierDTO request)
         {
             using var db = _dbConnectionFactory.OpenDbConnection();
@@ -111,6 +131,12 @@ namespace posystem.ServiceInterface.Services
             return new GetSupplierResponse { Supplier = supplierDto };
         }
 
+        /// <summary>
+        /// Creates a new supplier in the system.
+        /// Validates phone number uniqueness before creation.
+        /// </summary>
+        /// <param name="request">CreateSupplierDTO containing the new supplier's information</param>
+        /// <returns>CreateSupplierResponse indicating success/failure and containing the created supplier</returns>
         public async Task<CreateSupplierResponse> Post(CreateSupplierDTO request)
         {
             try
@@ -182,6 +208,12 @@ namespace posystem.ServiceInterface.Services
             }
         }
 
+        /// <summary>
+        /// Updates an existing supplier's information.
+        /// Validates phone number uniqueness if being changed.
+        /// </summary>
+        /// <param name="request">UpdateSupplierDTO containing the updated supplier information</param>
+        /// <returns>UpdateSupplierResponse indicating success/failure and containing the updated supplier</returns>
         public async Task<UpdateSupplierResponse> Put(UpdateSupplierDTO request)
         {
             try
@@ -261,6 +293,11 @@ namespace posystem.ServiceInterface.Services
             }
         }
 
+        /// <summary>
+        /// Deletes a supplier from the system.
+        /// </summary>
+        /// <param name="request">DeleteSupplierDTO containing the ID of the supplier to delete</param>
+        /// <returns>DeleteSupplierResponse indicating success/failure of the deletion</returns>
         public async Task<DeleteSupplierResponse> Delete(DeleteSupplierDTO request)
         {
             try
