@@ -4,9 +4,13 @@ import Login from "./Pages/Login";
 import CredentialsSignInPage from "./Pages/Signup";
 import Marketplace from "./Pages/Marketplace";
 import AccountDetailsPage from "./Pages/CreateCustomerAccount";
+import Checkout from "./Pages/Checkout";
+import BookDetails from "./Pages/BookDetails";
 import AccountDetails from './Pages/CustomerAccountDetails';
 import ShoppingCart from './Pages/ShoppingCart';
 import ManagementPage from "./Pages/ManagementPage/index";
+import EmployeeLogin from "./Pages/EmployeeLogin";
+import ReportsPage from './Pages/Reports';
 
 // PrivateRoute component that checks if the user is logged in
 const PrivateRoute = ({ element }) => {
@@ -31,11 +35,15 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<CredentialsSignInPage />} />
         <Route path="/create-account" element={<AccountDetailsPage />} />
-        <Route path="/EmployeePortal" element={<ManagementPage />} />
+        <Route path="/employeelogin" element={<EmployeeLogin />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/bookdetails" element={<BookDetails />} />
 
         {/* Protected Routes */}
         <Route path="/account" element={<PrivateRoute element={<AccountDetails />} />} />
         <Route path="/cart" element={<PrivateRoute element={<ShoppingCart />} />} />
+        <Route path="/EmployeePortal" element={<PrivateRoute element={<ManagementPage />} />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Routes>
     </Router>
   );

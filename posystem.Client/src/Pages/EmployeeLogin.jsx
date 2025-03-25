@@ -9,16 +9,34 @@ import {
   TextField,
   Link,
   Alert,
+  createTheme,
+  ThemeProvider,
 } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { SignInPage } from '@toolpad/core/SignInPage';
-import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
+
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#90caf9',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+    text: {
+      primary: '#ffffff',
+    },
+  },
+});
 
 function CustomEmailField() {
   return (
@@ -110,42 +128,27 @@ function SignUpLink() {
   );
 }
 
-function SignInAsEmployee() {
+function SignInAsCustomer() {
   return (
-    <Link href="/employeelogin" variant="body2">
-      Sign in as Employee
-    </Link>
-  );
-}
-
-function ForgotPasswordLink() {
-  return (
-    <Link href="/" variant="body2">
-      Forgot password?
+    <Link href="/login" variant="body2">
+      Sign in as Customer
     </Link>
   );
 }
 
 function Title() {
-  return <h2 style={{ marginBottom: 8 }}>Login</h2>;
+  return <h2 style={{ marginBottom: 8 }}>Employee Login</h2>;
 }
 
 export default function SlotsSignIn() {
-  const theme = useTheme();
   const [error, setError] = useState(null);
 
   const signIn = async (provider, formData) => {
     try {
-      // Extract email and password from formData
       const email = formData.get('email');
       const password = formData.get('password');
 
-
-      //FOR DEPLOYMNET: http://cougar-catalog-service/customers/login
-      //FOR LOCAL: https://localhost:5001/customers/login
-
-      // Make the POST request to the backend
-      const response = await fetch('https://localhost:5001/customers/login', {
+      const response = await fetch('https://localhost:5001/employee/employeeLogin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,16 +162,11 @@ export default function SlotsSignIn() {
 
       const data = await response.json();
 
-      // If login is successful
       if (data.success) {
-        console.log('Login successful:', data.token);
-        
-        alert(data.Message || 'Loged in successfully');
+        alert(data.Message || 'Logged in successfully');
         localStorage.setItem('authToken', data.token);
-        // Navigate to a different page (e.g., the dashboard)
-        window.location.href = '/'; // Replace with your dashboard URL
+        window.location.href = '/EmployeePortal';
       } else {
-        // If login fails, display the error message
         setError(data.message);
       }
     } catch (error) {
@@ -177,25 +175,25 @@ export default function SlotsSignIn() {
   };
 
   return (
-    <AppProvider theme={theme}>
-      <SignInPage
-        signIn={signIn}
-        slots={{
-          title: Title,
-          emailField: CustomEmailField,
-          passwordField: CustomPasswordField,
-          submitButton: CustomButton,
-          signUpLink: SignUpLink,
-          forgotPasswordLink: SignInAsEmployee,
-        }}
-        providers={providers}
-      />
-      {error && (
-        <Alert severity="error" sx={{ my: 2 }}>
-          {error}
-        </Alert>
-      )}
-    </AppProvider>
+
+      <AppProvider theme={darkTheme}>
+        <SignInPage
+          signIn={signIn}
+          slots={{
+            title: Title,
+            emailField: CustomEmailField,
+            passwordField: CustomPasswordField,
+            submitButton: CustomButton,
+            signUpLink: SignUpLink,
+            forgotPasswordLink: SignInAsCustomer,
+          }}
+          providers={providers}
+        />
+        {error && (
+          <Alert severity="error" sx={{ my: 2 }}>
+            {error}
+          </Alert>
+        )}
+      </AppProvider>
   );
 }
-
