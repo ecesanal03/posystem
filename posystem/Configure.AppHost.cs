@@ -26,6 +26,7 @@ public class AppHost() : AppHostBase("posystem"), IHostingStartup
         Plugins.Add(new OpenApiFeature());
         // Configure ServiceStack, Run custom logic after ASP.NET Core Startup
         SetConfig(new HostConfig {
+            UseHttpsLinks = true,
         });
     }
 

@@ -1,7 +1,17 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using posystem.ServiceInterface;
 using posystem.ServiceInterface.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // If you don't know the exact IPs of Cloudflare, you can clear the default networks/proxies
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 
 //builder.WebHost.UseUrls("http://0.0.0.0:8090"); //Comment this out for development
 
@@ -18,6 +28,8 @@ services.AddServiceStack(typeof(EmployeeService).Assembly);
 //test for deployment #2
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

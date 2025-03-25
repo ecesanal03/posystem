@@ -17,6 +17,7 @@ import { AppProvider } from '@toolpad/core/AppProvider';
 import { SignInPage } from '@toolpad/core/SignInPage';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
+import customerApi from '../api/customerApi';
 
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
 
@@ -136,40 +137,18 @@ export default function SlotsSignIn() {
 
   const signIn = async (provider, formData) => {
     try {
-      // Extract email and password from formData
       const email = formData.get('email');
       const password = formData.get('password');
-
-
-      //FOR DEPLOYMNET: http://cougar-catalog-service/customers/login
-      //FOR LOCAL: https://localhost:5001/customers/login
-
-      // Make the POST request to the backend
-      const response = await fetch('https://localhost:5001/customers/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed. Please check your credentials.');
-      }
-
-      const data = await response.json();
-
-      // If login is successful
+  
+      const data = await customerApi.login(email, password); // ✅ Use API
+  
       if (data.success) {
-        console.log('Login successful:', data.token);
-        
-        alert(data.Message || 'Loged in successfully');
+        alert(data.Message || 'Logged in successfully');
         localStorage.setItem('authToken', data.token);
-        // Navigate to a different page (e.g., the dashboard)
-        window.location.href = '/'; // Replace with your dashboard URL
+        window.location.href = '/';
       } else {
-        // If login fails, display the error message
-        setError(data.message);
+        setError(data.Message);
+        alert(data.Message);
       }
     } catch (error) {
       setError(error.message);

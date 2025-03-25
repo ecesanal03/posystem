@@ -2,6 +2,7 @@ import * as React from 'react';
 import { TextField, Button, Box, Typography, Grid, Card, CardContent, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import customerApi from '../api/customerApi';
 
 export default function AccountDetailsPage() {
   const navigate = useNavigate();
@@ -32,41 +33,24 @@ export default function AccountDetailsPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!formData.Email || !formData.Password ) {
-        alert('Please enter email and password.');
-        return;
-      }
-
-    console.log('Account Details Submitted:', formData);
-
-    // Send the data to the backend using fetch
+  
+    if (!formData.Email || !formData.Password) {
+      alert('Please enter email and password.');
+      return;
+    }
+  
     try {
-      const response = await fetch('/customers/registration', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to register customer');
-      }
-
-      const result = await response.json();
-      console.log('Customer registered:', result);
+      const result = await customerApi.register(formData); // ✅ Use API
       alert(result.Message || 'Customer registered successfully');
-      
-      // Store the JWT token in localStorage 
+  
       if (result.Token) {
-        localStorage.setItem('authToken', result.Token);  // Store the token
+        localStorage.setItem('authToken', result.Token);
       }
-
+  
       navigate('/');
-
     } catch (error) {
       console.error('Error:', error);
+      alert('Registration failed');
     }
   };
 
