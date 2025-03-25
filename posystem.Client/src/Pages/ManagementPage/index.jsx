@@ -48,7 +48,11 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
     }),
     backgroundColor: '#1E1E1E',
     minHeight: '100vh',
-    color: 'white'
+    height: '100vh',
+    color: 'white',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column'
   }),
 );
 
@@ -134,7 +138,7 @@ const ManagementPage = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <CssBaseline />
         <AppBarStyled position="fixed" open={open}>
           <Toolbar>
