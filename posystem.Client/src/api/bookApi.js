@@ -1,8 +1,15 @@
 import axios from 'axios';
 
-const API_URL = 'https://localhost:5001'; // Backend is running on HTTPS port 5001
+/**
+ * Base URL for the backend API.
+ * The backend is running on HTTPS port 5001 for secure communication.
+ */
+const API_URL = 'https://localhost:5001';
 
-// Configure axios for better debugging
+/**
+ * Axios request interceptor for debugging API requests.
+ * Logs request details including URL, method, data, and headers.
+ */
 axios.interceptors.request.use(request => {
   console.log('Starting Request:', {
     url: request.url,
@@ -13,6 +20,11 @@ axios.interceptors.request.use(request => {
   return request;
 });
 
+/**
+ * Axios response interceptor for debugging API responses.
+ * Logs response details including status and data.
+ * Also handles and logs error responses.
+ */
 axios.interceptors.response.use(
   response => {
     console.log('Response:', {
@@ -37,8 +49,16 @@ axios.interceptors.response.use(
   }
 );
 
+/**
+ * API client for book-related operations.
+ * Provides methods for CRUD operations and server status checking.
+ */
 const bookApi = {
-  // Get all books with optional filtering
+  /**
+   * Retrieves a list of books with optional filtering and pagination.
+   * @param {Object} params - Query parameters for filtering, sorting, and pagination
+   * @returns {Promise<Object>} Response containing books and total count
+   */
   getBooks: async (params = {}) => {
     try {
       const response = await axios.get(`${API_URL}/books`, { params });
@@ -49,7 +69,11 @@ const bookApi = {
     }
   },
 
-  // Get a single book by ID
+  /**
+   * Retrieves a single book by its ID.
+   * @param {string} id - The unique identifier of the book
+   * @returns {Promise<Object>} Response containing the book details
+   */
   getBook: async (id) => {
     try {
       const response = await axios.get(`${API_URL}/books/${id}`);
@@ -60,7 +84,12 @@ const bookApi = {
     }
   },
 
-  // Create a new book
+  /**
+   * Creates a new book in the system.
+   * Handles image conversion to base64 if provided.
+   * @param {Object} bookData - The book data to create
+   * @returns {Promise<Object>} Response indicating success/failure and containing the created book
+   */
   createBook: async (bookData) => {
     try {
       // Create a request object that matches the CreateBookDTO structure
@@ -97,7 +126,13 @@ const bookApi = {
     }
   },
 
-  // Update an existing book
+  /**
+   * Updates an existing book's information.
+   * Handles image conversion to base64 if provided.
+   * @param {string} id - The unique identifier of the book to update
+   * @param {Object} bookData - The updated book data
+   * @returns {Promise<Object>} Response indicating success/failure and containing the updated book
+   */
   updateBook: async (id, bookData) => {
     try {
       // Create a request object that matches the UpdateBookDTO structure
@@ -128,7 +163,11 @@ const bookApi = {
     }
   },
 
-  // Delete a book
+  /**
+   * Deletes a book from the system.
+   * @param {string} id - The unique identifier of the book to delete
+   * @returns {Promise<Object>} Response indicating success/failure of the deletion
+   */
   deleteBook: async (id) => {
     try {
       const response = await axios.delete(`${API_URL}/books/${id}`);
@@ -140,8 +179,9 @@ const bookApi = {
   },
   
   /**
-   * Test connection to the API to check for CORS issues
-   * @returns {Promise<Object>} Result of the connection test
+   * Tests the connection to the API and checks for CORS issues.
+   * Attempts both HTTPS and HTTP connections.
+   * @returns {Promise<Object>} Result of the connection test including CORS headers
    */
   async testConnection() {
     try {
@@ -205,7 +245,8 @@ const bookApi = {
   },
 
   /**
-   * Comprehensive check of server status by trying multiple endpoints and protocols
+   * Performs a comprehensive check of server status by testing multiple endpoints.
+   * Tests both HTTPS and HTTP protocols.
    * @returns {Promise<Object>} Detailed server status information
    */
   async checkServerStatus() {
@@ -261,7 +302,8 @@ const bookApi = {
   },
 
   /**
-   * Detect and report detailed information about the backend server
+   * Detects and reports detailed information about the backend server configuration.
+   * Includes CORS settings and server details.
    * @returns {Promise<Object>} Information about the server configuration
    */
   async detectServerDetails() {
@@ -380,7 +422,12 @@ const bookApi = {
   }
 };
 
-// Helper function to convert File object to base64 string
+/**
+ * Helper function to convert a File object to a base64 string.
+ * Used for sending images to the API.
+ * @param {File} file - The file to convert
+ * @returns {Promise<string>} Base64 string representation of the file
+ */
 const convertFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

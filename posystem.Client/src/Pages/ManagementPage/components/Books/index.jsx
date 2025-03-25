@@ -22,15 +22,33 @@ import BookForm from './BookForm';
 import BookTable from './BookTable';
 import bookApi from '../../../../api/bookApi';
 
+/**
+ * BookSection Component
+ * 
+ * A comprehensive component for managing books in the system.
+ * Provides functionality for:
+ * - Viewing a list of books in a table format
+ * - Searching/filtering books
+ * - Adding new books
+ * - Editing existing books
+ * - Deleting books
+ * - Handling loading states and error messages
+ * 
+ * The component uses Material-UI for styling and includes:
+ * - A search bar for filtering books
+ * - A form for adding/editing books
+ * - A table displaying book information
+ * - Confirmation dialogs for destructive actions
+ * - Snackbar notifications for operation feedback
+ */
 const BookSection = () => {
-  // Books data state
+  // State management for books data
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // We'll leave totalCount for future pagination implementation
   const [, setTotalCount] = useState(0);
   
-  // Form state
+  // State management for form and UI
   const [filter, setFilter] = useState('');
   const [newBook, setNewBook] = useState({ 
     Title: '', 
@@ -44,7 +62,7 @@ const BookSection = () => {
     Cover_Image: null 
   });
 
-  // UI state
+  // UI state management
   const [showAddForm, setShowAddForm] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,11 +71,17 @@ const BookSection = () => {
   const [bookToEdit, setBookToEdit] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
 
-  // Fetch books on component mount and when filter changes
+  /**
+   * Effect hook to fetch books when component mounts or filter changes
+   */
   useEffect(() => {
     fetchBooks();
   }, [filter]);
 
+  /**
+   * Fetches books from the API with optional filtering
+   * Updates the books state and handles loading/error states
+   */
   const fetchBooks = async () => {
     try {
       setLoading(true);
@@ -82,21 +106,38 @@ const BookSection = () => {
     }
   };
 
+  /**
+   * Handles changes to the search filter input
+   * @param {Event} e - The change event
+   */
   const handleFilterChange = (e) => {
     setFilter(e.target.value);
   };
 
+  /**
+   * Handles changes to the new book form fields
+   * @param {Event} e - The change event
+   */
   const handleNewBookChange = (e) => {
     const { name, value } = e.target;
     setNewBook((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Handles image file selection for book cover
+   * @param {Event} e - The file input change event
+   */
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setNewBook((prev) => ({ ...prev, Cover_Image: e.target.files[0] }));
     }
   };
 
+  /**
+   * Validates book data before submission
+   * @param {Object} book - The book data to validate
+   * @returns {Object} Validation errors if any
+   */
   const validateBook = (book) => {
     const errors = {};
     
@@ -118,6 +159,11 @@ const BookSection = () => {
     return errors;
   };
 
+  /**
+   * Handles editing an existing book
+   * Fetches complete book details and populates the form
+   * @param {Object} book - The book to edit
+   */
   const handleEditBook = async (book) => {
     try {
       setLoading(true);
@@ -155,11 +201,20 @@ const BookSection = () => {
     }
   };
 
+  /**
+   * Initiates the book deletion process
+   * Opens confirmation dialog
+   * @param {Object} book - The book to delete
+   */
   const handleDeleteBook = (book) => {
     setItemToDelete(book);
     setDeleteDialogOpen(true);
   };
 
+  /**
+   * Confirms and executes book deletion
+   * Handles success/error states and updates UI
+   */
   const confirmDeleteBook = async () => {
     if (itemToDelete) {
       try {
@@ -196,6 +251,10 @@ const BookSection = () => {
     }
   };
 
+  /**
+   * Cancels the current form operation
+   * Resets form state and validation errors
+   */
   const handleCancel = () => {
     setShowAddForm(false);
     setIsEditingBook(false);
@@ -214,7 +273,11 @@ const BookSection = () => {
     setValidationErrors({});
   };
 
-  // Helper function to validate and format GUID
+  /**
+   * Validates and formats GUID strings
+   * @param {string} input - The GUID string to format
+   * @returns {string|null} Formatted GUID or null if invalid
+   */
   const formatGuid = (input) => {
     if (!input || input.trim() === '') return null;
     
@@ -237,6 +300,10 @@ const BookSection = () => {
     return null;
   };
 
+  /**
+   * Handles adding a new book or updating an existing one
+   * Validates data, makes API call, and handles response
+   */
   const handleAddOrUpdateBook = async () => {
     if (showAddForm) {
       // Validate required fields
@@ -336,6 +403,9 @@ const BookSection = () => {
     }
   };
 
+  /**
+   * Closes the notification snackbar
+   */
   const handleCloseNotification = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };

@@ -8,6 +8,10 @@ namespace posystem.ServiceModel.Types
 
     #region request/Response DTOs
 
+    /// <summary>
+    /// DTO for retrieving a list of books with filtering, sorting, and pagination options.
+    /// Maps to GET /books endpoint.
+    /// </summary>
     [Route("/books", "GET")]
     public class GetBooksDTO : IReturn<GetBooksResponse>
     {
@@ -18,23 +22,37 @@ namespace posystem.ServiceModel.Types
         public int Take { get; set; }
     }
 
+    /// <summary>
+    /// Response DTO containing the list of books and total count for pagination.
+    /// </summary>
     public class GetBooksResponse
     {
         public List<BookListItemDTO> Books { get; set; } = new List<BookListItemDTO>();
         public int TotalCount { get; set; }
     }
 
+    /// <summary>
+    /// DTO for retrieving a single book by ID.
+    /// Maps to GET /books/{Id} endpoint.
+    /// </summary>
     [Route("/books/{Id}", "GET")]
     public class GetBookDTO : IReturn<GetBookResponse>
     {
         public Guid Id { get; set; }
     }
 
+    /// <summary>
+    /// Response DTO containing detailed information about a single book.
+    /// </summary>
     public class GetBookResponse
     {
         public BookDetailsDTO Book { get; set; }
     }
 
+    /// <summary>
+    /// DTO for creating a new book.
+    /// Maps to POST /books endpoint.
+    /// </summary>
     [Route("/books", "POST")]
     public class CreateBookDTO : IReturn<CreateBookResponse>
     {
@@ -50,6 +68,9 @@ namespace posystem.ServiceModel.Types
         public Guid? Created_By { get; set; }
     }
 
+    /// <summary>
+    /// Response DTO indicating success/failure of book creation and containing the created book.
+    /// </summary>
     public class CreateBookResponse
     {
         public bool Success { get; set; }
@@ -57,6 +78,10 @@ namespace posystem.ServiceModel.Types
         public BookDetailsDTO Book { get; set; }
     }
 
+    /// <summary>
+    /// DTO for updating an existing book.
+    /// Maps to PUT /books/{Id} endpoint.
+    /// </summary>
     [Route("/books/{Id}", "PUT")]
     public class UpdateBookDTO : IReturn<UpdateBookResponse>
     {
@@ -73,6 +98,9 @@ namespace posystem.ServiceModel.Types
         public Guid? Updated_By { get; set; }
     }
 
+    /// <summary>
+    /// Response DTO indicating success/failure of book update and containing the updated book.
+    /// </summary>
     public class UpdateBookResponse
     {
         public bool Success { get; set; }
@@ -80,12 +108,19 @@ namespace posystem.ServiceModel.Types
         public BookDetailsDTO Book { get; set; }
     }
 
+    /// <summary>
+    /// DTO for deleting a book.
+    /// Maps to DELETE /books/{Id} endpoint.
+    /// </summary>
     [Route("/books/{Id}", "DELETE")]
     public class DeleteBookDTO : IReturn<DeleteBookResponse>
     {
         public Guid Id { get; set; }
     }
 
+    /// <summary>
+    /// Response DTO indicating success/failure of book deletion.
+    /// </summary>
     public class DeleteBookResponse
     {
         public bool Success { get; set; }
@@ -97,7 +132,8 @@ namespace posystem.ServiceModel.Types
     #region DTO Models
 
     /// <summary>
-    /// DTO for book list items in the table
+    /// DTO for displaying books in list views (e.g., tables, grids).
+    /// Contains only essential information needed for display.
     /// </summary>
     public class BookListItemDTO
     {
@@ -116,7 +152,8 @@ namespace posystem.ServiceModel.Types
     }
 
     /// <summary>
-    /// DTO for book details when editing
+    /// DTO for detailed book information, used in edit forms and detailed views.
+    /// Contains all book properties including optional fields and metadata.
     /// </summary>
     public class BookDetailsDTO
     {
