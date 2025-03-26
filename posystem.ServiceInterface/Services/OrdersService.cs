@@ -1,0 +1,208 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ServiceStack;
+using ServiceStack.Data;
+using ServiceStack.OrmLite;
+using posystem.ServiceModel;
+using posystem.ServiceModel.Types;
+using posystem.ServiceModel.Models;
+
+namespace posystem.ServiceInterface.Services
+{
+    /// <summary>
+    /// Service responsible for handling all order-related operations in the POS system.
+    /// Provides functionality for retrieving, creating, updating, and managing orders
+    /// with associated customer information and order items.
+    /// </summary>
+    public class OrdersService : Service
+    {
+
+        private readonly IDbConnectionFactory _dbConnectionFactory;
+
+        /// <summary>
+        /// Initializes a new instance of the OrdersService with the specified database connection factory.
+        /// <param name="dbConnectionFactory">The database connection factory used for database operations</param>
+        public OrdersService(IDbConnectionFactory dbConnectionFactory)
+        {
+            _dbConnectionFactory = dbConnectionFactory;
+        }
+
+        /// <summary>
+        /// Retrieves a list of orders with associated customer information based on the specified criteria.
+        /// Supports searching, sorting, and pagination of orders.
+        /// </summary>
+        /// <param name="request">The request DTO containing search, sort, and pagination parameters</param>
+        /// <returns>
+        /// A response containing:
+        /// - List of orders with customer details and order items
+        /// - Total count of orders matching the search criteria
+        /// Each order includes:
+        /// - Basic order information (ID, dates, status)
+        /// - Customer details (name, email, phone, address)
+        /// - Order items with book details
+        /// - Financial information (subtotal, tax, total)
+        /// </returns>
+        public async Task<GetOrdersResponse> Get(GetOrdersDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+            
+            // Create a join query between Orders and Customers
+            var query = db.From<Orders>();
+
+            if(!string.IsNullOrEmpty(request.SearchTerm))
+            {
+                query = query.Where(o =>
+                o.Id.ToString().Contains(request.SearchTerm) ||
+                o.Customer_Id.ToString().Contains(request.SearchTerm) ||
+                o.Order_Date.ToString().Contains(request.SearchTerm));
+            }
+
+            if(!string.IsNullOrEmpty(request.SortBy))
+            {
+                query = request.SortDesc
+                    ? query.OrderByDescending(request.SortBy)
+                    : query.OrderBy(request.SortBy);
+            } else {
+                query = query.OrderByDescending(o => o.Order_Date);
+            }
+
+            var totalCount = await db.CountAsync(query);
+
+            if(request.Skip > 0)
+            {
+                query = query.Skip(request.Skip);
+            }
+
+            if(request.Take > 0)
+            {
+                query = query.Take(request.Take);
+            }
+
+            var orders = await db.SelectAsync(query);
+            
+            string sql = @"
+                SELECT 
+                    o.Id, 
+                    o.Order_Date, 
+                    o.Delivery_Date, 
+                    o.Customer_Id, 
+                    o.Order_Status,
+                    c.Email AS CustomerEmail,
+                    (SELECT SUM(b.Price * oi.Quantity) 
+                    FROM OrderItems oi 
+                    JOIN Books b ON oi.Book_Id = b.Id 
+                    WHERE oi.Order_Id = o.Id) AS Total_Amount
+                FROM ({0}) o
+                LEFT JOIN Customers c ON o.Customer_Id = c.Id
+            ";
+
+            sql = string.Format(sql, query.ToSelectStatement());
+
+            var OrderDetails = await db.SqlListAsync<dynamic>(sql);
+
+            var orderListItems = OrderDetails.Select(o => new OrderListItemDTO
+                {
+                    Id = o.Id,
+                    Order_Date = o.Order_Date,
+                    Delivery_Date = o.Delivery_Date,
+                    Customer_Id = o.Customer_Id,
+                    Order_Status = o.Order_Status,
+                    Customer_Email = o.CustomerEmail ?? "N/A",
+                    Total_Amount = o.Total_Amount
+                }).ToList();
+
+            return new GetOrdersResponse
+            {
+                Orders = orderListItems,
+                TotalCount = (int)totalCount
+            };
+
+        }
+
+        public async Task<GetOrderResponse> Get(GetOrderDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var order = await db.SingleByIdAsync<Orders>(request.Id);
+            if(order == null)
+                return new GetOrderResponse { Order = null };
+
+            var customer = await db.SingleByIdAsync<Customers>(order.Customer_Id);
+
+            var orderItems = await db.SelectAsync<OrderItems>(oi => oi.Order_Id == order.Id);
+            var items = new List<OrderItemDTO>();
+            foreach (var item in orderItems)
+            {
+                var book = await db.SingleByIdAsync<Books>(item.Book_Id);
+                if(book != null)
+                {
+                    items.Add(new OrderItemDTO
+                    {
+                        Id = item.Id,
+                        BookId = book.Id,
+                        Name = book.Title,
+                        ISBN = book.ISBN,
+                        Quantity = item.Quantity,
+                        Price = book.Price,
+                        Total = item.Quantity * book.Price,
+                    });
+                }
+            }
+
+            var subtotal = items.Sum(i => i.Total);
+            var taxRate = 0.085m;
+            var tax = subtotal * taxRate;
+            var total = subtotal + tax;
+
+            var response = new GetOrderResponse
+            {
+                Order = new OrderDTO
+                {
+                    Id = order.Id,
+                    Order_Date = order.Order_Date,
+                    Delivery_Date = order.Delivery_Date,
+                    Customer_Id = customer.Id,
+                    Customer_Email = customer.Email,
+                    Customer_Name = $"{customer.First_Name} {customer.Last_Name}",
+                    Customer_Phone = customer.PhoneNumber,
+                    Customer_Address = $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}",
+                    Order_Status = order.Order_Status,
+                    Items = items,
+                    Subtotal = subtotal,
+                    Tax = tax,
+                    Total = total,
+                    Payment_Method = "credit card",
+                    Card_Number = "1234"
+                }
+            };
+
+            Console.WriteLine($"Response: {response.ToJson()}");
+            return response;
+        }
+
+        public async Task<DeleteOrderResponse> Delete(DeleteOrderDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var order = await db.SingleByIdAsync<Orders>(request.Id);
+            if(order == null)
+                return new DeleteOrderResponse {
+                    Success = false,
+                    Message = "Order not found"
+                };
+
+            // Delete associated order items
+            await db.DeleteAsync<OrderItems>(x => x.Order_Id == request.Id);
+
+            // Delete the order
+            await db.DeleteAsync(order);
+
+            return new DeleteOrderResponse {
+                Success = true,
+                Message = "Order deleted successfully"
+            };
+        }
+    }
+}

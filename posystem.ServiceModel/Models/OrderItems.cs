@@ -9,10 +9,10 @@ namespace posystem.ServiceModel.Models
         public Guid Id { get; set; }
 
         [References(typeof(Orders))]
-        public Guid OrderId { get; set; }
+        public Guid Order_Id { get; set; }
 
         [References(typeof(Books))]
-        public Guid BookId { get; set; }
+        public Guid Book_Id { get; set; }
 
         public int Quantity { get; set; }
     }

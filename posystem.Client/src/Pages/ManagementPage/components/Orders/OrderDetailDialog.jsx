@@ -4,7 +4,6 @@ import {
   DialogTitle,
   Box,
   Typography,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -18,16 +17,17 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SaveIcon from '@mui/icons-material/Save';
+import PropTypes from 'prop-types';
 
 const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
   if (!order) return null;
   
-  // Calculate order totals
-  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxRate = 0.085; // 8.5% tax rate
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  console.log("Order passed to dialog:", order); // Debug the order object
+
+  // Calculate order totals - using the pre-calculated values from the backend
+  const subtotal = order.Subtotal || 0;
+  const tax = order.Tax || 0;
+  const total = order.Total || 0;
   
   // Format currency
   const formatCurrency = (amount) => {
@@ -37,8 +37,9 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
     }).format(amount);
   };
   
-  // Order status color based on status
   const getStatusColor = (status) => {
+    if (!status) return 'text.primary'; // Default color for undefined or null status
+  
     switch (status.toLowerCase()) {
       case 'delivered':
         return '#4caf50';
@@ -51,11 +52,6 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
       default:
         return 'text.primary';
     }
-  };
-  
-  // Save changes handler
-  const handleSaveChanges = () => {
-    onClose();
   };
 
   return (
@@ -89,14 +85,14 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
       }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 400, letterSpacing: '0.5px', mb: 0.5 }}>
-            INVOICE #{order.id}
+            INVOICE #{order.Id}
           </Typography>
         </Box>
         <Box display="flex" alignItems="center">
           <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 2 }}>
             <Select
-              value={order.status}
-              onChange={(e) => onStatusChange(order.id, e.target.value)}
+              value={order.Order_Status || "Processing"} // Default to "Processing" if undefined
+              onChange={(e) => onStatusChange(order.Id, e.target.value)}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                 '& .MuiSelect-select': { py: 1 },
@@ -123,12 +119,12 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
               BILLED TO
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {order.customer_name} <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>ID# {order.customer_id}</Typography>
+              {order.Customer_Name} <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>ID# {order.Customer_Id}</Typography>
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-              {order.customer_phone}<br />
-              {order.customer_email}<br />
-              {order.customer_address}
+              {order.Customer_Phone}<br />
+              {order.Customer_Email}<br />
+              {order.Customer_Address}
             </Typography>
           </Box>
           
@@ -140,25 +136,25 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Invoice Date:</Typography>
               <Typography variant="body2">
-                {new Date(order.order_date).toLocaleDateString()}
+                {new Date(order.Order_Date).toLocaleDateString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Status:</Typography>
-              <Typography variant="body2" sx={{ color: getStatusColor(order.status), fontWeight: 500 }}>
-                {order.status}
+              <Typography variant="body2" sx={{ color: getStatusColor(order.Order_Status), fontWeight: 500 }}>
+                {order.Order_Status}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Payment Method:</Typography>
               <Typography variant="body2">
-                {order.payment_method || 'Credit Card'}
+                {order.Payment_Method}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Card Last 4-Digits:</Typography>
               <Typography variant="body2">
-                {order.card_number ? `${order.card_number.slice(-4)}` : '1234'}
+                {order.Card_Number}
               </Typography>
             </Box>
           </Box>
@@ -184,17 +180,17 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {order.items.map((item, index) => (
-                <TableRow key={index} sx={{ '& td': { borderColor: 'rgba(255, 255, 255, 0.05)' } }}>
+              {(order.Items || []).map((item) => ( // Fallback to empty array if items is undefined
+                <TableRow key={item.id} sx={{ '& td': { borderColor: 'rgba(255, 255, 255, 0.05)' } }}>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>{item.name}</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {item.description || 'ISBN: ' + item.isbn}
+                      ISBN: {item.isbn}
                     </Typography>
                   </TableCell>
                   <TableCell align="center">{item.quantity}</TableCell>
                   <TableCell align="right">{formatCurrency(item.price)}</TableCell>
-                  <TableCell align="right">{formatCurrency(item.price * item.quantity)}</TableCell>
+                  <TableCell align="right">{formatCurrency(item.total)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -229,6 +225,39 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
       </DialogContent>
     </Dialog>
   );
+};
+
+OrderDetailDialog.propTypes = {
+  order: PropTypes.shape({
+    Id: PropTypes.string.isRequired,
+    Order_Date: PropTypes.string.isRequired,
+    Delivery_Date: PropTypes.string,
+    Order_Status: PropTypes.string.isRequired,
+    Customer_Id: PropTypes.string.isRequired,
+    Customer_Email: PropTypes.string.isRequired,
+    Customer_Name: PropTypes.string.isRequired,
+    Customer_Phone: PropTypes.string.isRequired,
+    Customer_Address: PropTypes.string.isRequired,
+    Items: PropTypes.arrayOf(
+      PropTypes.shape({
+        Id: PropTypes.string.isRequired,
+        BookId: PropTypes.string.isRequired,
+        Name: PropTypes.string.isRequired,
+        ISBN: PropTypes.string.isRequired,
+        Quantity: PropTypes.number.isRequired,
+        Price: PropTypes.number.isRequired,
+        Total: PropTypes.number.isRequired
+      })
+    ).isRequired,
+    Subtotal: PropTypes.number.isRequired,
+    Tax: PropTypes.number.isRequired,
+    Total: PropTypes.number.isRequired,
+    Payment_Method: PropTypes.string.isRequired,
+    Card_Number: PropTypes.string.isRequired
+  }).isRequired,
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onStatusChange: PropTypes.func.isRequired
 };
 
 export default OrderDetailDialog; 
