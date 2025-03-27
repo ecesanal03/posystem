@@ -7,46 +7,50 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.OrmLite;
-using BCrypt.Net;
+using Microsoft.AspNetCore.Identity;
 using posystem.ServiceModel.Types;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace posystem.ServiceInterface.Services
 {
     public class EmployeeService : Service
     {
         private readonly IDbConnectionFactory _dbConnectionFactory;
+        private readonly PasswordHasher<object> _passwordHasher;
 
         public EmployeeService(IDbConnectionFactory dbConnectionFactory)
         {
             _dbConnectionFactory = dbConnectionFactory;
+            _passwordHasher = new PasswordHasher<object>();
+
         }
 
         //Method to insert a manager into the database
-        // public void InsertManager(string firstName, string lastName, string email, string password)
-        // {
-        //     using (var db = _dbConnectionFactory.OpenDbConnection())
-        //     {
-        //         var newEmployee = new Employees
-        //         {
-        //             Id = Guid.NewGuid(),
-        //             First_Name = firstName,
-        //             Last_Name = lastName,
-        //             Email = email,
-        //             Password_Hash = BCrypt.Net.BCrypt.HashPassword(password),
-        //             PhoneNumber = "123-456-7890", 
-        //             DateOfBirth = DateTime.Now.AddYears(-30), 
-        //             Employment_Start_Date = DateTime.Now,
-        //             Role = "Manager", 
-        //             AddressLineOne = "123 Main St", 
-        //             City = "Houston",
-        //             State = "Texas",
-        //             ZipCode = "12345",
-        //             Country = "United States"
-        //         };
+        //public void InsertManager(string firstName, string lastName, string email, string password)
+        //{
+        //    using (var db = _dbConnectionFactory.OpenDbConnection())
+        //    {
+        //        var newEmployee = new Employees
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            First_Name = firstName,
+        //            Last_Name = lastName,
+        //            Email = email,
+        //            Password_Hash = _passwordHasher.HashPassword(null, password),
+        //            PhoneNumber = "123-456-7890",
+        //            DateOfBirth = DateTime.Now.AddYears(-30),
+        //            Employment_Start_Date = DateTime.Now,
+        //            Role = "Manager",
+        //            AddressLineOne = "123 Main St",
+        //            City = "Houston",
+        //            State = "Texas",
+        //            ZipCode = "12345",
+        //            Country = "United States"
+        //        };
 
-        //         db.Insert(newEmployee);
-        //     }   
-        // }
+        //        db.Insert(newEmployee);
+        //    }
+        //}
 
         //Method to insert an employee into the database
         public object Post(RegisterEmployeeDTO request)
@@ -63,6 +67,8 @@ namespace posystem.ServiceInterface.Services
                         return new RegisterEmployeeResponse { Result = "Error", Message = "Email is already registered." };
                     }
 
+                    var hashedPassword = _passwordHasher.HashPassword(null, request.Password);
+
                     var newEmployee = new Employees
                     {
                         Id = Guid.NewGuid(),
@@ -70,7 +76,7 @@ namespace posystem.ServiceInterface.Services
                         Middle_Name = request.MiddleName,
                         Last_Name = request.LastName,
                         Email = request.Email,
-                        Password_Hash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                        Password_Hash = hashedPassword,
                         PhoneNumber = request.PhoneNumber,
                         DateOfBirth = request.DateOfBirth,
                         Employment_Start_Date = request.EmploymentStartDate,
@@ -106,7 +112,9 @@ namespace posystem.ServiceInterface.Services
                     return new LoginEmployeeResponse { Success = false, Message = "Invalid email or password." };
                 }
 
-                if (!BCrypt.Net.BCrypt.Verify(request.Password, employee.Password_Hash))
+                var result = _passwordHasher.VerifyHashedPassword(null, employee.Password_Hash, request.Password);
+
+                if (result == PasswordVerificationResult.Failed)
                 {
                     return new LoginEmployeeResponse { Success = false, Message = "Invalid email or password." };
                 }
