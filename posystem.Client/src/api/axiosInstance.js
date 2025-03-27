@@ -9,10 +9,19 @@ const instance = axios.create({
 });
 
 // Optional: Debugging interceptors
-instance.interceptors.request.use((request) => {
-  console.log('Starting Request:', request);
-  return request;
-});
+instance.interceptors.request.use(
+  (request) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      request.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('Starting Request:', request);
+    return request;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 instance.interceptors.response.use(
   (response) => response,

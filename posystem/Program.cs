@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.IdentityModel.Tokens;
 using posystem.ServiceInterface;
 using posystem.ServiceInterface.Services;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +22,21 @@ var services = builder.Services;
 //services.AddServiceStack(typeof(MyServices).Assembly);
 services.AddServiceStack(typeof(CustomerService).Assembly);
 services.AddServiceStack(typeof(EmployeeService).Assembly);
-
+builder.Services.AddAuthentication("Bearer") 
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "https://localhost",   
+            ValidAudience = "https://localhost", 
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("my-very-secure-secret-key-with-32-bytes-long"))
+        };
+    });
+services.AddAuthorization();
 // Registering the EmployeeService with Dependency Injection
 //builder.Services.AddTransient<EmployeeService>();
 //builder.Services.AddTransient<CustomerService>();
@@ -40,6 +56,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+app.UseRouting();
+app.UseAuthentication(); 
+app.UseAuthorization();   
+
 
 // Configure ServiceStack License
 ServiceStack.LicenseUtils.RegisterLicense("TRIAL30WEB-e3JlZjpUUklBTDMwV0VCLG5hbWU6My8yNC8yMDI1IDIxMmYyMmEyYzc5NDRmZmQ4ZDIzOTZlZjcwNGYzZTBhLHR5cGU6VHJpYWwsbWV0YTowLGhhc2g6WGxLQmxRM2Q1V29EanVjUG1MTk9zd1RMemNWdjUwNXV0ODRVSjNKODBaaTdwWVpaRFRyQXJOWEZiV0NzN1Ivbkw1NUVXaERQbDZOLzIxUDhOY3ZIWWE5RjRkV3FVaEZla0MzbnJvR2FMTHgveEZZbnY3dHE0dHR5NkVyUE0xdG13b3IxYlFXOWE0Smp5MjJGMitUb3p3bnhxR0pXQWtJakRxYWhyRWNIZllnPSxleHBpcnk6MjAyNS0wNC0yM30=");

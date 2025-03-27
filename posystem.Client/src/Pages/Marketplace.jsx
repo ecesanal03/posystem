@@ -41,6 +41,7 @@ import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import { useNavigate, Link } from 'react-router-dom';
 import bookApi from '../api/bookApi';
+import cartApi from '../api/cartApi';
 
 // -----------------------------------------------------------------------------
 // Navigation configuration (categories, etc.)
@@ -254,6 +255,16 @@ function PageContent({ searchTerm }) {
     }
   };
 
+  const handleAddToCart = async () => {
+    try {
+      await cartApi.addToCart(selectedBook.id, 1);
+      alert("Book added to cart!");
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+      alert("Could not add book to cart.");
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1, p: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>
@@ -430,7 +441,7 @@ function PageContent({ searchTerm }) {
             color="primary"
             size="medium"
             sx={{ fontWeight: 'bold', px: 3 }}
-            onClick={() => alert('Added to cart!')}
+            onClick={handleAddToCart}
           >
             Add to Cart
           </Button>

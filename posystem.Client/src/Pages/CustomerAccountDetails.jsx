@@ -70,7 +70,7 @@ const AccountDetails = () => {
       }}
     >
       {/* Top Bar */}
-      <AppBar position="static" sx={{ backgroundColor: '#8499D9' }}>
+      <AppBar  sx={{ backgroundColor: '#8499D9' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="back" onClick={goBack}>
             <ArrowBack />
@@ -82,7 +82,7 @@ const AccountDetails = () => {
       </AppBar>
 
       {/* Main Content */}
-      <Container maxWidth="lg" sx={{ paddingTop: 5 }}>
+      <Container maxWidth="lg" sx={{ paddingTop: 10 }}>
         <Grid container spacing={3}>
           {/* Sidebar */}
           <Grid item xs={12} md={3} sx={{ padding: 2 }}>

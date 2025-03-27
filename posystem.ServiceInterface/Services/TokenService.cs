@@ -12,7 +12,8 @@ public class TokenService
     {
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, email),  // You can add more claims here
+            new Claim(ClaimTypes.Name, email),
+            new Claim("email", email), // You can add more claims here
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
