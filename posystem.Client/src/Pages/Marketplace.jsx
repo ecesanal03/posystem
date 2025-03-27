@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
-import { Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, Tooltip, IconButton, Typography, Grid } from '@mui/material';
+import { Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, Tooltip, IconButton, Typography, Grid, Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Avatar,
+  TextareaAutosize,
+  Rating,
+ } from '@mui/material';
 import { createTheme } from '@mui/material/styles';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import TimelineIcon from '@mui/icons-material/Timeline';
@@ -190,6 +202,11 @@ function PageContent({ searchTerm }) {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -214,6 +231,29 @@ function PageContent({ searchTerm }) {
     fetchBooks();
   }, [searchTerm]);
 
+  const handleBookClick = (book) => {
+    setSelectedBook(book);
+    // TODO: Fetch real reviews via API if needed
+    setReviews([
+      { user: "Alice", content: "Amazing book!" },
+      { user: "Bob", content: "Loved the character development." }
+    ]);
+    setShowDialog(true);
+  };
+  
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setSelectedBook(null);
+    setNewReview('');
+  };
+  
+  const handleAddReview = () => {
+    if (newReview.trim()) {
+      setReviews(prev => [...prev, { user: "You", content: newReview }]);
+      setNewReview('');
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1, p: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>
@@ -229,9 +269,10 @@ function PageContent({ searchTerm }) {
         {books.map((book) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={book.id}>
             <Card
+              onClick={() => handleBookClick(book)}
               sx={{
                 width: "100%",
-                height: 300,
+                height: 320,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
@@ -246,13 +287,41 @@ function PageContent({ searchTerm }) {
             >
               <CardMedia
                 component="img"
-                image={book.coverImage ? `data:image/jpeg;base64,${book.coverImage}` : "https://via.placeholder.com/300"}
+                image={book.CoverImage || "/defaultbookcover.png"}
                 alt={book.title}
                 sx={{ objectFit: "contain", height: 200, backgroundColor: "#f5f5f5" }}
               />
-              <CardContent sx={{ textAlign: "center" }}>
-                <Typography variant="h6" gutterBottom>{book.title}</Typography>
-                <Typography variant="body1" color="primary">
+              <CardContent sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                flexGrow: 1,
+                overflow: 'hidden',
+                alignItems: 'center',
+                textAlign: 'center',
+                p: 1.5
+              }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    minHeight: '3em',
+                  }}
+                >
+                  {book.title}
+                </Typography>
+                
+                <Typography
+                  variant="body2"
+                  color="primary"
+                  sx={{ fontWeight: 'bold', mt: 1 }}
+                >
                   ${book.price.toFixed(2)}
                 </Typography>
               </CardContent>
@@ -260,6 +329,113 @@ function PageContent({ searchTerm }) {
           </Grid>
         ))}
       </Grid>
+      <Dialog open={showDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold', fontSize: 22 }}>
+          {selectedBook?.title}
+        </DialogTitle>
+
+        <DialogContent dividers>
+
+          {/* Book Info Section */}
+          <Box display="flex" gap={3} mb={3}>
+            <Avatar
+              variant="square"
+              src={
+                selectedBook?.CoverImage
+                  ? `data:image/jpeg;base64,${selectedBook.CoverImage}`
+                  : '/defaultbookcover.png'
+              }
+              sx={{
+                width: 130,
+                height: 180,
+                borderRadius: 2,
+                boxShadow: 3,
+                bgcolor: '#f0f0f0',
+              }}
+            />
+            <Box>
+              <Typography variant="subtitle1" gutterBottom><strong>Author:</strong> {selectedBook?.author}</Typography>
+              <Typography variant="subtitle1" gutterBottom><strong>Price:</strong> ${selectedBook?.price?.toFixed(2)}</Typography>
+              <Typography variant="subtitle1" gutterBottom><strong>Supplier:</strong> {selectedBook?.supplierName || 'Unknown'}</Typography>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Description Section */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>Description</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedBook?.description || 'No description available.'}
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Reviews Section */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Reviews</Typography>
+
+            {reviews.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">No reviews yet.</Typography>
+            ) : (
+              <Box sx={{ maxHeight: 150, overflowY: 'auto', mb: 2, px: 1 }}>
+                {reviews.map((review, idx) => (
+                  <Box key={idx} sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="bold">{review.user}</Typography>
+                    <Rating value={review.rating || 0} readOnly size="small" sx={{ mb: 0.5 }} />
+                    <Typography variant="body2">{review.content}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {/* Review input */}
+            <TextareaAutosize
+              minRows={3}
+              placeholder="Write a review..."
+              value={newReview}
+              onChange={(e) => setNewReview(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: 6,
+                border: '1px solid #ccc',
+                fontFamily: 'inherit',
+                marginBottom: 10,
+                marginTop: 10
+              }}
+            />
+
+            {/* Optional: user rating before submitting */}
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Rating
+                name="user-rating"
+                value={reviewRating}
+                onChange={(e, newValue) => setReviewRating(newValue)}
+              />
+              <Button variant="outlined" size="small" onClick={handleAddReview}>
+                Submit Review
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+          <Button variant="outlined" onClick={handleCloseDialog}>
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="medium"
+            sx={{ fontWeight: 'bold', px: 3 }}
+            onClick={() => alert('Added to cart!')}
+          >
+            Add to Cart
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -44,7 +44,7 @@ namespace posystem.ServiceModel.Types
         public decimal Price { get; set; }
         public int Units { get; set; }
         public string Description { get; set; }
-        public byte[] Cover_Image { get; set; }
+        public string Cover_Image { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
         public Guid? Created_By { get; set; }
@@ -67,7 +67,7 @@ namespace posystem.ServiceModel.Types
         public decimal Price { get; set; }
         public int Units { get; set; }
         public string Description { get; set; }
-        public byte[] Cover_Image { get; set; }
+        public string Cover_Image { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
         public Guid? Updated_By { get; set; }
@@ -107,7 +107,8 @@ namespace posystem.ServiceModel.Types
         public string ISBN { get; set; }
         public decimal Price { get; set; }
         public int Units { get; set; }
-
+        public string? Description { get; set; }
+        public string? CoverImage { get; set; }
         public Guid Supplier_Id { get; set; }
         public Guid Discount_Id { get; set; }
         public DateTime Added_At { get; set; }
@@ -126,8 +127,8 @@ namespace posystem.ServiceModel.Types
         public string ISBN { get; set; }
         public decimal Price { get; set; }
         public int Units { get; set; }
-        public string Description { get; set; }
-        public byte[] Cover_Image { get; set; }
+        public string? Description { get; set; }
+        public string? CoverImage { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
         public DateTime Added_At { get; set; }
