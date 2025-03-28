@@ -9,9 +9,9 @@ namespace posystem.ServiceModel.Models
         public Guid Id { get; set; }
 
         [References(typeof(Customers))]
-        public Guid CustomerId { get; set; }
+        public Guid Customer_Id { get; set; }
 
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime? Updated_At { get; set; }
 
     }
 }

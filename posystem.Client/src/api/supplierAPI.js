@@ -1,15 +1,8 @@
 import axios from 'axios';
 
-/**
- * Base URL for the backend API.
- * The backend is running on HTTPS port 5001 for secure communication.
- */
-const API_URL = 'https://localhost:5001';
+const API_URL = 'https://localhost:5001'; // Backend is running on HTTPS port 5001
 
-/**
- * Axios request interceptor for debugging API requests.
- * Logs request details including URL, method, data, and headers.
- */
+// Configure axios for better debugging
 axios.interceptors.request.use(request => {
     console.log('Starting Request:', {
         url: request.url,
@@ -20,11 +13,6 @@ axios.interceptors.request.use(request => {
     return request;
 });
 
-/**
- * Axios response interceptor for debugging API responses.
- * Logs response details including status and data.
- * Also handles and logs error responses.
- */
 axios.interceptors.response.use(
     response => {
         console.log('Response:', {
@@ -54,39 +42,19 @@ axios.interceptors.response.use(
  * Provides methods for CRUD operations on suppliers.
  */
 const supplierApi = {
-    /**
-     * Retrieves a list of suppliers with optional filtering.
-     * @returns {Promise<Object>} Response containing suppliers and total count
-     */
+    // Get all suppliers with optional filtering
     getSuppliers: async (params = {}) => {
-        try {
-            const response = await axios.get(`${API_URL}/suppliers`, { params });
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching suppliers:', error);
-            throw error;
-        }
+      const response = await axios.get('/suppliers', { params });
+      return response.data;
     },
 
-    /**
-     * Retrieves a single supplier by ID.
-     * @param {string} id - The unique identifier of the supplier
-     * @returns {Promise<Object>} Response containing the supplier details
-     */
+    // Get a single supplier by ID
     getSupplier: async (id) => {
-        try {
-            const response = await axios.get(`${API_URL}/suppliers/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error(`Error fetching supplier with ID ${id}:`, error);
-            throw error;
-        }
+      const response = await axios.get(`/suppliers/${id}`);
+      return response.data;
     },
     
-    /**
-     * Creates a new supplier in the system.
-     * @returns {Promise<Object>} Response indicating success/failure and containing the created supplier
-     */
+    // Create a new supplier
     createSupplier: async (supplierData) => {
         try {
             const requestData = {
@@ -107,6 +75,7 @@ const supplierApi = {
             return response.data;
         } catch (error) {
             console.error('Error creating supplier:', error);
+            // Log more detailed error information
             if (error.response) {
                 console.error('Response data:', error.response.data);
                 console.error('Response status:', error.response.status);
@@ -115,50 +84,19 @@ const supplierApi = {
         }
     },
 
-    /**
-     * Updates an existing supplier's information.
-     * @returns {Promise<Object>} Response indicating success/failure and containing the updated supplier
-     */
+    // Update an existing supplier
     updateSupplier: async (supplierData) => {
-        try {
-            const id = supplierData.Id;
-            const requestData = {
-                Id: id,
-                SupplierName: supplierData.SupplierName,
-                Email: supplierData.Email,
-                PhoneNumber: supplierData.PhoneNumber,
-                AddressLineOne: supplierData.AddressLineOne,
-                AddressLineTwo: supplierData.AddressLineTwo,
-                City: supplierData.City,
-                State: supplierData.State,
-                ZipCode: supplierData.ZipCode,
-                Country: supplierData.Country
-            };
-
-            console.log('Updating supplier data:', requestData);
-
-            const response = await axios.put(`${API_URL}/suppliers/${id}`, requestData);
-            return response.data;
-        } catch (error) {
-            console.error('Error updating supplier:', error);
-            throw error;
-        }
+      const id = supplierData.Id;
+      const requestData = { ...supplierData };
+      const response = await axios.put(`/suppliers/${id}`, requestData);
+      return response.data;
     },
 
-    /**
-     * Deletes a supplier from the system.
-     * @param {string} id - The unique identifier of the supplier to delete
-     * @returns {Promise<Object>} Response indicating success/failure of the deletion
-     */
+    // Delete a supplier
     deleteSupplier: async (id) => {
-        try {
-            const response = await axios.delete(`${API_URL}/suppliers/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error(`Error deleting supplier with ID ${id}:`, error);
-            throw error;
-        }
+      const response = await axios.delete(`/suppliers/${id}`);
+      return response.data;
     }
-};
-
-export default supplierApi;
+  };
+  
+  export default supplierApi;

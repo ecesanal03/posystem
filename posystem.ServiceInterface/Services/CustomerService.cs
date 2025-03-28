@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.OrmLite;
-using BCrypt.Net;
+using Microsoft.AspNetCore.Identity;
 using ServiceStack;
 using ServiceStack.Data;
 using posystem.ServiceModel.Types;
@@ -19,10 +19,12 @@ namespace posystem.ServiceInterface.Services
     public class CustomerService : Service
     {
         private readonly IDbConnectionFactory _dbConnectionFactory;
+        private readonly PasswordHasher<object> _passwordHasher;
 
         public CustomerService(IDbConnectionFactory dbConnectionFactory)
         {
             _dbConnectionFactory = dbConnectionFactory;
+            _passwordHasher = new PasswordHasher<object>();
         }
 
         //Method to get a list of customers
@@ -118,6 +120,8 @@ namespace posystem.ServiceInterface.Services
                         return new { Message = "Email is already registered." };
                     }
 
+                    var hashedPassword = _passwordHasher.HashPassword(null, request.Password);
+
                     var newCustomer = new Customers
                     {
                         Id = Guid.NewGuid(),
@@ -125,7 +129,7 @@ namespace posystem.ServiceInterface.Services
                         Middle_Name = request.MiddleName,
                         Last_Name = request.LastName,
                         Email = request.Email,
-                        Password_Hash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                        Password_Hash = hashedPassword,
                         PhoneNumber = request.PhoneNumber,
                         DateOfBirth = request.DateOfBirth,
                         AddressLineOne = request.AddressLineOne,
@@ -193,7 +197,6 @@ namespace posystem.ServiceInterface.Services
         {
             using (var db = _dbConnectionFactory.OpenDbConnection())
             {
-                // Fetch the customer by email
                 var customer = db.Single<Customers>(x => x.Email == request.Email);
 
                 if (customer == null)
@@ -205,8 +208,8 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
-                // Verify the password
-                if (!BCrypt.Net.BCrypt.Verify(request.Password, customer.Password_Hash))
+                var verificationResult = _passwordHasher.VerifyHashedPassword(null, customer.Password_Hash, request.Password);
+                if (verificationResult == PasswordVerificationResult.Failed)
                 {
                     return new LoginResponse
                     {
@@ -215,13 +218,13 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
-                var token = TokenService.GenerateJwtToken(request.Email);  
+                var token = TokenService.GenerateJwtToken(request.Email);
 
                 return new LoginResponse
                 {
                     Success = true,
                     Message = "Login successful",
-                    Token = token  // Return the token in the response
+                    Token = token
                 };
             }
         }

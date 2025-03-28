@@ -1,15 +1,8 @@
 import axios from 'axios';
 
-/**
- * Base URL for the backend API.
- * The backend is running on HTTPS port 5001 for secure communication.
- */
-const API_URL = 'https://localhost:5001';
+const API_URL = 'https://localhost:5001'; // Backend is running on HTTPS port 5001
 
-/**
- * Axios request interceptor for debugging API requests.
- * Logs request details including URL, method, data, and headers.
- */
+// Configure axios for better debugging
 axios.interceptors.request.use(request => {
   console.log('Starting Request:', {
     url: request.url,
@@ -20,11 +13,6 @@ axios.interceptors.request.use(request => {
   return request;
 });
 
-/**
- * Axios response interceptor for debugging API responses.
- * Logs response details including status and data.
- * Also handles and logs error responses.
- */
 axios.interceptors.response.use(
   response => {
     console.log('Response:', {
@@ -54,120 +42,62 @@ axios.interceptors.response.use(
  * Provides methods for CRUD operations and server status checking.
  */
 const bookApi = {
-  /**
-   * Retrieves a list of books with optional filtering and pagination.
-   * @param {Object} params - Query parameters for filtering, sorting, and pagination
-   * @returns {Promise<Object>} Response containing books and total count
-   */
+  // Get all books with optional filtering
   getBooks: async (params = {}) => {
-    try {
-      const response = await axios.get(`${API_URL}/books`, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching books:', error);
-      throw error;
-    }
+    const response = await axios.get('/books', { params });
+    return response.data;
   },
 
-  /**
-   * Retrieves a single book by its ID.
-   * @param {string} id - The unique identifier of the book
-   * @returns {Promise<Object>} Response containing the book details
-   */
+  // Get a single book by ID
   getBook: async (id) => {
-    try {
-      const response = await axios.get(`${API_URL}/books/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching book with ID ${id}:`, error);
-      throw error;
-    }
+    const response = await axios.get(`/books/${id}`);
+    return response.data;
   },
 
-  /**
-   * Creates a new book in the system.
-   * Handles image conversion to base64 if provided.
-   * @param {Object} bookData - The book data to create
-   * @returns {Promise<Object>} Response indicating success/failure and containing the created book
-   */
+  // Create a new book
   createBook: async (bookData) => {
-    try {
-      // Create a request object that matches the CreateBookDTO structure
-      const requestData = {
-        Title: bookData.title,
-        Author: bookData.author,
-        ISBN: bookData.isbn,
-        Price: parseFloat(bookData.price),
-        Units: parseInt(bookData.units),
-        Description: bookData.description || '',
-        Supplier_Id: bookData.supplierId || null,
-        Discount_Id: bookData.discountId || null
-      };
+    const requestData = {
+      Title: bookData.title,
+      Author: bookData.author,
+      ISBN: bookData.isbn,
+      Price: parseFloat(bookData.price),
+      Units: parseInt(bookData.units),
+      Description: bookData.description || '',
+      Supplier_Id: bookData.supplierId || null,
+      Discount_Id: bookData.discountId || null
+    };
 
-      // Handle image conversion separately if it exists
-      if (bookData.image instanceof File) {
-        // Convert file to base64 for sending to API
-        const base64Image = await convertFileToBase64(bookData.image);
-        requestData.Cover_Image = base64Image;
-      }
-
-      console.log('Sending book data:', requestData);
-
-      const response = await axios.post(`${API_URL}/books`, requestData);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating book:', error);
-      // Log more detailed error information
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-      }
-      throw error;
+    if (bookData.image instanceof File) {
+      requestData.Cover_Image = await convertFileToBase64(bookData.image);
     }
+
+    const response = await axios.post('/books', requestData);
+    return response.data;
   },
 
-  /**
-   * Updates an existing book's information.
-   * Handles image conversion to base64 if provided.
-   * @param {string} id - The unique identifier of the book to update
-   * @param {Object} bookData - The updated book data
-   * @returns {Promise<Object>} Response indicating success/failure and containing the updated book
-   */
+  // Update an existing book
   updateBook: async (id, bookData) => {
-    try {
-      // Create a request object that matches the UpdateBookDTO structure
-      const requestData = {
-        Id: id,
-        Title: bookData.title,
-        Author: bookData.author,
-        ISBN: bookData.isbn,
-        Price: parseFloat(bookData.price),
-        Units: parseInt(bookData.units),
-        Description: bookData.description || '',
-        Supplier_Id: bookData.supplierId || null,
-        Discount_Id: bookData.discountId || null
-      };
+    const requestData = {
+      Id: id,
+      Title: bookData.title,
+      Author: bookData.author,
+      ISBN: bookData.isbn,
+      Price: parseFloat(bookData.price),
+      Units: parseInt(bookData.units),
+      Description: bookData.description || '',
+      Supplier_Id: bookData.supplierId || null,
+      Discount_Id: bookData.discountId || null
+    };
 
-      // Handle image conversion separately if it exists
-      if (bookData.image instanceof File) {
-        // Convert file to base64 for sending to API
-        const base64Image = await convertFileToBase64(bookData.image);
-        requestData.CoverImage = base64Image;
-      }
-
-      const response = await axios.put(`${API_URL}/books/${id}`, requestData);
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating book with ID ${id}:`, error);
-      throw error;
+    if (bookData.image instanceof File) {
+      requestData.CoverImage = await convertFileToBase64(bookData.image);
     }
+
+    const response = await axios.put(`/books/${id}`, requestData);
+    return response.data;
   },
 
-  /**
-   * Deletes a book from the system.
-   * @param {string} id - The unique identifier of the book to delete
-   * @returns {Promise<Object>} Response indicating success/failure of the deletion
-   */
+  // Delete a book
   deleteBook: async (id) => {
     try {
       const response = await axios.delete(`${API_URL}/books/${id}`);
@@ -179,9 +109,8 @@ const bookApi = {
   },
   
   /**
-   * Tests the connection to the API and checks for CORS issues.
-   * Attempts both HTTPS and HTTP connections.
-   * @returns {Promise<Object>} Result of the connection test including CORS headers
+   * Test connection to the API to check for CORS issues
+   * @returns {Promise<Object>} Result of the connection test
    */
   async testConnection() {
     try {
@@ -245,8 +174,7 @@ const bookApi = {
   },
 
   /**
-   * Performs a comprehensive check of server status by testing multiple endpoints.
-   * Tests both HTTPS and HTTP protocols.
+   * Comprehensive check of server status by trying multiple endpoints and protocols
    * @returns {Promise<Object>} Detailed server status information
    */
   async checkServerStatus() {
@@ -302,8 +230,7 @@ const bookApi = {
   },
 
   /**
-   * Detects and reports detailed information about the backend server configuration.
-   * Includes CORS settings and server details.
+   * Detect and report detailed information about the backend server
    * @returns {Promise<Object>} Information about the server configuration
    */
   async detectServerDetails() {
@@ -422,12 +349,7 @@ const bookApi = {
   }
 };
 
-/**
- * Helper function to convert a File object to a base64 string.
- * Used for sending images to the API.
- * @param {File} file - The file to convert
- * @returns {Promise<string>} Base64 string representation of the file
- */
+// Helper function to convert File object to base64 string
 const convertFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -444,3 +366,4 @@ const convertFileToBase64 = (file) => {
 };
 
 export default bookApi;
+

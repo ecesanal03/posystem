@@ -1,17 +1,7 @@
 import { useState } from 'react';
-import { 
-  Box, 
-  CssBaseline, 
-  Drawer, 
-  List, 
-  ListItemButton, 
-  ListItemText, 
-  Divider, 
-  Toolbar,
-  IconButton,
-  Typography,
-  AppBar,
-  Avatar
+import {
+  Box, CssBaseline, Drawer, List, ListItemButton, ListItemText, Divider,
+  Toolbar, IconButton, Typography, AppBar, Avatar, Tooltip, Menu, MenuItem
 } from '@mui/material';
 import { styled, ThemeProvider } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -21,12 +11,14 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import { useNavigate } from 'react-router-dom';
 
 import theme from './styles/theme';
 import BooksSection from './components/Books';
 import SuppliersSection from './components/Suppliers';
 import OrdersSection from './components/Orders';
 import AccountsSection from './components/Accounts';
+import ReportsPage from '../Reports';
 
 const drawerWidth = 240;
 
@@ -98,18 +90,22 @@ const DrawerStyled = styled(Drawer)(() => ({
 }));
 
 const ManagementPage = () => {
-  const [open, setOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(true);
   const [selectedTab, setSelectedTab] = useState('books');
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const menuOpen = Boolean(menuAnchorEl);
+  const navigate = useNavigate();
+  const isLoggedIn = Boolean(localStorage.getItem('authToken'));
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
+  const handleDrawerOpen = () => setDrawerOpen(true);
+  const handleDrawerClose = () => setDrawerOpen(false);
+  const handleMenuOpen = (event) => setMenuAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setMenuAnchorEl(null);
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/employeelogin');
   };
 
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
-
-  // Navigation items with icons
   const navigation = [
     { name: 'books', label: 'Books', icon: <BookIcon sx={{ color: '#536DFE' }} /> },
     { name: 'suppliers', label: 'Suppliers', icon: <LocalShippingIcon sx={{ color: '#FF9800' }} /> },
@@ -120,19 +116,12 @@ const ManagementPage = () => {
 
   const renderContent = () => {
     switch (selectedTab) {
-      case 'books':
-        return <BooksSection />;
-      case 'suppliers':
-        return <SuppliersSection />;
-      case 'orders':
-        return <OrdersSection />;
-      case 'accounts':
-        return <AccountsSection />;
-      case 'reports':
-        // Will add this section later
-        return <Box sx={{ p: 3 }}>Reports Coming Soon</Box>;
-      default:
-        return <BooksSection />;
+      case 'books': return <BooksSection />;
+      case 'suppliers': return <SuppliersSection />;
+      case 'orders': return <OrdersSection />;
+      case 'accounts': return <AccountsSection />;
+      case 'reports': return <ReportsPage />;
+      default: return <BooksSection />;
     }
   };
 
@@ -140,29 +129,45 @@ const ManagementPage = () => {
     <ThemeProvider theme={theme}>
       <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <CssBaseline />
-        <AppBarStyled position="fixed" open={open}>
+        <AppBarStyled position="fixed" open={drawerOpen}>
           <Toolbar>
             <IconButton
               color="inherit"
               aria-label="open drawer"
               onClick={handleDrawerOpen}
               edge="start"
-              sx={{ mr: 2, ...(open && { display: 'none' }) }}
+              sx={{ mr: 2, ...(drawerOpen && { display: 'none' }) }}
             >
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" noWrap component="div">
-              Cougar Cataloge Employee Portal
+              Cougar Catalog Employee Portal
             </Typography>
             <Box sx={{ flexGrow: 1 }} />
-            <Avatar sx={{ bgcolor: 'grey.500' }}>FP</Avatar>
+            {isLoggedIn && (
+              <>
+                <Tooltip title="Account">
+                  <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
+                    <Avatar sx={{ bgcolor: 'grey.500' }}>E</Avatar>
+                  </IconButton>
+                </Tooltip>
+
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={menuOpen}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem disabled>Logged in</MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                </Menu>
+              </>
+            )}
           </Toolbar>
         </AppBarStyled>
-        <DrawerStyled
-          variant="persistent"
-          anchor="left"
-          open={open}
-        >
+        <DrawerStyled variant="persistent" anchor="left" open={drawerOpen}>
           <DrawerHeader>
             <Typography variant="h6" noWrap sx={{ flexGrow: 1, ml: 2 }}>
               Management
@@ -174,7 +179,7 @@ const ManagementPage = () => {
           <Divider sx={{ bgcolor: '#61677A' }} />
           <List>
             {navigation.map((item) => (
-              <ListItemButton 
+              <ListItemButton
                 key={item.name}
                 selected={selectedTab === item.name}
                 onClick={() => setSelectedTab(item.name)}
@@ -205,7 +210,7 @@ const ManagementPage = () => {
             ))}
           </List>
         </DrawerStyled>
-        <Main open={open}>
+        <Main open={drawerOpen}>
           <DrawerHeader />
           {renderContent()}
         </Main>
@@ -214,4 +219,4 @@ const ManagementPage = () => {
   );
 };
 
-export default ManagementPage; 
+export default ManagementPage;

@@ -155,34 +155,6 @@ function ReportsPage() {
     <ThemeProvider theme={darkTheme}>
     <CssBaseline />
     <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Paper
-        elevation={1}
-        sx={{
-          p: 2,
-          bgcolor: '#252525',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <IconButton color="inherit" edge="start" sx={{ mr: 2 }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Reports
-        </Typography>
-        
-        {/* Shopping cart and account icons */}
-        <IconButton color="inherit" sx={{ mr: 1 }}>
-          <Badge badgeContent={3} color="error">
-            <ShoppingCart />
-          </Badge>
-        </IconButton>
-        <IconButton color="inherit">
-          <AccountCircle />
-        </IconButton>
-      </Paper>
 
       <Container maxWidth="lg" sx={{ mt: 3, mb: 4, flexGrow: 1, overflow: 'auto' }}>
         <Grid container spacing={3}>
