@@ -1,4 +1,4 @@
-using ServiceStack;
+﻿using ServiceStack;
 using ServiceStack.DataAnnotations;
 
 namespace posystem.ServiceModel.Models
@@ -35,9 +35,7 @@ namespace posystem.ServiceModel.Models
         [Input(Type = "textarea")]
         public string? Description { get; set; }
 
-        [StringLength(int.MaxValue)]
-        [Input(Type = "file")]
-        public byte[]? Cover_Image { get; set; }
+        public string? Cover_Image { get; set; }
 
         [Required]
         [Default(typeof(DateTime), "GETUTCDATE()")]

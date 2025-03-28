@@ -1,27 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Grid, Paper, Typography, Button, IconButton, TextField, AppBar, Toolbar, Box } from '@mui/material';
 import { Delete, ArrowBack } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom'; // React Router's useNavigate for back functionality
+import { useNavigate, useLocation } from 'react-router-dom';
+import cartApi from '../api/cartApi';
 
 const ShoppingCart = () => {
-  const initialCart = [
-    { id: 1, name: 'The Great Gatsby', price: 10.99, quantity: 1 },
-    { id: 2, name: '1984', price: 8.99, quantity: 2 },
-    { id: 3, name: 'To Kill a Mockingbird', price: 12.99, quantity: 1 },
-    { id: 4, name: 'Test', price: 12.99, quantity: 1 },
-  ];
+  const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate(); // Initialize useNavigate hook to navigate
+  const location = useLocation();
 
-  const [cartItems, setCartItems] = useState(initialCart);
-  const navigate = useNavigate(); // Navigate hook for handling back navigation
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const response = await cartApi.getCart();
+        setCartItems(response.items || []);
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    };
+  
+    fetchCart();
+  }, []);
+  
 
-  const removeItem = (id) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
+  const removeItem = async (bookId) => {
+    try {
+      await cartApi.removeFromCart(bookId);
+      setCartItems(prev => prev.filter(item => item.bookId !== bookId));
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
   };
-
-  const updateQuantity = (id, newQuantity) => {
-    setCartItems(cartItems.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+  
+  const updateQuantity = async (bookId, newQuantity) => {
+    try {
+      await cartApi.updateCartQuantity(bookId, newQuantity);
+      setCartItems(prev => prev.map(item =>
+        item.bookId === bookId ? { ...item, quantity: newQuantity } : item
+      ));
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+    }
   };
 
   const calculateTotal = () => {
@@ -29,13 +48,13 @@ const ShoppingCart = () => {
   };
 
   const goBack = () => {
-    navigate('/'); // Navigates to the previous page
+    navigate('/'); // Navigate back to the previous page
   };
 
   return (
     <div>
       {/* Top Bar */}
-      <AppBar position="static" sx={{ backgroundColor: '#8499D9' }}>
+      <AppBar  sx={{ backgroundColor: '#8499D9' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={goBack}>
             <ArrowBack />
@@ -51,7 +70,7 @@ const ShoppingCart = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'flex-start', 
-        paddingTop: 4 
+        paddingTop: 10 
         }}>
         <Container maxWidth="lg">
             <Grid container spacing={3} justifyContent="center">
@@ -73,7 +92,7 @@ const ShoppingCart = () => {
                         cartItems.map((item) => (
                             <Grid container key={item.id} spacing={2} sx={{ marginBottom: 2 }}>
                             <Grid item xs={8}>
-                                <Typography variant="h6">{item.name}</Typography>
+                                <Typography variant="h6">{item.bookTitle}</Typography>
                                 <Typography variant="body2">{`$${item.price} x ${item.quantity}`}</Typography>
                             </Grid>
                             <Grid item xs={3}>
@@ -81,12 +100,12 @@ const ShoppingCart = () => {
                                 type="number"
                                 label="Quantity"
                                 value={item.quantity}
-                                onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                                onChange={(e) => updateQuantity(item.bookId, parseInt(e.target.value))}
                                 sx={{ width: '100%' }}
                                 />
                             </Grid>
                             <Grid item xs={1}>
-                                <IconButton color="error" onClick={() => removeItem(item.id)}>
+                                <IconButton color="error" onClick={() => removeItem(item.bookId)}>
                                 <Delete />
                                 </IconButton>
                             </Grid>

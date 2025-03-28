@@ -9,13 +9,13 @@ namespace posystem.ServiceModel.Models
         public Guid Id { get; set; }
 
         [References(typeof(Cart))]
-        public Guid CartId { get; set; }
+        public Guid Cart_Id { get; set; }
 
         [References(typeof(Books))]
-        public Guid BookId { get; set; }
+        public Guid Book_Id { get; set; }
 
         public int Quantity { get; set; }
-        public DateTime? AddedAt { get; set; }
+        public DateTime? Added_At { get; set; }
 
     }
 }

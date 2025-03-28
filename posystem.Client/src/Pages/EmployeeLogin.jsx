@@ -18,6 +18,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { SignInPage } from '@toolpad/core/SignInPage';
 import { useState } from 'react';
+import employeeApi from '../api/employeeApi';
 
 const providers = [{ id: 'credentials', name: 'Email and Password' }];
 
@@ -148,29 +149,18 @@ export default function SlotsSignIn() {
       const email = formData.get('email');
       const password = formData.get('password');
 
-      const response = await fetch('https://localhost:5001/employee/employeeLogin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed. Please check your credentials.');
-      }
-
-      const data = await response.json();
+      const data = await employeeApi.login(email, password);
 
       if (data.success) {
         alert(data.Message || 'Logged in successfully');
         localStorage.setItem('authToken', data.token);
         window.location.href = '/EmployeePortal';
       } else {
-        setError(data.message);
+        setError(data.Message);
+        alert(data.Message || 'Login failed');
       }
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError(err.toString());
     }
   };
 
