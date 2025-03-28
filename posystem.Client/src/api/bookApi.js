@@ -1,4 +1,4 @@
-import axios from './axiosInstance'; // 👈 Use the shared instance
+import axios from './axiosInstance'; 
 
 const convertFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {

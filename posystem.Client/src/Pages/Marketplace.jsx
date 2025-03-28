@@ -12,6 +12,7 @@ import { Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, To
   Avatar,
   TextareaAutosize,
   Rating,
+  Badge,
  } from '@mui/material';
 import { createTheme } from '@mui/material/styles';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -36,12 +37,14 @@ import FaceRetouchingNaturalOutlinedIcon from '@mui/icons-material/FaceRetouchin
 import QueueMusicOutlinedIcon from '@mui/icons-material/QueueMusicOutlined';
 import ToysOutlinedIcon from '@mui/icons-material/ToysOutlined';
 import AddIcon from '@mui/icons-material/Add';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout, ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import { useNavigate, Link } from 'react-router-dom';
 import bookApi from '../api/bookApi';
 import cartApi from '../api/cartApi';
+import notificationApi from '../api/notificationApi';
 
 // -----------------------------------------------------------------------------
 // Navigation configuration (categories, etc.)
@@ -89,15 +92,29 @@ const demoTheme = createTheme({
 function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [notifAnchorEl, setNotifAnchorEl] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
   const open = Boolean(anchorEl);
+  const notifOpen = Boolean(notifAnchorEl);
 
-  const handleAccountMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
+  const handleAccountMenuClick = (event) => setAnchorEl(event.currentTarget);
+  const handleAccountMenuClose = () => setAnchorEl(null);
+
+  const handleNotifClick = async (event) => {
+    setNotifAnchorEl(event.currentTarget);
+
+    if (isLoggedIn) {
+      try {
+        const data = await notificationApi.getNotifications();
+        setNotifications(data.results || []);
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    }
   };
 
-  const handleAccountMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleNotifClose = () => setNotifAnchorEl(null);
 
   const isLoggedIn = Boolean(localStorage.getItem('authToken'));
 
@@ -107,7 +124,7 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
   };
 
   return (
-    <Stack direction="row">
+    <Stack direction="row" >
       <Tooltip title="Search" enterDelay={1000}>
         <div>
           <IconButton
@@ -138,12 +155,51 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
         }}
         sx={{
           flexGrow: 1,
-          mr: 40,
+          mr: 30,
           maxWidth: "700px",
           minWidth: "500px",
         }}
       />
 
+      <Tooltip title="Notifications">
+        <IconButton color="primary" onClick={handleNotifClick}>
+          <Badge
+            badgeContent={notifications.filter(n => !n.is_Read).length}
+            color="error"
+            overlap="circular"
+            invisible={notifications.filter(n => !n.is_Read).length === 0}
+          >
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+
+      <Menu
+        anchorEl={notifAnchorEl}
+        open={notifOpen}
+        onClose={handleNotifClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ mt: 1 }}
+      >
+        {notifications.length === 0 ? (
+          <MenuItem disabled>No new notifications</MenuItem>
+        ) : (
+          notifications.map((notif) => (
+            <MenuItem
+              key={notif.id}
+              onClick={() => {
+                notificationApi.markNotificationAsRead(notif.id);
+                handleNotifClose();
+              }}
+            >
+              {notif.message}
+            </MenuItem>
+          ))
+        )}
+      </Menu>
+
+      {/* Account & Cart buttons below */}
       <Tooltip title="Account">
         <IconButton color="primary" onClick={handleAccountMenuClick}>
           <AccountCircleIcon />
@@ -189,6 +245,7 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
     </Stack>
   );
 }
+
 
 ToolbarActionsSearch.propTypes = {
   searchTerm: PropTypes.string.isRequired,
