@@ -5,7 +5,6 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Box, 
   FormControl, 
   InputLabel, 
   Select, 
@@ -16,26 +15,52 @@ import {
   FormControlLabel
 } from '@mui/material';
 
-const EmployeeForm = ({ employee, onSave }) => {
-  const isEditing = !!employee;
+const EmployeeForm = ({ employee, onSave, onCancel }) => {
+  const isEditing = !!employee?.Id;
   
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'cashier',
-    phone: '',
-    address: '',
-    password: '',
-    active: true
+    Id: '',
+    FirstName: '',
+    MiddleName: '',
+    LastName: '',
+    Email: '',
+    DateOfBirth: '',
+    PhoneNumber: '',
+    Password: '',
+    AddressLineOne: '',
+    AddressLineTwo: '',
+    City: '',
+    State: '',
+    ZipCode: '',
+    Country: '',
+    Role: 'cashier',
+    IsActive: true
   });
   
   const [errors, setErrors] = useState({});
   
   useEffect(() => {
     if (employee) {
+      console.log("Setting form data with employee:", employee);
+      
+      // Ensure all fields have defined values to prevent uncontrolled/controlled switch
       setFormData({
-        ...employee,
-        password: '' // Don't populate password field when editing
+        Id: employee.Id || '',
+        FirstName: employee.FirstName || '',
+        MiddleName: employee.MiddleName || '',
+        LastName: employee.LastName || '',
+        Email: employee.Email || '',
+        DateOfBirth: employee.DateOfBirth || '',
+        PhoneNumber: employee.PhoneNumber || '',
+        Password: '', // Don't populate password field when editing
+        AddressLineOne: employee.AddressLineOne || '',
+        AddressLineTwo: employee.AddressLineTwo || '',
+        City: employee.City || '',
+        State: employee.State || '',
+        ZipCode: employee.ZipCode || '',
+        Country: employee.Country || '',
+        Role: employee.Role || 'cashier',
+        IsActive: typeof employee.IsActive === 'boolean' ? employee.IsActive : true
       });
     }
   }, [employee]);
@@ -59,156 +84,144 @@ const EmployeeForm = ({ employee, onSave }) => {
   const handleSwitchChange = (e) => {
     setFormData(prev => ({
       ...prev,
-      active: e.target.checked
+      IsActive: e.target.checked
     }));
-  };
-  
-  const validate = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!isEditing && !formData.password.trim()) {
-      newErrors.password = 'Password is required for new employees';
-    } else if (!isEditing && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (!formData.role) {
-      newErrors.role = 'Role is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
   
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (validate()) {
-      onSave({
-        ...formData,
-        // If editing and password is empty, don't update the password
-        password: isEditing && !formData.password ? undefined : formData.password
-      });
+    // Basic validation
+    const newErrors = {};
+    if (!formData.FirstName) newErrors.FirstName = 'First name is required';
+    if (!formData.LastName) newErrors.LastName = 'Last name is required';
+    if (!formData.Email) newErrors.Email = 'Email is required';
+    if (!isEditing && !formData.Password) newErrors.Password = 'Password is required';
+    if (!formData.AddressLineOne) newErrors.AddressLineOne = 'Address is required';
+    if (!formData.City) newErrors.City = 'City is required';
+    if (!formData.State) newErrors.State = 'State is required';
+    if (!formData.ZipCode) newErrors.ZipCode = 'Zip Code is required';
+    if (!formData.Country) newErrors.Country = 'Country is required';
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
+    
+    // Prepare form data for submission
+    const submitData = { ...formData };
+    
+    // Add EmploymentStartDate field (required by the backend)
+    if (!isEditing) {
+      submitData.EmploymentStartDate = new Date().toISOString();
+    }
+    
+    onSave(submitData);
   };
   
   return (
-    <Paper
-      elevation={0}
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        p: 3,
-        width: '100%',
-        maxWidth: '800px',
-        mx: 'auto'
-      }}
-    > 
+    <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        {isEditing ? 'Edit Employee' : 'Add New Employee'}
+      </Typography>
+      
       <Grid container spacing={1}>
-        <Grid item xs={12} sm={3}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
-            label="Fname"
-            name="name"
-            value={formData.name}
+            label="First Name"
+            name="FirstName"
+            value={formData.FirstName}
             onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
+            error={!!errors.FirstName}
+            helperText={errors.FirstName}
             required
             variant="outlined"
             size="small"
             margin="normal"
           />
         </Grid>
-        <Grid item xs={12} sm={1}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
-            label="M"
-            name="name"
-            value={formData.name}
+            label="Middle Name"
+            name="MiddleName"
+            value={formData.MiddleName || ''}
             onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
-            required
             variant="outlined"
             size="small"
             margin="normal"
           />
-        </Grid>       
-        <Grid item xs={12} sm={3}>
+        </Grid>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
-            label="Lname"
-            name="name"
-            value={formData.name}
+            label="Last Name"
+            name="LastName"
+            value={formData.LastName}
             onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
+            error={!!errors.LastName}
+            helperText={errors.LastName}
             required
             variant="outlined"
             size="small"
             margin="normal"
           />
         </Grid>
-        <Grid item xs={12} sm={5}>
-            <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!errors.email}
-                helperText={errors.email}
-                required
-                variant="outlined"
-                size="small"
-                margin="normal"
-            />  
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Email"
+            name="Email"
+            type="email"
+            value={formData.Email}
+            onChange={handleChange}
+            error={!!errors.Email}
+            helperText={errors.Email}
+            required
+            variant="outlined"
+            size="small"
+            margin="normal"
+          />
         </Grid>
         <Grid item xs={12} sm={3}>
             <TextField
                 fullWidth
                 label="Date of Birth"
-                name="dob"
-                value={formData.dob}
+                name="DateOfBirth"
+                type="date"
+                value={formData.DateOfBirth ? String(formData.DateOfBirth).split('T')[0] : ''}
                 onChange={handleChange}
                 variant="outlined"
                 size="small"
                 margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
             />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={3}>
           <TextField
             fullWidth
             label="Phone"
-            name="phone"
-            value={formData.phone || ''}
+            name="PhoneNumber"
+            value={formData.PhoneNumber || ''}
             onChange={handleChange}
             variant="outlined"
             size="small"
             margin="normal"
           />
         </Grid>      
-        <Grid item xs={12} sm={5}>
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             label="Password"
-            name="password"
+            name="Password"
             type="password"
-            value={formData.password}
+            value={formData.Password}
             onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password || (isEditing ? 'Leave blank to keep current password' : '')}
+            error={!!errors.Password}
+            helperText={errors.Password || (isEditing ? 'Leave blank to keep current password' : '')}
             required={!isEditing}
             variant="outlined"
             size="small"
@@ -218,108 +231,113 @@ const EmployeeForm = ({ employee, onSave }) => {
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Address"
-            name="address"
-            value={formData.address || ''}
+            label="Address Line 1"
+            name="AddressLineOne"
+            value={formData.AddressLineOne || ''}
             onChange={handleChange}
             variant="outlined"
             size="small"
             margin="normal"
-            multiline
           />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Address2"
-            name="address2"
-            value={formData.address2 || ''}
+            label="Address Line 2"
+            name="AddressLineTwo"
+            value={formData.AddressLineTwo || ''}
             onChange={handleChange}
             variant="outlined"
             size="small"
             margin="normal"
-            multiline
           />
         </Grid>
         <Grid item xs={12} sm={3}>
-            <TextField
-                fullWidth
-                label="City"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                margin="normal"
-            />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-            <TextField
-                fullWidth
-                label="State"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                margin="normal"
-            />
+          <TextField
+            fullWidth
+            label="City"
+            name="City"
+            value={formData.City || ''}
+            onChange={handleChange}
+            variant="outlined"
+            size="small"
+            margin="normal"
+          />
         </Grid>
         <Grid item xs={12} sm={3}>
-            <TextField
-                fullWidth
-                label="Zip Code"
-                name="zip"
-                value={formData.zip}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                margin="normal"
-            />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-            <TextField
-                fullWidth
-                label="Country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                margin="normal"
-            />
+          <TextField
+            fullWidth
+            label="State"
+            name="State"
+            value={formData.State || ''}
+            onChange={handleChange}
+            variant="outlined"
+            size="small"
+            margin="normal"
+          />
         </Grid>
         <Grid item xs={12} sm={3}>
-          <FormControl fullWidth margin="normal" size="small" error={!!errors.role}>
+          <TextField
+            fullWidth
+            label="Zip Code"
+            name="ZipCode"
+            value={formData.ZipCode || ''}
+            onChange={handleChange}
+            variant="outlined"
+            size="small"
+            margin="normal"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="Country"
+            name="Country"
+            value={formData.Country || ''}
+            onChange={handleChange}
+            variant="outlined"
+            size="small"
+            margin="normal"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <FormControl fullWidth margin="normal" size="small" error={!!errors.Role}>
             <InputLabel id="role-label">Role</InputLabel>
             <Select
               labelId="role-label"
-              name="role"
-              value={formData.role}
+              name="Role"
+              value={formData.Role || 'cashier'}
               onChange={handleChange}
               label="Role"
               required
             >
-              <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="manager">Manager</MenuItem>
               <MenuItem value="cashier">Cashier</MenuItem>
             </Select>
-            {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
+            {errors.Role && <FormHelperText>{errors.Role}</FormHelperText>}
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormControlLabel
             control={
               <Switch
-                checked={formData.active}
+                checked={Boolean(formData.IsActive)}
                 onChange={handleSwitchChange}
-                name="active"
+                name="IsActive"
                 color="primary"
               />
             }
             label="Active"
             sx={{ mt: 2 }}
           />
+        </Grid>
+        <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Button variant="outlined" color="inherit" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" color="primary">
+            {isEditing ? 'Update Employee' : 'Add Employee'}
+          </Button>
         </Grid>
       </Grid>
     </Paper>
@@ -328,15 +346,21 @@ const EmployeeForm = ({ employee, onSave }) => {
 
 EmployeeForm.propTypes = {
   employee: PropTypes.shape({
-    id: PropTypes.number,
-    employee_id: PropTypes.string,
-    name: PropTypes.string,
-    email: PropTypes.string,
-    role: PropTypes.string,
-    phone: PropTypes.string,
-    address: PropTypes.string,
-    active: PropTypes.bool,
-    start_date: PropTypes.string
+    Id: PropTypes.string,
+    FirstName: PropTypes.string,
+    MiddleName: PropTypes.string,
+    LastName: PropTypes.string,
+    Email: PropTypes.string,
+    DateOfBirth: PropTypes.string,
+    PhoneNumber: PropTypes.string,
+    AddressLineOne: PropTypes.string,
+    AddressLineTwo: PropTypes.string,
+    City: PropTypes.string,
+    State: PropTypes.string,
+    ZipCode: PropTypes.string,
+    Country: PropTypes.string,
+    Role: PropTypes.string,
+    IsActive: PropTypes.bool
   }),
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired

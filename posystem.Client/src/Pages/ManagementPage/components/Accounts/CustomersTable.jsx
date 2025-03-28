@@ -12,21 +12,29 @@ import {
   Chip,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
+import { useMemo } from 'react';
 
 const CustomersTable = ({ customers, onDelete }) => {
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+  // Log the incoming customer props for debugging
+  //console.log('CustomersTable received customers:', customers);
+
+  // Memoized formatters to prevent unnecessary re-renders
+  const formatCurrency = useMemo(() => {
+    const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
-  };
+    });
+    return (amount) => {
+      // Handle NaN, undefined or null values
+      if (amount === undefined || amount === null || isNaN(amount)) {
+        console.log('formatCurrency: Invalid amount value:', amount);
+        return '$0.00';
+      }
+      return formatter.format(amount);
+    };
+  }, []);
 
-  // Format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
+  // Table is already using customer data directly from API
   return (
     <Paper elevation={2} sx={{ 
       bgcolor: '#2A2D2A', 
@@ -49,9 +57,11 @@ const CustomersTable = ({ customers, onDelete }) => {
           </TableHead>
           <TableBody>
             {customers.length > 0 ? (
-              customers.map((customer) => (
+              customers.map((customer, index) => {
+                //console.log(`Rendering customer ${index}:`, customer);
+                return (
                 <TableRow 
-                  key={customer.id} 
+                  key={customer.Id || customer.id || `customer-${index}`} 
                   hover
                   sx={{ 
                     '&:last-child td, &:last-child th': { 
@@ -65,13 +75,13 @@ const CustomersTable = ({ customers, onDelete }) => {
                     }
                   }}
                 >
-                  <TableCell>{customer.user_id}</TableCell>
-                  <TableCell>{customer.name}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{formatDate(customer.registration_date)}</TableCell>
+                  <TableCell>{customer.Id || customer.id || 'N/A'}</TableCell>
+                  <TableCell>{customer.Name || customer.name || 'N/A'}</TableCell>
+                  <TableCell>{customer.Email || customer.email || 'N/A'}</TableCell>
+                  <TableCell>{customer.Created_At || customer.created_At || 'N/A'}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={customer.orders_count}
+                      label={Number.isFinite(Number(customer.Orders || customer.orders)) ? Number(customer.Orders || customer.orders) : 0}
                       size="small"
                       variant="outlined"
                       sx={{
@@ -83,7 +93,7 @@ const CustomersTable = ({ customers, onDelete }) => {
                       }}
                     />
                   </TableCell>
-                  <TableCell>{formatCurrency(customer.total_spent)}</TableCell>
+                  <TableCell>{formatCurrency(Number(customer.Total_Spent || customer.total_Spent || 0))}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex' }}>
                       <IconButton 
@@ -101,7 +111,7 @@ const CustomersTable = ({ customers, onDelete }) => {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))
+              )})
             ) : (
               <TableRow>
                 <TableCell colSpan={7} align="center">
@@ -119,15 +129,12 @@ const CustomersTable = ({ customers, onDelete }) => {
 CustomersTable.propTypes = {
   customers: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      user_id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      email: PropTypes.string.isRequired,
-      phone: PropTypes.string,
-      address: PropTypes.string,
-      registration_date: PropTypes.string.isRequired,
-      orders_count: PropTypes.number.isRequired,
-      total_spent: PropTypes.number.isRequired
+      Id: PropTypes.string,
+      Name: PropTypes.string,
+      Email: PropTypes.string,
+      Created_At: PropTypes.string,
+      Orders: PropTypes.number,
+      Total_Spent: PropTypes.number
     })
   ).isRequired,
   onDelete: PropTypes.func.isRequired

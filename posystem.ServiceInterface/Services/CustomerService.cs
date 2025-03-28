@@ -12,6 +12,7 @@ using posystem.ServiceModel.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 
 namespace posystem.ServiceInterface.Services
 {
@@ -22,6 +23,84 @@ namespace posystem.ServiceInterface.Services
         public CustomerService(IDbConnectionFactory dbConnectionFactory)
         {
             _dbConnectionFactory = dbConnectionFactory;
+        }
+
+        //Method to get a list of customers
+        public async Task<GetCustomersResponse> Get(GetCustomersDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+            
+            var query = db.From<Customers>();
+
+            // Apply filtering by search term if provided
+            if(!string.IsNullOrEmpty(request.SearchTerm))
+            {
+                query = query.Where(c =>
+                c.Id.ToString().Contains(request.SearchTerm) ||
+                c.First_Name.Contains(request.SearchTerm) ||
+                c.Last_Name.Contains(request.SearchTerm) ||
+                c.Email.Contains(request.SearchTerm));
+            }
+
+            // Apply sorting
+            if(!string.IsNullOrEmpty(request.SortBy))
+            {
+                query = request.SortDesc
+                    ? query.OrderByDescending(request.SortBy)
+                    : query.OrderBy(request.SortBy);
+            } else {
+                query = query.OrderByDescending(c => c.Created_At);
+            }
+
+            // Get total count for pagination
+            var totalCount = await db.CountAsync(query);
+
+            // Apply pagination
+            if(request.Skip > 0)
+                query = query.Skip(request.Skip);
+
+            if(request.Take > 0)
+                query = query.Take(request.Take);
+
+            var Customers_Filtered = await db.SelectAsync(query);
+
+            string sql = @"
+                SELECT 
+                    c.Id,
+                    CONCAT(c.First_Name, ' ', c.Last_Name) AS Name,
+                    c.Email,
+                    DATE_FORMAT(c.Created_At, '%m/%d/%Y') AS Created_At,
+                    COUNT(DISTINCT o.Id) AS Orders,
+                    COALESCE(SUM(oi.Quantity * b.Price), 0) AS Total_Spent
+                FROM Customers c
+                LEFT JOIN Orders o ON c.Id = o.Customer_Id
+                LEFT JOIN OrderItems oi ON o.Id = oi.Order_Id
+                LEFT JOIN Books b ON oi.Book_Id = b.Id
+                GROUP BY c.Id, c.First_Name, c.Last_Name, c.Email, c.Created_At
+                ORDER BY c.Created_At DESC
+                LIMIT @Take OFFSET @Skip";
+
+            var parameters = new { request.Skip, request.Take };
+            var customers = await db.SelectAsync<CustomerListDTO>(sql, parameters);
+
+            /*// Log the results
+            Console.WriteLine("Query returned {0} customers", customers.Count);
+            foreach (var customer in customers)
+            {
+                Console.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}",
+                    customer.Id,
+                    customer.Name,
+                    customer.Email,
+                    customer.Created_At,
+                    customer.Orders,
+                    customer.Total_Spent);
+            }
+            */
+            return new GetCustomersResponse
+            {
+                Customers = customers,
+                TotalCount = (int)totalCount
+            };
         }
 
         //Method to insert a new customer into the database
@@ -147,5 +226,28 @@ namespace posystem.ServiceInterface.Services
             }
         }
 
+        //Method to delete a customer
+        public async Task<DeleteCustomerResponse> Delete(DeleteCustomerDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var customer = db.SingleById<Customers>(request.Id);
+            if(customer == null)
+                return new DeleteCustomerResponse {
+                    Success = false,
+                    Message = "Customer not found"
+                };
+
+            //Delete associated orders
+            await db.DeleteAsync<Orders>(x => x.Customer_Id == request.Id);
+
+            //Delete the customer
+            await db.DeleteAsync(customer);
+
+            return new DeleteCustomerResponse {
+                Success = true,
+                Message = "Customer deleted successfully"
+            };
+        }
     }
 }

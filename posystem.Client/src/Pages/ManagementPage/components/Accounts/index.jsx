@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   TextField,
@@ -11,7 +11,10 @@ import {
   DialogContentText,
   DialogTitle,
   Tabs,
-  Tab
+  Tab,
+  Snackbar,
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 
@@ -19,157 +22,120 @@ import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 import CustomersTable from './CustomersTable';
 import EmployeeTable from './EmployeeTable';
 import EmployeeForm from './EmployeeForm';
+import customerApi from '../../../../api/customerAPI';
+import employeeApi from '../../../../api/EmployeeAPI';
 
 const AccountsSection = () => {
-  // Tab state
+  // State management for data
   const [activeTab, setActiveTab] = useState(0);
-  
-  // Customer accounts data state
-  const [customers, setCustomers] = useState([
-    { 
-      id: 1,
-      user_id: "CUS1001", 
-      name: "John Doe", 
-      email: "john.doe@example.com",
-      phone: "555-123-4567",
-      address: "123 Main St, Anytown, USA",
-      registration_date: "2023-01-15",
-      orders_count: 12,
-      total_spent: 678.45
-    },
-    { 
-      id: 2,
-      user_id: "CUS1002", 
-      name: "Sarah Johnson", 
-      email: "sarah.j@example.com",
-      phone: "555-987-6543",
-      address: "456 Oak Ave, Somewhere, USA",
-      registration_date: "2023-02-28",
-      orders_count: 5,
-      total_spent: 321.75
-    },
-    { 
-      id: 3,
-      user_id: "CUS1003", 
-      name: "Michael Brown", 
-      email: "mike.brown@example.com",
-      phone: "555-555-5555",
-      address: "789 Pine St, Nowhere, USA",
-      registration_date: "2023-03-10",
-      orders_count: 8,
-      total_spent: 492.30
-    }
-  ]);
-  
-  // Employee accounts data state
-  const [employees, setEmployees] = useState([
-    { 
-      id: 1,
-      employee_id: "EMP001", 
-      name: "Robert Smith", 
-      email: "robert.smith@posystem.com",
-      phone: "555-111-2222",
-      address: "123 Admin St, Management, USA",
-      role: "admin",
-      start_date: "2022-01-10",
-      active: true
-    },
-    { 
-      id: 2,
-      employee_id: "EMP002", 
-      name: "Jennifer Williams", 
-      email: "jennifer.w@posystem.com",
-      phone: "555-333-4444",
-      address: "456 Manager Ave, Direction, USA",
-      role: "manager",
-      start_date: "2022-03-15",
-      active: true
-    },
-    { 
-      id: 3,
-      employee_id: "EMP003", 
-      name: "David Johnson", 
-      email: "david.j@posystem.com",
-      phone: "555-666-7777",
-      address: "789 Register St, Sales, USA",
-      role: "cashier",
-      start_date: "2022-06-20",
-      active: false
-    }
-  ]);
+  const [customers, setCustomers] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   // Form state
   const [customerFilter, setCustomerFilter] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    role: '',
-    department: '',
-    status: 'Active'
+    FirstName: '',
+    MiddleName: '',
+    LastName: '',
+    Email: '',
+    DateOfBirth: '',
+    PhoneNumber: '',
+    Password: '',
+    AddressLineOne: '',
+    AddressLineTwo: '',
+    City: '',
+    State: '',
+    ZipCode: '',
+    Country: '',
+    Role: 'cashier',
+    IsActive: true
   });
 
   // UI state
-  const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false);
-  const [employeeValidationErrors, setEmployeeValidationErrors] = useState({});
   const [deleteCustomerDialog, setDeleteCustomerDialog] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false);
   const [deleteEmployeeDialog, setDeleteEmployeeDialog] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isEditingEmployee, setIsEditingEmployee] = useState(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState(null);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
+  // Effect to fetch customers when tab changes or filter changes
+  useEffect(() => {
+    if (activeTab === 0) {
+      fetchCustomers();
+    } else {
+      fetchEmployees();
+    }
+  }, [activeTab, customerFilter, employeeFilter]);
+
+  // Let the backend handle filtering, pagination, and data transformation
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        searchTerm: customerFilter,
+        skip: 0,
+        take: 20
+      };
+
+      console.log('Fetching customers with params:', params);
+      const response = await customerApi.getCustomers(params);
+      
+      if (response.customers) {
+        setCustomers(response.customers);
+      } else {
+        console.error('No customers array in response:', response);
+        setError('Failed to load customers. Unexpected response format.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch customers:', err);
+      setError('Failed to load customers. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch employees with pagination and filtering
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        searchTerm: employeeFilter,
+        skip: 0,
+        take: 20
+      };
+
+      console.log('Fetching employees with params:', params);
+      const response = await employeeApi.getEmployees(params);
+      
+      if (response.employees) {
+        setEmployees(response.employees);
+      } else {
+        console.error('No employees array in response:', response);
+        setError('Failed to load employees. Unexpected response format.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch employees:', err);
+      setError('Failed to load employees. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCustomerFilterChange = (e) => {
     setCustomerFilter(e.target.value);
-  };
-
-  const handleEmployeeFilterChange = (e) => {
-    setEmployeeFilter(e.target.value);
-  };
-
-  const handleNewEmployeeChange = (e) => {
-    const { name, value } = e.target;
-    setNewEmployee((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const validateEmployee = (employee) => {
-    const errors = {};
-    
-    if (!employee.name.trim()) errors.name = 'Name is required';
-    if (!employee.email.trim()) errors.email = 'Email is required';
-    if (!employee.phone.trim()) errors.phone = 'Phone is required';
-    if (!employee.role.trim()) errors.role = 'Role is required';
-    if (!employee.department.trim()) errors.department = 'Department is required';
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (employee.email && !emailRegex.test(employee.email)) {
-      errors.email = 'Valid email is required';
-    }
-    
-    return errors;
-  };
-
-  const handleEditEmployee = (employee) => {
-    setEmployeeToEdit(employee);
-    setNewEmployee({
-      name: employee.name,
-      email: employee.email,
-      phone: employee.phone || '',
-      address: employee.address || '',
-      role: employee.role || '',
-      department: employee.department || '',
-      status: employee.status || 'Active'
-    });
-    setIsEditingEmployee(true);
-    setShowAddEmployeeForm(true);
-    setEmployeeValidationErrors({});
   };
 
   const handleDeleteCustomer = (customer) => {
@@ -177,12 +143,44 @@ const AccountsSection = () => {
     setDeleteCustomerDialog(true);
   };
 
-  const confirmDeleteCustomer = () => {
+  const confirmDeleteCustomer = async () => {
     if (selectedCustomer) {
-      setCustomers((prev) => prev.filter((customer) => customer.id !== selectedCustomer.id));
-      setDeleteCustomerDialog(false);
-      setSelectedCustomer(null);
+      try {
+        setLoading(true);
+        const response = await customerApi.deleteCustomer(selectedCustomer);
+
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Customer deleted successfully',
+            severity: 'success'
+          });
+          // Refresh the customer list
+          fetchCustomers();
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to delete customer',
+            severity: 'error'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to delete customer:', err);
+        setNotification({
+          open: true,
+          message: 'Failed to delete customer. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
+        setDeleteCustomerDialog(false);
+      }
     }
+  };
+
+  // Employee Functionality
+  const handleEmployeeFilterChange = (e) => {
+    setEmployeeFilter(e.target.value);
   };
 
   const handleDeleteEmployee = (employee) => {
@@ -190,117 +188,203 @@ const AccountsSection = () => {
     setDeleteEmployeeDialog(true);
   };
 
-  const confirmDeleteEmployee = () => {
+  const handleEditEmployee = async (employee) => {
+    try {
+      setLoading(true);
+      console.log('Editing employee with ID:', employee.Id);
+      const employeeDetails = await employeeApi.getEmployee(employee.Id);
+      
+      console.log('Received from API:', employeeDetails);
+      
+      if (!employeeDetails) {
+        console.error('No employee details returned from API');
+        throw new Error("Failed to retrieve employee details - empty response");
+      }
+      
+      // Since the API seems to return a mix of camelCase and snake_case, we'll handle it flexibly
+      const normalizedData = {
+        Id: employeeDetails.Id || employeeDetails.id || '',
+        FirstName: employeeDetails.First_Name || employeeDetails.first_Name || employeeDetails.firstName || employeeDetails.FirstName || '',
+        MiddleName: employeeDetails.Middle_Name || employeeDetails.middle_Name || employeeDetails.middleName || employeeDetails.MiddleName || '',
+        LastName: employeeDetails.Last_Name || employeeDetails.last_Name || employeeDetails.lastName || employeeDetails.LastName || '',
+        Email: employeeDetails.Email || employeeDetails.email || '',
+        PhoneNumber: employeeDetails.PhoneNumber || employeeDetails.phoneNumber || '',
+        Password: '', // Don't populate password
+        // Format date properly or set to empty string if undefined
+        DateOfBirth: employeeDetails.DateOfBirth || employeeDetails.dateOfBirth ? 
+          (typeof (employeeDetails.DateOfBirth || employeeDetails.dateOfBirth) === 'string' ? 
+            (employeeDetails.DateOfBirth || employeeDetails.dateOfBirth).split('T')[0] : 
+            new Date(employeeDetails.DateOfBirth || employeeDetails.dateOfBirth).toISOString().split('T')[0]) : 
+          '',
+        AddressLineOne: employeeDetails.AddressLineOne || employeeDetails.addressLineOne || '',
+        AddressLineTwo: employeeDetails.AddressLineTwo || employeeDetails.addressLineTwo || '',
+        City: employeeDetails.City || employeeDetails.city || '',
+        State: employeeDetails.State || employeeDetails.state || '',
+        ZipCode: employeeDetails.ZipCode || employeeDetails.zipCode || '',
+        Country: employeeDetails.Country || employeeDetails.country || '',
+        Role: employeeDetails.Role || employeeDetails.role || 'cashier',
+        IsActive: employeeDetails.IsActive !== undefined ? employeeDetails.IsActive : 
+                  employeeDetails.isActive !== undefined ? employeeDetails.isActive : true
+      };
+      
+      console.log("Normalized employee data:", normalizedData);
+      setNewEmployee(normalizedData);
+      setIsEditingEmployee(true);
+      setShowAddEmployeeForm(true);
+    } catch (err) {
+      console.error('Failed to load employee details:', err);
+      setNotification({
+        open: true,
+        message: 'Failed to load employee details. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDeleteEmployee = async () => {
     if (selectedEmployee) {
-      setEmployees((prev) => prev.filter((employee) => employee.id !== selectedEmployee.id));
-      setDeleteEmployeeDialog(false);
-      setSelectedEmployee(null);
+      try {
+        setLoading(true);
+        const response = await employeeApi.deleteEmployee(selectedEmployee.Id);
+
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Employee deleted successfully',
+            severity: 'success'
+          });
+          // Refresh the employee list
+          fetchEmployees();
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to delete employee',
+            severity: 'error'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to delete employee:', err);
+        setNotification({
+          open: true,
+          message: 'Failed to delete employee. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
+        setDeleteEmployeeDialog(false);
+      }
     }
   };
 
   const handleEmployeeCancel = () => {
     setShowAddEmployeeForm(false);
     setIsEditingEmployee(false);
-    setEmployeeToEdit(null);
     setNewEmployee({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      role: '',
-      department: '',
-      status: 'Active'
+      FirstName: '',
+      MiddleName: '',
+      LastName: '',
+      Email: '',
+      DateOfBirth: '',
+      PhoneNumber: '',
+      Password: '',
+      AddressLineOne: '',
+      AddressLineTwo: '',
+      City: '',
+      State: '',
+      ZipCode: '',
+      Country: '',
+      Role: 'cashier',
+      IsActive: true
     });
-    setEmployeeValidationErrors({});
   };
 
-  const addEmployee = () => {
-    if (showAddEmployeeForm) {
-      // Validate required fields
-      const errors = validateEmployee(newEmployee);
-      setEmployeeValidationErrors(errors);
-      
-      // If there are validation errors, don't add/update the employee
-      if (Object.keys(errors).length > 0) {
-        return;
-      }
-      
-      // All validation passed, add or update the employee
-      if (isEditingEmployee && employeeToEdit) {
-        // Update existing employee
-        const updatedEmployee = {
-          ...employeeToEdit,
-          name: newEmployee.name,
-          email: newEmployee.email,
-          phone: newEmployee.phone,
-          address: newEmployee.address,
-          role: newEmployee.role,
-          department: newEmployee.department,
-          status: newEmployee.status,
-          updated_at: new Date()
-        };
+  const addEmployee = async (formData) => {
+    // If formData is provided, we're submitting the form
+    if (formData) {
+      try {
+        setLoading(true);
+        console.log('Received form data from EmployeeForm:', formData);
         
-        setEmployees((prev) => prev.map((employee) => 
-          employee.id === employeeToEdit.id ? updatedEmployee : employee
-        ));
-        setIsEditingEmployee(false);
-        setEmployeeToEdit(null);
-      } else {
-        // Add new employee
-        const employeeToAdd = {
-          id: employees.length + 1 + 100,
-          employee_id: `EMP${Math.floor(1000 + Math.random() * 9000)}`,
-          name: newEmployee.name,
-          email: newEmployee.email,
-          phone: newEmployee.phone,
-          address: newEmployee.address,
-          hire_date: new Date().toISOString(),
-          role: newEmployee.role,
-          department: newEmployee.department,
-          status: newEmployee.status,
-          added_at: new Date()
-        };
+        // Save the form data to state for potential future use
+        setNewEmployee(formData);
         
-        setEmployees((prev) => [...prev, employeeToAdd]);
+        let response;
+        
+        if (isEditingEmployee) {
+          // Update existing employee
+          console.log('Updating employee with data:', formData);
+          response = await employeeApi.updateEmployee(formData);
+          if (response && response.success) {
+            setNotification({
+              open: true,
+              message: 'Employee updated successfully',
+              severity: 'success'
+            });
+          } else {
+            throw new Error(response?.message || 'Failed to update employee');
+          }
+        } else {
+          // Add new employee
+          console.log('Creating new employee with data:', formData);
+          response = await employeeApi.createEmployee(formData);
+          if (response && response.result === 'Success') {
+            setNotification({
+              open: true,
+              message: 'Employee added successfully',
+              severity: 'success'
+            });
+          } else {
+            throw new Error(response?.message || 'Failed to add employee');
+          }
+        }
+        
+        // Reset form and refresh list
+        handleEmployeeCancel();
+        fetchEmployees();
+      } catch (err) {
+        console.error('Employee operation failed:', err);
+        setNotification({
+          open: true,
+          message: err.message || 'Operation failed. Please try again.',
+          severity: 'error'
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      // Reset form
-      setNewEmployee({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        role: '',
-        department: '',
-        status: 'Active'
-      });
-      setEmployeeValidationErrors({});
-      setShowAddEmployeeForm(false);
-    } else {
+    } 
+    // If no formData, we're just showing the form (from the Add Employee button)
+    else {
       // Show the form for adding a new employee
       setIsEditingEmployee(false);
-      setEmployeeToEdit(null);
       setShowAddEmployeeForm(true);
-      setEmployeeValidationErrors({});
     }
   };
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(customerFilter.toLowerCase()) ||
-    customer.email.toLowerCase().includes(customerFilter.toLowerCase()) ||
-    customer.user_id.toLowerCase().includes(customerFilter.toLowerCase())
-  );
-
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name.toLowerCase().includes(employeeFilter.toLowerCase()) ||
-    employee.email.toLowerCase().includes(employeeFilter.toLowerCase()) ||
-    employee.employee_id.toLowerCase().includes(employeeFilter.toLowerCase()) ||
-    employee.role.toLowerCase().includes(employeeFilter.toLowerCase()) ||
-    employee.department.toLowerCase().includes(employeeFilter.toLowerCase())
-  );
+  const handleCloseNotification = () => {
+    setNotification(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2 }}>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+
       {/* Tabs */}
       <Paper 
         elevation={0} 
@@ -352,9 +436,9 @@ const AccountsSection = () => {
           mx: 'auto'
         }}>
           <EmployeeForm 
-            newEmployee={newEmployee}
-            handleNewEmployeeChange={handleNewEmployeeChange}
-            employeeValidationErrors={employeeValidationErrors}
+            employee={newEmployee}
+            onSave={addEmployee}
+            onCancel={handleEmployeeCancel}
           />
         </Paper>
       )}
@@ -422,7 +506,7 @@ const AccountsSection = () => {
               variant="contained"
               color="primary"
               startIcon={<AddIcon />}
-              onClick={addEmployee}
+              onClick={() => addEmployee()}
               sx={{ 
                 minWidth: 180,
                 bgcolor: '#61677A',
@@ -439,15 +523,27 @@ const AccountsSection = () => {
         )}
       </Box>
 
+      {loading && !showAddEmployeeForm && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       {/* Content based on active tab */}
       {activeTab === 0 ? (
         <CustomersTable 
-          customers={filteredCustomers} 
+          customers={customers} 
           onDelete={handleDeleteCustomer} 
         />
       ) : (
         <EmployeeTable 
-          employees={filteredEmployees} 
+          employees={employees} 
           onEdit={handleEditEmployee} 
           onDelete={handleDeleteEmployee} 
         />
@@ -462,7 +558,7 @@ const AccountsSection = () => {
         <DialogTitle>Delete Customer Account</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: 'white' }}>
-            Are you sure you want to delete the account for {selectedCustomer?.name}? This action cannot be undone.
+            Delete account for {selectedCustomer?.Email}? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -474,10 +570,13 @@ const AccountsSection = () => {
           </Button>
           <Button 
             onClick={confirmDeleteCustomer} 
-            sx={{ color: '#ff6b6b' }} 
-            autoFocus
+            disabled={loading}
+            sx={{ 
+              color: '#ff6b6b',
+              '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.1)' }
+            }}
           >
-            Delete
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -491,7 +590,7 @@ const AccountsSection = () => {
         <DialogTitle>Delete Employee Account</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: 'white' }}>
-            Are you sure you want to delete the employee account for {selectedEmployee?.name}? This action cannot be undone.
+            Are you sure you want to delete the employee account for {selectedEmployee?.Name}? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -503,10 +602,13 @@ const AccountsSection = () => {
           </Button>
           <Button 
             onClick={confirmDeleteEmployee} 
-            sx={{ color: '#ff6b6b' }} 
-            autoFocus
+            disabled={loading}
+            sx={{ 
+              color: '#ff6b6b',
+              '&:hover': { bgcolor: 'rgba(255, 107, 107, 0.1)' }
+            }}
           >
-            Delete
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

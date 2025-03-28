@@ -14,9 +14,7 @@ import {
   Alert,
   Snackbar
 } from '@mui/material';
-import {
-  Search as SearchIcon
-} from '@mui/icons-material';
+import { Search as SearchIcon } from '@mui/icons-material';
 
 import SupplierForm from './SupplierForm';
 import SupplierTable from './SupplierTable';

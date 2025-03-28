@@ -7,6 +7,25 @@ using System.Threading.Tasks;
 
 namespace posystem.ServiceModel.Types
 {
+
+    #region request/Response DTOs
+
+    [Route("/customers", "GET")]
+    public class GetCustomersDTO : IReturn<GetCustomersResponse>
+    {
+        public string? SearchTerm { get; set; }
+        public string? SortBy { get; set; }
+        public bool SortDesc { get; set; }
+        public int Skip { get; set; }
+        public int Take { get; set; }
+    }
+
+    public class GetCustomersResponse
+    {
+        public List<CustomerListDTO> Customers { get; set; } = new List<CustomerListDTO>();
+        public int TotalCount { get; set; }
+    } 
+
     [Route("/customers/registration", "POST")]
     public class RegistrationDTO : IGet, IReturn<RegistrationResponse>
     {
@@ -46,4 +65,32 @@ namespace posystem.ServiceModel.Types
         public string Message { get; set; } 
         public string Token { get; set; }
     }
+
+    [Route("/customers/{Id}", "DELETE")]
+    public class DeleteCustomerDTO : IReturn<DeleteCustomerResponse>
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class DeleteCustomerResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
+    #endregion
+
+    #region DTO models 
+
+    public class CustomerListDTO
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Created_At { get; set; }
+        public int Orders { get; set; }
+        public decimal Total_Spent { get; set; }
+    }
+
+    #endregion
 }
