@@ -176,6 +176,8 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
+                    var hashedPassword = _passwordHasher.HashPassword(null, request.Password);
+
                 var newEmployee = new Employees
                 {
                     Id = Guid.NewGuid(),
@@ -183,7 +185,7 @@ namespace posystem.ServiceInterface.Services
                     Middle_Name = request.MiddleName,
                     Last_Name = request.LastName,
                     Email = request.Email,
-                    Password_Hash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Password_Hash = hashedPassword,
                     PhoneNumber = request.PhoneNumber,
                     DateOfBirth = request.DateOfBirth,
                     Employment_Start_Date = request.EmploymentStartDate,
@@ -263,10 +265,12 @@ namespace posystem.ServiceInterface.Services
                 // Update status
                 employee.IsActive = request.IsActive;
 
+                var hashedPassword = _passwordHasher.HashPassword(null, request.Password);
+
                 // If password is provided, update it
                 if (!string.IsNullOrEmpty(request.Password))
                 {
-                    employee.Password_Hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                    employee.Password_Hash = hashedPassword;
                 }
 
                 // Update the employee in the database

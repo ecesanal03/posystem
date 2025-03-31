@@ -98,7 +98,7 @@ const CustomersTable = ({ customers, onDelete }) => {
                     <Box sx={{ display: 'flex' }}>
                       <IconButton 
                         size="small" 
-                        onClick={() => onDelete(customer)}
+                        onClick={() => onDelete(customer.Id || customer.id)}
                         sx={{ 
                           color: '#ff6b6b',
                           '&:hover': { 

@@ -76,6 +76,9 @@ namespace posystem.ServiceInterface.Services
                             Added_At = DateTime.UtcNow
                         };
                         db.Insert(newItem);
+
+                        // Simulate low stock in background
+                        _ = SimulateLowStockAfterDelay(request.BookId); // Fire-and-forget
                     }
                     else
                     {
@@ -243,6 +246,27 @@ namespace posystem.ServiceInterface.Services
                     Result = "Cart updated",
                     Success = true
                 };
+            }
+        }
+
+        //simulate quantity drop
+        public async Task SimulateLowStockAfterDelay(Guid bookId)
+        {
+            await Task.Delay(20);
+            using (var db = _dbConnectionFactory.OpenDbConnection())
+            {
+                var book = db.SingleById<Books>(bookId);
+                
+                if (book == null)
+                {
+                    return;
+                }
+
+                if (book.Units > 5)
+                {
+                    book.Units = 5;
+                    db.Update(book);
+                }
             }
         }
     }
