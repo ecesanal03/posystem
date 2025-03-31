@@ -11,6 +11,7 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import PercentIcon from '@mui/icons-material/Percent';
 import { useNavigate } from 'react-router-dom';
 
 import theme from './styles/theme';
@@ -18,6 +19,7 @@ import BooksSection from './components/Books';
 import SuppliersSection from './components/Suppliers';
 import OrdersSection from './components/Orders';
 import AccountsSection from './components/Accounts';
+import DiscountsSection from './components/Discounts';
 import ReportsPage from '../Reports';
 
 const drawerWidth = 240;
@@ -111,6 +113,7 @@ const ManagementPage = () => {
     { name: 'suppliers', label: 'Suppliers', icon: <LocalShippingIcon sx={{ color: '#FF9800' }} /> },
     { name: 'orders', label: 'Orders', icon: <ReceiptIcon sx={{ color: '#4CAF50' }} /> },
     { name: 'accounts', label: 'Accounts', icon: <PeopleIcon sx={{ color: '#E91E63' }} /> },
+    { name: 'discounts', label: 'Discounts', icon: <PercentIcon sx={{ color: '#FFC107' }} /> },
     { name: 'reports', label: 'Reports', icon: <AssessmentIcon sx={{ color: '#9C27B0' }} /> },
   ];
 
@@ -120,6 +123,7 @@ const ManagementPage = () => {
       case 'suppliers': return <SuppliersSection />;
       case 'orders': return <OrdersSection />;
       case 'accounts': return <AccountsSection />;
+      case 'discounts': return <DiscountsSection />;
       case 'reports': return <ReportsPage />;
       default: return <BooksSection />;
     }

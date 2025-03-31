@@ -129,6 +129,7 @@ namespace posystem.ServiceInterface.Services
                 IsActive = employee.IsActive
             };
 
+            /*
             Console.WriteLine("Getting employee Id: {0}", request.Id);
             Console.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}",
                 employeeDto.Id,
@@ -146,7 +147,7 @@ namespace posystem.ServiceInterface.Services
                 employeeDto.Country,
                 employeeDto.Role,
                 employeeDto.IsActive);
-
+            */
             return new GetEmployeeResponse { Employee = employeeDto };
         }
 
@@ -158,13 +159,14 @@ namespace posystem.ServiceInterface.Services
             try
             {
                 // Log incoming request data for debugging
+                /*
                 Console.WriteLine("Received employee registration request with data:");
                 Console.WriteLine($"FirstName: '{request.FirstName}', LastName: '{request.LastName}'");
                 Console.WriteLine($"Email: '{request.Email}', Role: '{request.Role}'");
                 Console.WriteLine($"Phone: '{request.PhoneNumber}', DOB: '{request.DateOfBirth}'");
                 Console.WriteLine($"Address: '{request.AddressLineOne}', City: '{request.City}', State: '{request.State}'");
                 Console.WriteLine($"Zip: '{request.ZipCode}', Country: '{request.Country}'");
-                
+                */
                 //Check if the email already exists in the database
                 var existingEmployee = db.Single<Employees>(x => x.Email == request.Email);
 
@@ -338,7 +340,12 @@ namespace posystem.ServiceInterface.Services
                 // After successful login, generate JWT token
                 var token = TokenService.GenerateJwtToken(request.Email);
 
-                return new LoginEmployeeResponse { Success = true, Message = "Login successful.", Token = token };
+                return new LoginEmployeeResponse { 
+                    Success = true, 
+                    Message = "Login successful.", 
+                    Token = token,
+                    EmployeeId = employee.Id
+                };
             }
         }
 

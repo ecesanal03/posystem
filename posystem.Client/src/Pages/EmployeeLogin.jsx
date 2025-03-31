@@ -152,8 +152,15 @@ export default function SlotsSignIn() {
       const data = await employeeApi.login(email, password);
 
       if (data.success) {
-        alert(data.Message || 'Logged in successfully');
         localStorage.setItem('authToken', data.token);
+        
+        if (data.employeeId) {
+          localStorage.setItem('employeeId', data.employeeId);
+          console.log('Saved employee ID to localStorage:', data.employeeId);
+        } else {
+          console.warn('No employee ID found in login response');
+        }
+        
         window.location.href = '/EmployeePortal';
       } else {
         setError(data.Message);
