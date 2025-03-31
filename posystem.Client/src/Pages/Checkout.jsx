@@ -8,6 +8,8 @@ import { ArrowBack } from '@mui/icons-material';
 import cartApi from '../api/cartApi';
 import customerApi from '../api/customerApi';
 import { jwtDecode } from 'jwt-decode'; 
+import { useNavigate, Link } from 'react-router-dom';
+import orderApi from '../api/ordersAPI';
 
 const steps = ['Shipping Details', 'Payment Information', 'Review Order'];
 
@@ -33,6 +35,7 @@ const usStates = [
 
 const Checkout = () => {
     const [activeStep, setActiveStep] = useState(0);
+    const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [shippingInfo, setShippingInfo] = useState({
@@ -81,6 +84,39 @@ const Checkout = () => {
 
     const handleNext = () => setActiveStep((prev) => prev + 1);
     const handleBack = () => setActiveStep((prev) => prev - 1);
+
+    const handlePlaceOrder = async () => {
+        try {
+            const cartRes = await cartApi.getCart(); // get fresh cart in case anything changed
+            const cartId = cartRes.id; // make sure this exists
+    
+            const payload = {
+                order_Date: new Date().toISOString(),
+                delivery_Date: null,
+                order_Status: 'Pending',
+                payment_Method: paymentInfo.method,
+                cartId: cartId,
+                cartItems: cartRes.items.map(item => ({
+                    bookId: item.bookId,
+                    quantity: item.quantity
+                }))
+            };
+    
+            const response = await orderApi.placeOrder(payload);
+    
+            if (response.success) {
+                alert("Order placed successfully!");
+                setCartItems([]);  // Clear cart in frontend
+                setActiveStep(0);  // Go back to start
+                navigate('/');
+            } else {
+                alert(`Failed to place order: ${response.message}`);
+            }
+        } catch (error) {
+            console.error('Order error:', error);
+            alert("Something went wrong while placing the order.");
+        }
+    };
 
     return (
         <Box>
@@ -233,7 +269,9 @@ const Checkout = () => {
                                                     Total: ${total.toFixed(2)}
                                                 </Typography>
                                                 <Divider sx={{ my: 2 }} />
-                                                <Button variant="contained" disabled>PLACE ORDER</Button>
+                                                <Button variant="contained" color="primary" onClick={handlePlaceOrder}>
+                                                    PLACE ORDER
+                                                </Button>
                                                 <Button sx={{ ml: 2 }} onClick={handleBack}>Back</Button>
                                             </Box>
                                         )}

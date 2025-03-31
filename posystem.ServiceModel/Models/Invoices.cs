@@ -8,22 +8,21 @@ namespace posystem.ServiceModel.Models
         [PrimaryKey]
         public Guid Id { get; set; }
 
-        public DateTime InvoiceDate { get; set; }
-        public Guid CustomerId { get; set; }
-        public decimal TotalAmount { get; set; }
-        public Guid OrderId { get; set; }
-        public Guid PaymentId { get; set; }
-
-        public DateTime? GeneratedAt { get; set; }
+        public DateTime Invoice_Date { get; set; }
 
         [References(typeof(Customers))]
-        public Guid Customer { get; set; }
+        public Guid Customer_Id { get; set; }
+        public decimal Total_Amount { get; set; }
 
         [References(typeof(Orders))]
-        public Guid Order { get; set; }
-
+        public Guid Order_Id { get; set; }
+        
         [References(typeof(Payments))]
-        public Guid Payment { get; set; }
+        public Guid Payment_Id { get; set; }
+
+        public DateTime? Generated_At { get; set; }
+
+
     }
 }
 
