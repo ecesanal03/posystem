@@ -51,6 +51,10 @@ const ShoppingCart = () => {
     navigate('/'); // Navigate back to the previous page
   };
 
+  const handleProceedToCheckout = () => {
+    navigate('/checkout'); // Navigate to the checkout page
+  };
+
   return (
     <div>
       {/* Top Bar */}
@@ -123,7 +127,7 @@ const ShoppingCart = () => {
                         Cart Summary
                         </Typography>
                         <Typography variant="body1">{`Total: $${calculateTotal()}`}</Typography>
-                        <Button variant="contained" color="primary" fullWidth sx={{ marginTop: 2 }}>
+                        <Button variant="contained" color="primary" fullWidth sx={{ marginTop: 2 }} onClick={handleProceedToCheckout}>
                         Proceed to Checkout
                         </Button>
                     </Paper>

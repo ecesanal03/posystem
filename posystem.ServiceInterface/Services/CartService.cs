@@ -73,7 +73,10 @@ namespace posystem.ServiceInterface.Services
                             Cart_Id = cart.Id,
                             Book_Id = request.BookId,
                             Quantity = request.Quantity,
-                            Added_At = DateTime.UtcNow
+                            Added_At = DateTime.UtcNow,
+                            Discount_Id = request.DiscountId.HasValue && request.DiscountId != Guid.Empty
+                                        ? request.DiscountId
+                                        : null
                         };
                         db.Insert(newItem);
 
@@ -252,7 +255,7 @@ namespace posystem.ServiceInterface.Services
         //simulate quantity drop
         public async Task SimulateLowStockAfterDelay(Guid bookId)
         {
-            await Task.Delay(20);
+            await Task.Delay(10);
             using (var db = _dbConnectionFactory.OpenDbConnection())
             {
                 var book = db.SingleById<Books>(bookId);
