@@ -8,8 +8,8 @@ namespace posystem.ServiceModel.Models
         [PrimaryKey]
         public Guid Id { get; set; }
 
-        public string PaymentMethod { get; set; }
-        public string PaymentStatus { get; set; }
-        public DateTime PaymentDate { get; set; }
+        public string Payment_Method { get; set; }
+        public string Payment_Status { get; set; }
+        public DateTime Payment_Date { get; set; }
     }
 }

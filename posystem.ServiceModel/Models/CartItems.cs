@@ -17,6 +17,9 @@ namespace posystem.ServiceModel.Models
         public int Quantity { get; set; }
         public DateTime? Added_At { get; set; }
 
+        [References(typeof(Discounts))]
+        public Guid? Discount_Id { get; set; }
+
     }
 }
 

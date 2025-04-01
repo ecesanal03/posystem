@@ -7,10 +7,6 @@ namespace posystem.ServiceModel.Types
 {
     #region request/Response DTOs
 
-    /// <summary>
-    /// DTO for retrieving a list of orders with filtering, sorting, and pagination options.
-    /// Maps to GET /orders endpoint.
-    /// </summary>
     [Route("/orders", "GET")]
     public class GetOrdersDTO : IReturn<GetOrdersResponse>
     {
@@ -27,49 +23,50 @@ namespace posystem.ServiceModel.Types
         public int TotalCount { get; set; }
     }
 
-    /// <summary>
-    /// DTO for retrieving a single order by ID.
-    /// Maps to GET /orders/{Id} endpoint.
-    /// </summary>
     [Route("/orders/{Id}", "GET")]
     public class GetOrderDTO : IReturn<GetOrderResponse>
     {
         public Guid Id { get; set; }
     }
 
-    /// <summary>
-    /// Response DTO containing detailed information about a single order.
-    /// </summary>
     public class GetOrderResponse
     {
         public OrderDTO Order { get; set; }
     }
 
-    /// <summary>
-    /// DTO for creating a new order.
-    /// Maps to POST /orders endpoint.
-    /// </summary>
-    [Route("/orders", "POST")]
-    public class CreateOrderDTO : IReturn<CreateOrderResponse>
+
+    [Route("/orders/create", "POST")]
+    public class CreateOrderDTO : IReturn<PlaceOrderResponse>
     {
         public DateTime Order_Date { get; set; }
         public DateTime? Delivery_Date { get; set; }
-        public Guid Customer_Id { get; set; }
         public string Order_Status { get; set; }
+        
+        public List<CartItemDTO> CartItems { get; set; }
+        public string Payment_Method { get; set; }
     }
 
-    /// <summary>
-    /// Response DTO indicating success/failure of order creation and containing the created order.
-    /// </summary>
+    public class CartItemDTO
+    {
+        public Guid BookId { get; set; }
+        public int Quantity { get; set; }
+    }
+
+
     public class CreateOrderResponse : BaseResponse
     {
         public OrderDTO Order { get; set; }
     }
 
-    /// <summary>
-    /// DTO for updating an existing order.
-    /// Maps to PUT /orders/{Id}/status endpoint.
-    /// </summary>
+    public class PlaceOrderResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public Guid OrderId { get; set; }
+        public Guid InvoiceId { get; set; }
+    }
+
+
     [Route("/orders/{Id}/status", "PUT")]
     public class UpdateOrderDTO : IReturn<UpdateOrderResponse>
     {
@@ -77,27 +74,18 @@ namespace posystem.ServiceModel.Types
         public string Order_Status { get; set; }
     }
 
-    /// <summary>
-    /// Response DTO indicating success/failure of order update and containing the updated order.
-    /// </summary>
+
     public class UpdateOrderResponse : BaseResponse
     {
         public OrderDTO Order { get; set; }
     }
 
-    /// <summary>
-    /// DTO for deleting an order.
-    /// Maps to DELETE /orders/{Id} endpoint.
-    /// </summary>
     [Route("/orders/{Id}", "DELETE")]
     public class DeleteOrderDTO : IReturn<DeleteOrderResponse>
     {
         public Guid Id { get; set; }
     }
 
-    /// <summary>
-    /// Response DTO indicating success/failure of order deletion.
-    /// </summary>
     public class DeleteOrderResponse : BaseResponse{}
 
     public class BaseResponse
@@ -110,9 +98,6 @@ namespace posystem.ServiceModel.Types
 
     #region DTO Models
 
-    /// <summary>
-    /// Base order DTO with common properties
-    /// </summary>
     public abstract class BaseOrderDTO
     {
         public Guid Id { get; set; }
@@ -124,9 +109,6 @@ namespace posystem.ServiceModel.Types
         public decimal Total_Amount { get; set; }
     }
 
-    /// <summary>
-    /// DTO for individual order items, containing book details and quantities
-    /// </summary>
     public class OrderItemDTO
     {
         public Guid Id { get; set; }
@@ -139,19 +121,13 @@ namespace posystem.ServiceModel.Types
         public decimal? Discount { get; set; }
     }
 
-    /// <summary>
-    /// DTO for displaying orders in list views (e.g., tables, grids).
-    /// Contains order information needed for display in lists.
-    /// </summary>
+
     public class OrderListItemDTO : BaseOrderDTO
     {
         // Inherits all properties from BaseOrderDTO
         // Add any additional properties specific to list views here
     }
 
-    /// <summary>
-    /// DTO for detailed order information, used in edit forms and detailed views.
-    /// </summary>
     public class OrderDTO : BaseOrderDTO
     {
         public string Customer_Email { get; set; }
@@ -166,9 +142,6 @@ namespace posystem.ServiceModel.Types
         public string Card_Number { get; set; }
     }
 
-    /// <summary>
-    /// DTO for capturing SQL query results with order details
-    /// </summary>
     public class OrderDetailDTO
     {
         public Guid Id { get; set; }
