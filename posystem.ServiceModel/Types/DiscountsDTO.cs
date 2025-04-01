@@ -38,7 +38,7 @@ namespace posystem.ServiceModel.Types
     [Route("/discounts", "POST")]
     public class CreateDiscountDTO : IReturn<CreateDiscountResponse>
     {
-        public float Percentage { get; set; }
+        public decimal Percentage { get; set; }
         public DateTime? Start_Date { get; set; }
         public DateTime? End_Date { get; set; }
         public string Discount_Name { get; set; }
@@ -56,7 +56,7 @@ namespace posystem.ServiceModel.Types
     public class UpdateDiscountDTO : IReturn<UpdateDiscountResponse>
     {
         public Guid Id { get; set; }
-        public float Percentage { get; set; }
+        public decimal Percentage { get; set; }
         public DateTime? Start_Date { get; set; }
         public DateTime? End_Date { get; set; }
         public string Discount_Name { get; set; }
@@ -89,7 +89,7 @@ namespace posystem.ServiceModel.Types
     public class DiscountDTO
     {
         public Guid Id { get; set; }
-        public float Percentage { get; set; }
+        public decimal Percentage { get; set; }
         public DateTime? Start_Date { get; set; }
         public DateTime? End_Date { get; set; }
         public string Discount_Name { get; set; }

@@ -40,6 +40,10 @@ namespace posystem.ServiceModel.Types
         public string? BookTitle { get; set; }
         public decimal Price { get; set; }
         public int Quantity { get; set; }
+
+        public Guid? Discount_Id { get; set; }
+        public string? Discount_Name { get; set; } // For display
+        public decimal? Discount_Value { get; set; } // For showing discount amount
     }
 
     public class CartResponse
