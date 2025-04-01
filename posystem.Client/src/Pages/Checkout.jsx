@@ -7,7 +7,6 @@ import {
 import { ArrowBack } from '@mui/icons-material';
 import cartApi from '../api/cartApi';
 import customerApi from '../api/customerApi';
-import { jwtDecode } from 'jwt-decode'; 
 import { useNavigate, Link } from 'react-router-dom';
 import orderApi from '../api/ordersAPI';
 
