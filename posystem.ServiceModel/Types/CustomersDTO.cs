@@ -20,6 +20,26 @@ namespace posystem.ServiceModel.Types
         public int Take { get; set; }
     }
 
+    [Route("/customers/me", "GET")]
+    public class GetMyCustomerProfile : IReturn<ReturnCustomerByIdResponse> { }
+
+
+    public class ReturnCustomerByIdResponse
+    {
+        public string Email { get; set; }
+        public string First_Name { get; set; }
+        public string? Middle_Name { get; set; }
+        public string Last_Name { get; set; }
+        public string AddressLineOne { get; set; }
+        public string? AddressLineTwo { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string ZipCode { get; set; }
+        public string Country { get; set; }
+
+    }
+
+
     public class GetCustomersResponse
     {
         public List<CustomerListDTO> Customers { get; set; } = new List<CustomerListDTO>();

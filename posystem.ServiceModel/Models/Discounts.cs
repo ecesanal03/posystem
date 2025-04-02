@@ -11,7 +11,7 @@ namespace posystem.ServiceModel.Models
         public float Percentage { get; set; }
         public DateTime? Start_Date { get; set; }
         public DateTime? End_Date { get; set; }
-        public string Discount_Name { get; set; }
+        public string? Discount_Name { get; set; }
         
         [References(typeof(Employees))]
         public Guid Employee_id { get; set; }

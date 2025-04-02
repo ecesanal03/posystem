@@ -52,6 +52,17 @@ const customerApi = {
     }
   },
 
+  getMyProfile: async () => {
+    try {
+      const response = await axios.get('/customers/me');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching current customer profile:', error);
+      throw error;
+    }
+  },
+  
+
   deleteCustomer: async (id) => {
     try {
         const response = await axios.delete(`/customers/${id}`);

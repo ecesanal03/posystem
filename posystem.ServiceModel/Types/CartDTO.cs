@@ -12,6 +12,7 @@ namespace posystem.ServiceModel.Types
     {
         public Guid BookId { get; set; }
         public int Quantity { get; set; } = 1;
+        public Guid? DiscountId { get; set; }
     }
 
     

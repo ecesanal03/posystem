@@ -105,6 +105,37 @@ namespace posystem.ServiceInterface.Services
             };
         }
 
+        [Authenticate]
+        public async Task<ReturnCustomerByIdResponse> Get(GetMyCustomerProfile request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var email = base.GetSession().Email;
+
+            if (string.IsNullOrEmpty(email))
+                throw HttpError.Unauthorized("User email not found in session");
+
+            var customer = await db.SingleAsync<Customers>(c => c.Email == email);
+
+            if (customer == null)
+                throw HttpError.NotFound("Customer not found");
+
+            return new ReturnCustomerByIdResponse
+            {
+                Email = customer.Email,
+                First_Name = customer.First_Name,
+                Middle_Name = customer.Middle_Name,
+                Last_Name = customer.Last_Name,
+                AddressLineOne = customer.AddressLineOne,
+                AddressLineTwo = customer.AddressLineTwo,
+                City = customer.City,
+                State = customer.State,
+                ZipCode = customer.ZipCode,
+                Country = customer.Country
+            };
+        }
+
+
         //Method to insert a new customer into the database
         public object Post(RegistrationDTO request)
         {

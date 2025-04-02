@@ -11,39 +11,16 @@ using posystem.ServiceModel.Models;
 
 namespace posystem.ServiceInterface.Services
 {
-    /// <summary>
-    /// Service responsible for handling all order-related operations in the POS system.
-    /// Provides functionality for retrieving, creating, updating, and managing orders
-    /// with associated customer information and order items.
-    /// </summary>
     public class OrdersService : Service
     {
 
         private readonly IDbConnectionFactory _dbConnectionFactory;
 
-        /// <summary>
-        /// Initializes a new instance of the OrdersService with the specified database connection factory.
-        /// <param name="dbConnectionFactory">The database connection factory used for database operations</param>
         public OrdersService(IDbConnectionFactory dbConnectionFactory)
         {
             _dbConnectionFactory = dbConnectionFactory;
         }
 
-        /// <summary>
-        /// Retrieves a list of orders with associated customer information based on the specified criteria.
-        /// Supports searching, sorting, and pagination of orders.
-        /// </summary>
-        /// <param name="request">The request DTO containing search, sort, and pagination parameters</param>
-        /// <returns>
-        /// A response containing:
-        /// - List of orders with customer details and order items
-        /// - Total count of orders matching the search criteria
-        /// Each order includes:
-        /// - Basic order information (ID, dates, status)
-        /// - Customer details (name, email, phone, address)
-        /// - Order items with book details
-        /// - Financial information (subtotal, tax, total)
-        /// </returns>
         public async Task<GetOrdersResponse> Get(GetOrdersDTO request)
         {
             using var db = _dbConnectionFactory.OpenDbConnection();

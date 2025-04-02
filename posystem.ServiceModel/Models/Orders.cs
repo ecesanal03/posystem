@@ -9,20 +9,12 @@ namespace posystem.ServiceModel.Models
         [Required]
         public Guid Id { get; set; }
 
-        [Required]
-        [Default(typeof(DateTime), "GETUTCDATE()")]
         public DateTime Order_Date { get; set; }
 
-        [Default(typeof(DateTime), "GETUTCDATE()")]
         public DateTime? Delivery_Date { get; set; }
 
-        [Required]
-        [ForeignKey(typeof(Customers), OnDelete = "SET NULL")]
         public Guid Customer_Id { get; set; }
-
-        [Required]
-        [StringLength(20)]
-        [Default("Pending")]
+        
         public string Order_Status { get; set; }
     }
 }
