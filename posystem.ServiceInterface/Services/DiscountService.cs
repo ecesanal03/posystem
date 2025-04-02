@@ -72,6 +72,7 @@ namespace posystem.ServiceInterface.Services
             var discountDtos = await db.SelectAsync<DiscountDTO>(sql);
 
             // Log the results
+            /*
             Console.WriteLine("Query returned {0} discounts", discountDtos.Count);
             foreach (var discount in discountDtos)
             {
@@ -83,7 +84,7 @@ namespace posystem.ServiceInterface.Services
                     discount.Employee_Name,
                     discount.Discount_Name);
             }
-            
+            */
             return new GetDiscountsResponse
             {
                 Discounts = discountDtos,
