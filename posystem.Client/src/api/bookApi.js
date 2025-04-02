@@ -1,55 +1,19 @@
 import axios from './axiosInstance'; // 👈 Use the shared instance
 
-<<<<<<<<< Temporary merge branch 1
-=========
 /**
- * Base URL for the backend API.
- * The backend is running on HTTPS port 5001 for secure communication.
+ * Helper function to convert a File object to a base64 string.
+ * Used for sending images to the API.
+ * @param {File} file - The file to convert
+ * @returns {Promise<string>} Base64 string representation of the file
  */
-const API_URL = 'https://localhost:5001';
-
-/**
- * Axios request interceptor for debugging API requests.
- * Logs request details including URL, method, data, and headers.
- */
-axios.interceptors.request.use(request => {
-  console.log('Starting Request:', {
-    url: request.url,
-    method: request.method,
-    data: request.data,
-    headers: request.headers
+const convertFileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
   });
-  return request;
-});
-
-/**
- * Axios response interceptor for debugging API responses.
- * Logs response details including status and data.
- * Also handles and logs error responses.
- */
-axios.interceptors.response.use(
-  response => {
-    console.log('Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      data: response.data
-    });
-    return response;
-  },
-  error => {
-    console.error('Request Failed:', {
-      error: error.message
-    });
-    if (error.response) {
-      console.error('Response Error:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data
-      });
-    }
-    return Promise.reject(error);
-  }
-);
+};
 
 /**
  * API client for book-related operations.
@@ -63,7 +27,7 @@ const bookApi = {
    */
   getBooks: async (params = {}) => {
     try {
-      const response = await axios.get(`${API_URL}/books`, { params });
+      const response = await axios.get('/books', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -78,7 +42,7 @@ const bookApi = {
    */
   getBook: async (id) => {
     try {
-      const response = await axios.get(`${API_URL}/books/${id}`);
+      const response = await axios.get(`/books/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching book with ID ${id}:`, error);
@@ -113,17 +77,10 @@ const bookApi = {
         requestData.Cover_Image = base64Image;
       }
 
-      console.log('Sending book data:', requestData);
-
-      const response = await axios.post(`${API_URL}/books`, requestData);
+      const response = await axios.post('/books', requestData);
       return response.data;
     } catch (error) {
       console.error('Error creating book:', error);
-      // Log more detailed error information
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-      }
       throw error;
     }
   },
@@ -157,7 +114,7 @@ const bookApi = {
         requestData.CoverImage = base64Image;
       }
 
-      const response = await axios.put(`${API_URL}/books/${id}`, requestData);
+      const response = await axios.put(`/books/${id}`, requestData);
       return response.data;
     } catch (error) {
       console.error(`Error updating book with ID ${id}:`, error);
@@ -172,7 +129,7 @@ const bookApi = {
    */
   deleteBook: async (id) => {
     try {
-      const response = await axios.delete(`${API_URL}/books/${id}`);
+      const response = await axios.delete(`/books/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error deleting book with ID ${id}:`, error);
@@ -421,80 +378,6 @@ const bookApi = {
     }
     
     return details;
-  }
-};
-
-/**
- * Helper function to convert a File object to a base64 string.
- * Used for sending images to the API.
- * @param {File} file - The file to convert
- * @returns {Promise<string>} Base64 string representation of the file
- */
->>>>>>>>> Temporary merge branch 2
-const convertFileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-  });
-};
-
-const bookApi = {
-  getBooks: async (params = {}) => {
-    const response = await axios.get('/books', { params });
-    return response.data;
-  },
-
-  getBook: async (id) => {
-    const response = await axios.get(`/books/${id}`);
-    return response.data;
-  },
-
-  createBook: async (bookData) => {
-    const requestData = {
-      Title: bookData.title,
-      Author: bookData.author,
-      ISBN: bookData.isbn,
-      Price: parseFloat(bookData.price),
-      Units: parseInt(bookData.units),
-      Description: bookData.description || '',
-      Supplier_Id: bookData.supplierId || null,
-      Discount_Id: bookData.discountId || null
-    };
-
-    if (bookData.image instanceof File) {
-      requestData.Cover_Image = await convertFileToBase64(bookData.image);
-    }
-
-    const response = await axios.post('/books', requestData);
-    return response.data;
-  },
-
-  updateBook: async (id, bookData) => {
-    const requestData = {
-      Id: id,
-      Title: bookData.title,
-      Author: bookData.author,
-      ISBN: bookData.isbn,
-      Price: parseFloat(bookData.price),
-      Units: parseInt(bookData.units),
-      Description: bookData.description || '',
-      Supplier_Id: bookData.supplierId || null,
-      Discount_Id: bookData.discountId || null
-    };
-
-    if (bookData.image instanceof File) {
-      requestData.CoverImage = await convertFileToBase64(bookData.image);
-    }
-
-    const response = await axios.put(`/books/${id}`, requestData);
-    return response.data;
-  },
-
-  deleteBook: async (id) => {
-    const response = await axios.delete(`/books/${id}`);
-    return response.data;
   }
 };
 

@@ -87,7 +87,7 @@ const OrderTable = ({ orders, onView, onDelete }) => {
             {Array.isArray(orders) && orders.length > 0 ? (
               orders.map((order) => (
                 <TableRow 
-                  key={order.id || `order-${Math.random()}`}
+                  key={order.id || order.Id || `order-${Math.random()}`}
                   hover
                   onClick={() => onView(order)}
                   sx={{ 
@@ -97,23 +97,23 @@ const OrderTable = ({ orders, onView, onDelete }) => {
                     '&:hover': { bgcolor: 'rgba(97, 103, 122, 0.1)' }
                   }}
                 >
-                  <TableCell>#{order.id || 'N/A'}</TableCell>
-                  <TableCell>{order.customer_Email || 'N/A'}</TableCell>
-                  <TableCell>{formatDate(order.order_Date)}</TableCell>
-                  <TableCell>{formatDate(order.delivery_Date)}</TableCell>
+                  <TableCell>#{order.id || order.Id || 'N/A'}</TableCell>
+                  <TableCell>{order.customerEmail || order.customer_Email || 'N/A'}</TableCell>
+                  <TableCell>{formatDate(order.orderDate || order.order_Date)}</TableCell>
+                  <TableCell>{formatDate(order.deliveryDate || order.delivery_Date)}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={order.order_Status || 'Processing'}
+                      label={order.status || order.order_Status || 'Processing'}
                       size="small"
                       variant="outlined"
                       sx={{
-                        ...getStatusColor(order.order_Status),
+                        ...getStatusColor(order.status || order.order_Status),
                         fontWeight: 500,
                         fontSize: '0.75rem'
                       }}
                     />
                   </TableCell>
-                  <TableCell>{formatCurrency(order.total_Amount || 0)}</TableCell>
+                  <TableCell>{formatCurrency(order.total || order.total_Amount || 0)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex' }}>
                       <IconButton 
@@ -150,12 +150,17 @@ const OrderTable = ({ orders, onView, onDelete }) => {
 OrderTable.propTypes = {
   orders: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      customerEmail: PropTypes.string,
       customer_Email: PropTypes.string,
+      orderDate: PropTypes.string,
       order_Date: PropTypes.string,
+      deliveryDate: PropTypes.string,
       delivery_Date: PropTypes.string,
+      status: PropTypes.string,
       order_Status: PropTypes.string,
-      total_Amount: PropTypes.number,
+      total: PropTypes.number,
+      total_Amount: PropTypes.number
     })
   ).isRequired,
   onView: PropTypes.func.isRequired,

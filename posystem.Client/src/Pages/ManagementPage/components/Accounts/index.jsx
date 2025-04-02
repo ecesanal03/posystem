@@ -35,7 +35,9 @@ const AccountsSection = () => {
   
   // Form state
   const [customerFilter, setCustomerFilter] = useState('');
+  const [debouncedCustomerFilter, setDebouncedCustomerFilter] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
+  const [debouncedEmployeeFilter, setDebouncedEmployeeFilter] = useState('');
   const [newEmployee, setNewEmployee] = useState({
     FirstName: '',
     MiddleName: '',
@@ -62,19 +64,89 @@ const AccountsSection = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isEditingEmployee, setIsEditingEmployee] = useState(false);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  // Effect to fetch customers when tab changes or filter changes
+  // Debounced filter changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedCustomerFilter(customerFilter);
+    }, 500); // 500ms debounce
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [customerFilter]);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedEmployeeFilter(employeeFilter);
+    }, 500); // 500ms debounce
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [employeeFilter]);
+
+  // Effect to fetch data when tab changes or debounced filter changes
   useEffect(() => {
     if (activeTab === 0) {
       fetchCustomers();
     } else {
       fetchEmployees();
     }
-  }, [activeTab, customerFilter, employeeFilter]);
+  }, [activeTab, debouncedCustomerFilter, debouncedEmployeeFilter]);
+
+  // Apply client-side filtering after customers are loaded
+  useEffect(() => {
+    if (!customers.length) {
+      setFilteredCustomers([]);
+      return;
+    }
+    
+    const searchTerm = customerFilter.trim().toLowerCase();
+    
+    if (!searchTerm) {
+      setFilteredCustomers(customers);
+      return;
+    }
+    
+    const filtered = customers.filter(customer => 
+      (customer.Id?.toString().toLowerCase().includes(searchTerm)) ||
+      (customer.Name?.toLowerCase().includes(searchTerm)) ||
+      (customer.Email?.toLowerCase().includes(searchTerm))
+    );
+    
+    setFilteredCustomers(filtered);
+  }, [customers, customerFilter]);
+
+  // Apply client-side filtering for employees after they are loaded
+  useEffect(() => {
+    if (!employees.length) {
+      setFilteredEmployees([]);
+      return;
+    }
+    
+    const searchTerm = employeeFilter.trim().toLowerCase();
+    
+    if (!searchTerm) {
+      setFilteredEmployees(employees);
+      return;
+    }
+    
+    const filtered = employees.filter(employee => 
+      (employee.Id?.toString().toLowerCase().includes(searchTerm)) ||
+      (employee.Name?.toLowerCase().includes(searchTerm)) ||
+      (employee.Email?.toLowerCase().includes(searchTerm)) ||
+      (employee.Role?.toLowerCase().includes(searchTerm))
+    );
+    
+    setFilteredEmployees(filtered);
+  }, [employees, employeeFilter]);
 
   // Let the backend handle filtering, pagination, and data transformation
   const fetchCustomers = async () => {
@@ -83,18 +155,16 @@ const AccountsSection = () => {
       setError(null);
 
       const params = {
-        searchTerm: customerFilter,
         skip: 0,
-        take: 20
+        take: 100 // Get more records for client-side filtering
       };
 
-      console.log('Fetching customers with params:', params);
       const response = await customerApi.getCustomers(params);
       
       if (response.customers) {
         setCustomers(response.customers);
+        // Initial filtering will be done by the useEffect
       } else {
-        console.error('No customers array in response:', response);
         setError('Failed to load customers. Unexpected response format.');
       }
     } catch (err) {
@@ -105,25 +175,23 @@ const AccountsSection = () => {
     }
   };
 
-  // Fetch employees with pagination and filtering
+  // Fetch employees with pagination but without relying on backend filtering
   const fetchEmployees = async () => {
     try {
       setLoading(true);
       setError(null);
 
       const params = {
-        searchTerm: employeeFilter,
         skip: 0,
-        take: 20
+        take: 100 // Get more records for client-side filtering
       };
 
-      console.log('Fetching employees with params:', params);
       const response = await employeeApi.getEmployees(params);
       
       if (response.employees) {
         setEmployees(response.employees);
+        // Initial filtering will be done by the useEffect
       } else {
-        console.error('No employees array in response:', response);
         setError('Failed to load employees. Unexpected response format.');
       }
     } catch (err) {
@@ -191,10 +259,10 @@ const AccountsSection = () => {
   const handleEditEmployee = async (employee) => {
     try {
       setLoading(true);
-      console.log('Editing employee with ID:', employee.Id);
+      //console.log('Editing employee with ID:', employee.Id);
       const employeeDetails = await employeeApi.getEmployee(employee.Id);
       
-      console.log('Received from API:', employeeDetails);
+      //console.log('Received from API:', employeeDetails);
       
       if (!employeeDetails) {
         console.error('No employee details returned from API');
@@ -227,7 +295,7 @@ const AccountsSection = () => {
                   employeeDetails.isActive !== undefined ? employeeDetails.isActive : true
       };
       
-      console.log("Normalized employee data:", normalizedData);
+      //console.log("Normalized employee data:", normalizedData);
       setNewEmployee(normalizedData);
       setIsEditingEmployee(true);
       setShowAddEmployeeForm(true);
@@ -305,7 +373,7 @@ const AccountsSection = () => {
     if (formData) {
       try {
         setLoading(true);
-        console.log('Received form data from EmployeeForm:', formData);
+        //console.log('Received form data from EmployeeForm:', formData);
         
         // Save the form data to state for potential future use
         setNewEmployee(formData);
@@ -314,7 +382,7 @@ const AccountsSection = () => {
         
         if (isEditingEmployee) {
           // Update existing employee
-          console.log('Updating employee with data:', formData);
+          //console.log('Updating employee with data:', formData);
           response = await employeeApi.updateEmployee(formData);
           if (response && response.success) {
             setNotification({
@@ -327,7 +395,7 @@ const AccountsSection = () => {
           }
         } else {
           // Add new employee
-          console.log('Creating new employee with data:', formData);
+          //console.log('Creating new employee with data:', formData);
           response = await employeeApi.createEmployee(formData);
           if (response && response.result === 'Success') {
             setNotification({
@@ -538,12 +606,12 @@ const AccountsSection = () => {
       {/* Content based on active tab */}
       {activeTab === 0 ? (
         <CustomersTable 
-          customers={customers} 
+          customers={filteredCustomers} 
           onDelete={handleDeleteCustomer} 
         />
       ) : (
         <EmployeeTable 
-          employees={employees} 
+          employees={filteredEmployees} 
           onEdit={handleEditEmployee} 
           onDelete={handleDeleteEmployee} 
         />

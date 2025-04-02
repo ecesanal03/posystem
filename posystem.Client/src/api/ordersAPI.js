@@ -1,53 +1,4 @@
-import axios from 'axios';
-
-/**
- * Base URL for the backend API.
- * The backend is running on HTTPS port 5001 for secure communication.
- */
-const API_URL = 'https://localhost:5001';
-
-/**
- * Axios request interceptor for debugging API requests.
- * Logs request details including URL, method, data, and headers.
- */
-axios.interceptors.request.use(request => {
-    console.log('Starting Request:', {
-        url: request.url,
-        method: request.method,
-        data: request.data,
-        headers: request.headers
-    });
-    return request;
-});
-
-/**
- * Axios response interceptor for debugging API responses.
- * Logs response details including status and data.
- * Also handles and logs error responses.
- */
-axios.interceptors.response.use(
-    response => {
-        console.log('Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: response.data
-        });
-        return response;
-    },
-    error => {
-        console.error('Request Failed:', {
-            error: error.message
-        });
-        if (error.response) {
-            console.error('Response Error:', {
-                status: error.response.status,
-                statusText: error.response.statusText,
-                data: error.response.data
-            });
-        }
-        return Promise.reject(error);
-    }
-); 
+import axios from './axiosInstance';
 
 /**
  * API client for order-related operations.
@@ -55,14 +6,20 @@ axios.interceptors.response.use(
  */
 const ordersApi = {
     /**
-     * Retrieves a list of orders with optional filtering and search.
+     * Retrieves a list of orders with pagination.
+     * @param {Object} params - Query parameters for pagination
+     * @returns {Promise<Object>} Response containing orders and total count
      */
     getOrders: async (params = {}) => {
         try {
-            const response = await axios.get(`${API_URL}/orders`, { params });
-            //console.log("Raw API response:", response.data);
+            // Simplify parameters to avoid 500 errors
+            const queryParams = {
+                skip: params.skip || 0,
+                take: params.take || 100 // Fetch more records for client-side filtering
+            };
             
-            // The response is already in the format {orders: Array, totalCount: number}
+            const response = await axios.get('/orders', { params: queryParams });
+            
             if (response.data && response.data.orders && Array.isArray(response.data.orders)) {
                 return {
                     orders: response.data.orders,
@@ -107,11 +64,11 @@ const ordersApi = {
     /**
      * Retrieves detailed information about a single order.
      * @param {string} id - The unique identifier of the order
+     * @returns {Promise<Object>} Response containing order details
      */
     getOrder: async (id) => {
         try {
-            const response = await axios.get(`${API_URL}/orders/${id}`);
-            console.log("Raw API response:", response.data); // Log the raw response
+            const response = await axios.get(`/orders/${id}`);
     
             if (response.data && response.data.order) {
                 const order = response.data.order;
@@ -159,7 +116,7 @@ const ordersApi = {
      */
     updateOrderStatus: async (id, status) => {
         try {
-            const response = await axios.put(`${API_URL}/orders/${id}/status`, { 
+            const response = await axios.put(`/orders/${id}/status`, { 
                 Id: id,
                 Order_Status: status
             });
@@ -205,7 +162,7 @@ const ordersApi = {
      */ 
     deleteOrder: async (id) => {
         try {
-            const response = await axios.delete(`${API_URL}/orders/${id}`);
+            const response = await axios.delete(`/orders/${id}`);
 
             // Handle the response based on the updated DTO structure
             if (response.data) {
