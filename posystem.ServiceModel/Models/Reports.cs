@@ -8,12 +8,11 @@ namespace posystem.ServiceModel.Models
         [PrimaryKey]
         public Guid Id { get; set; }
 
-        public string ReportFormat { get; set; }
-        public string? ReportDescription { get; set; }
-        public byte[] ReportDocument { get; set; }
-
-        [References(typeof(Employees))]
-        public Guid EmployeeId { get; set; }
+        public string Report_Name { get; set; }
+        public string? Report_Description { get; set; }
+        public string? Report_Format { get; set; }
+        public string? Sql_Query { get; set; }
+        public DateTime? Created_At { get; set; }
     }
 }
 

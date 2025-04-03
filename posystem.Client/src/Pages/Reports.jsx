@@ -1,384 +1,286 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Paper, 
-  Tabs, 
-  Tab, 
-  Grid, 
-  Card, 
-  CardContent,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Badge
+import React, { useState } from 'react';
+import {
+  Box, Typography, Paper, Grid, TextField, MenuItem, Button, Divider, Stack, ToggleButton, ToggleButtonGroup
 } from '@mui/material';
-import { 
-  ArrowBack, 
-  CloudDownload, 
-  Print, 
-  FilterList, 
-  ShoppingCart,
-  AccountCircle,
-  PictureAsPdf,
-  Description,
-  TableChart
-} from '@mui/icons-material';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { subMonths, subYears } from 'date-fns';
+import { DataGrid } from '@mui/x-data-grid';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import reportApi from '../api/reportApi';
 
-// Create a dark theme
-const darkTheme = createTheme({
-    palette: {
-      mode: 'dark',
-      background: {
-        default: '#1E1E1E',
-        paper: '#252525',
-      },
-      primary: {
-        main: '#6366F1', // Purple accent color
-      },
-      text: {
-        primary: '#FFFFFF',
-        secondary: '#B0B0B0',
-      }
-    },
-  });
+const filterOptions = [
+  { label: 'Overall Sales', value: 'overall' },
+  { label: 'By Customer', value: 'customer' },
+  { label: 'By Book', value: 'book' },
+  { label: 'By Supplier', value: 'supplier' }
+];
 
+const topOptions = [10, 25, 50, 100, 'All'];
 
-function ReportsPage() {
-  // State for reports data
-  const [reports, setReports] = useState([]);
-  const [tabValue, setTabValue] = useState(0);
-  const [reportFormat, setReportFormat] = useState('PDF');
-  const [startDate, setStartDate] = useState('2025-03-01');
-  const [endDate, setEndDate] = useState('2025-03-22');
-  const [description, setDescription] = useState('');
-  
-  // Sample reports data - in a real app, this would come from an API call
-  useEffect(() => {
-    // Simulate fetching data from backend
-    const sampleReports = [
-      { 
-        id: '550e8400-e29b-41d4-a716-446655440000', 
-        Report_Format: 'PDF', 
-        Report_Descripti: 'Monthly Sales Summary', 
-        Report_Documen: 'blob_data', 
-        Employee_Id: 'e29b41d4-a716-4466-5544-000055e29b41',
-        createdAt: '2025-03-19' 
-      },
-      { 
-        id: '550e8400-e29b-41d4-a716-446655440001', 
-        Report_Format: 'CSV', 
-        Report_Descripti: 'Inventory Status Report', 
-        Report_Documen: 'blob_data', 
-        Employee_Id: 'e29b41d4-a716-4466-5544-000055e29b41',
-        createdAt: '2025-03-18' 
-      },
-      { 
-        id: '550e8400-e29b-41d4-a716-446655440002', 
-        Report_Format: 'DOCX', 
-        Report_Descripti: 'Customer Analysis Q1', 
-        Report_Documen: 'blob_data', 
-        Employee_Id: '71d4a716-4466-5544-0000-55e29b41d4a7',
-        createdAt: '2025-03-17' 
-      },
-      { 
-        id: '550e8400-e29b-41d4-a716-446655440003', 
-        Report_Format: 'PDF', 
-        Report_Descripti: 'Employee Performance Review', 
-        Report_Documen: 'blob_data', 
-        Employee_Id: '71d4a716-4466-5544-0000-55e29b41d4a7',
-        createdAt: '2025-03-16' 
-      },
-      { 
-        id: '550e8400-e29b-41d4-a716-446655440004', 
-        Report_Format: 'CSV', 
-        Report_Descripti: 'Daily Transactions Log', 
-        Report_Documen: 'blob_data', 
-        Employee_Id: 'e29b41d4-a716-4466-5544-000055e29b41',
-        createdAt: '2025-03-15' 
-      },
-    ];
-    
-    setReports(sampleReports);
-  }, []);
+const Reports = () => {
+  const [filterType, setFilterType] = useState('overall');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [reportResult, setReportResult] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('summary');
+  const [topCount, setTopCount] = useState(10);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const handleFormatChange = (event) => {
-    setReportFormat(event.target.value);
-  };
-
-  const handleGenerateReport = () => {
-    // Generate a new report
-    const newReport = {
-      id: `new-${Date.now()}`,
-      Report_Format: reportFormat,
-      Report_Descripti: description,
-      Report_Documen: 'new_blob_data',
-      Employee_Id: 'e29b41d4-a716-4466-5544-000055e29b41', // Current user ID
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    
-    setReports([newReport, ...reports]);
-    setDescription('');
-  };
-
-  const getFormatIcon = (format) => {
-    switch (format) {
-      case 'PDF':
-        return <PictureAsPdf sx={{ color: '#f44336' }}/>;
-      case 'DOCX':
-        return <Description sx={{ color: '#2196f3' }}/>;
-      case 'CSV':
-        return <TableChart sx={{ color: '#4caf50' }}/>;
-      default:
-        return <Description />;
+  const handleGenerate = async () => {
+    try {
+      setLoading(true);
+      const reportName = filterType === 'customer' ? 'Sales by Customer' : 'Sales Summary Report';
+      const response = await reportApi.generateReport(reportName, startDate, endDate);
+      setReportResult(response.data || []);
+    } catch (error) {
+      console.error("Failed to generate report:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const setRangeFromToday = (months) => {
+    const now = new Date();
+    if (months === 12) setStartDate(subYears(now, 1));
+    else setStartDate(subMonths(now, months));
+    setEndDate(now);
+  };
+
+  const formatDate = (date) =>
+    date ? new Intl.DateTimeFormat('en-US').format(new Date(date)) : '';
+
+  const columns = Object.keys(reportResult[0] || {}).map(key => ({
+    field: key,
+    headerName: key,
+    flex: 1
+  }));
+
+  const renderGraph = () => {
+    if (filterType === 'customer') {
+      const customerData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={customerData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="CustomerName"
+              stroke="#ccc"
+              angle={-45}
+              textAnchor="end"
+              interval={0}
+            />
+            <YAxis stroke="#ccc" />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+              labelStyle={{ color: "#fff" }}
+            />
+            <Bar dataKey="TotalSpent" fill="#8499D9" radius={[6, 6, 0, 0]}>
+              <LabelList dataKey="TotalSpent" position="top" fill="#fff" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart
+          data={Object.entries(reportResult[0] || {}).map(([key, value]) => ({
+            label: key,
+            value: typeof value === "number" ? Number(value.toFixed(2)) : 0
+          }))}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+          <XAxis dataKey="label" stroke="#ccc" />
+          <YAxis stroke="#ccc" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+            labelStyle={{ color: "#fff" }}
+          />
+          <Bar dataKey="value" fill="#8499D9" radius={[6, 6, 0, 0]}>
+            <LabelList dataKey="value" position="top" fill="#fff" />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
   return (
-    <ThemeProvider theme={darkTheme}>
-    <CssBaseline />
-    <Box sx={{ flexGrow: 1, height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ p: 4, overflowY: 'auto' }}>
+        <Paper sx={{ p: 4, backgroundColor: '#2b2b2b', color: '#fff' }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 4 }}>Generate Sales Report</Typography>
 
-      <Container maxWidth="lg" sx={{ mt: 3, mb: 4, flexGrow: 1, overflow: 'auto' }}>
-        <Grid container spacing={3}>
-          {/* Sidebar */}
-          <Grid item xs={12} md={3}>
-            <Card elevation={2} sx={{ height: '100%' }}>
-              <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#2A2A2A' }}>
-                <Box
-                  component="img"
-                  src="src/assets/logo.png"
-                  alt="Store Logo"
-                  sx={{ 
-                    width: 80, 
-                    height: 80, 
-                    borderRadius: '50%',
-                    mb: 1
-                  }}
-                />
-                <Typography variant="h6">POS System</Typography>
-                <Typography variant="body2" color="text.secondary">Store Admin</Typography>
-              </Box>
-              <Box sx={{ p: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                  Quick Reports
-                </Typography>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  sx={{ justifyContent: 'flex-start', mb: 1 }}
-                >
-                  Sales Summary
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={3}>
+              <TextField
+                select
+                label="Filter Type"
+                fullWidth
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                sx={{ backgroundColor: '#1f1f1f' }}
+                InputLabelProps={{ style: { color: '#ccc' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              >
+                {filterOptions.map(option => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="Start Date"
+                value={startDate}
+                onChange={(newValue) => setStartDate(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                    InputLabelProps={{ style: { color: '#ccc' } }}
+                    InputProps={{ style: { color: '#fff' } }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="End Date"
+                value={endDate}
+                onChange={(newValue) => setEndDate(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                    InputLabelProps={{ style: { color: '#ccc' } }}
+                    InputProps={{ style: { color: '#fff' } }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={3}>
+              <Stack spacing={1}>
+                <Stack direction="row" spacing={1}>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(1)}>Last 1M</Button>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(6)}>Last 6M</Button>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(12)}>Last 1Y</Button>
+                </Stack>
+                <Button variant="contained" color="primary" fullWidth onClick={handleGenerate} disabled={loading}>
+                  {loading ? 'Loading...' : 'Generate Report'}
                 </Button>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  sx={{ justifyContent: 'flex-start', mb: 1 }}
-                >
-                  Inventory Status
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  sx={{ justifyContent: 'flex-start', mb: 1 }}
-                >
-                  Customer Analysis
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  sx={{ justifyContent: 'flex-start', mb: 1 }}
-                >
-                  Employee Performance
-                </Button>
-              </Box>
-            </Card>
+              </Stack>
+            </Grid>
           </Grid>
 
-          {/* Main Content */}
-          <Grid item xs={12} md={9}>
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h5" sx={{ mb: 3 }}>
-                Reports Management
-              </Typography>
+          <Divider sx={{ my: 4, borderColor: '#444' }} />
 
-              <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-                <Tab label="All Reports" />
-                <Tab label="Generate New" />
-                <Tab label="My Reports" />
-                <Tab label="Archived" />
-              </Tabs>
-              
-              {tabValue === 0 && (
-                <>
-                  {/* Filter Controls */}
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
-                    <TextField
-                      label="Start Date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                      label="End Date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    
-                    <FormControl size="small" sx={{ minWidth: 150 }}>
-                      <InputLabel>Format</InputLabel>
-                      <Select
-                        value={reportFormat}
-                        onChange={handleFormatChange}
-                        label="Format"
-                      >
-                        <MenuItem value="PDF">PDF</MenuItem>
-                        <MenuItem value="DOCX">DOCX</MenuItem>
-                        <MenuItem value="CSV">CSV</MenuItem>
-                      </Select>
-                    </FormControl>
+          <Box>
+            <Typography variant="h6" gutterBottom>Report Preview</Typography>
 
-                    <Box sx={{ flexGrow: 1 }} />
-                    
-                    <Button variant="outlined" startIcon={<FilterList />}>
-                      Filter
-                    </Button>
-                    <Button variant="outlined" startIcon={<Print />}>
-                      Print
-                    </Button>
-                    <Button variant="contained" startIcon={<CloudDownload />}>
-                      Export
-                    </Button>
-                  </Box>
+            <ToggleButtonGroup
+              color="primary"
+              value={viewMode}
+              exclusive
+              onChange={(e, val) => val && setViewMode(val)}
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value="summary">Summary</ToggleButton>
+              <ToggleButton value="table">Table</ToggleButton>
+              <ToggleButton value="graph">Graph</ToggleButton>
+            </ToggleButtonGroup>
 
-                  {/* Reports Table */}
-                  <TableContainer component={Paper} sx={{ mt: 2 }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Description</TableCell>
-                          <TableCell>Format</TableCell>
-                          <TableCell>Employee ID</TableCell>
-                          <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reports.map((report) => (
-                          <TableRow key={report.id}>
-                            <TableCell>{report.createdAt}</TableCell>
-                            <TableCell>{report.Report_Descripti}</TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                {getFormatIcon(report.Report_Format)}
-                                <Typography variant="body2" sx={{ ml: 1 }}>
-                                  {report.Report_Format}
-                                </Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell>{report.Employee_Id.substring(0, 8)}...</TableCell>
-                            <TableCell align="right">
-                              <IconButton size="small" color="primary">
-                                <CloudDownload />
-                              </IconButton>
-                              <IconButton size="small" color="default">
-                                <Print />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
+            {viewMode === 'graph' && filterType === 'customer' && reportResult.length > 0 && (
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#ccc', mt: 1 }}>Show top:</Typography>
+                <TextField
+                  select
+                  value={topCount}
+                  onChange={(e) => setTopCount(e.target.value)}
+                  size="small"
+                  sx={{ width: 100, backgroundColor: '#1f1f1f' }}
+                  InputProps={{ style: { color: '#fff' } }}
+                  InputLabelProps={{ style: { color: '#ccc' } }}
+                >
+                  {topOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
+            )}
+
+            {viewMode === 'summary' && filterType === 'customer' && reportResult.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Customers</Typography>
+                <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+                  {reportResult.slice(0, 3).map((row, index) => (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      {Object.entries(row).map(([key, value]) => (
+                        <Typography key={key} variant="body2">
+                          <strong>{key}:</strong> {value}
+                        </Typography>
+                      ))}
+                    </Box>
+                  ))}
+                </Paper>
+              </>
+            )}
+
+            {viewMode === 'summary' && filterType !== 'customer' && (
+              <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+                {reportResult.length > 0 ? (
+                  <Box>
+                    {reportResult.map((row, index) => (
+                      <Box key={index} sx={{ mb: 2 }}>
+                        {Object.entries(row).map(([key, value]) => (
+                          <Typography key={key} variant="body2">
+                            <strong>{key}:</strong> {value}
+                          </Typography>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {tabValue === 1 && (
-                <Box sx={{ p: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 3 }}>Generate New Report</Typography>
-                  
-                  <Grid container spacing={3}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Report Description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Report Format</InputLabel>
-                        <Select
-                          value={reportFormat}
-                          onChange={handleFormatChange}
-                          label="Report Format"
-                        >
-                          <MenuItem value="PDF">PDF</MenuItem>
-                          <MenuItem value="DOCX">DOCX</MenuItem>
-                          <MenuItem value="CSV">CSV</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Date Range"
-                        type="text"
-                        value={`${startDate} to ${endDate}`}
-                        InputProps={{ readOnly: true }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button 
-                          variant="contained" 
-                          color="primary"
-                          onClick={handleGenerateReport}
-                        >
-                          Generate Report
-                        </Button>
                       </Box>
-                    </Grid>
-                  </Grid>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2">
+                    Report data will be shown here after generation.
+                  </Typography>
+                )}
+              </Paper>
+            )}
+
+            {viewMode === 'table' && reportResult.length > 0 && (
+              <Box sx={{ backgroundColor: '#1a1a1a', p: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#ccc', mb: 1 }}>
+                  Table View ({formatDate(startDate)} - {formatDate(endDate)})
+                </Typography>
+                <Box sx={{ height: 400 }}>
+                  <DataGrid
+                    rows={reportResult.map((r, i) => ({ id: i, ...r }))}
+                    columns={columns}
+                    sx={{ color: '#fff' }}
+                  />
                 </Box>
-              )}
-
-              {/* Save button at the bottom */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                <Button variant="contained" color="primary">
-                  Save Changes
-                </Button>
               </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
-    </ThemeProvider>
-  );
-}
+            )}
 
-export default ReportsPage;
+            {viewMode === 'graph' && reportResult.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Graph View ({formatDate(startDate)} - {formatDate(endDate)})
+                </Typography>
+                {renderGraph()}
+              </Box>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+    </LocalizationProvider>
+  );
+};
+
+export default Reports;
