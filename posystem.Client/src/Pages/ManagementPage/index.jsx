@@ -20,7 +20,7 @@ import SuppliersSection from './components/Suppliers';
 import OrdersSection from './components/Orders';
 import AccountsSection from './components/Accounts';
 import DiscountsSection from './components/Discounts';
-import ReportsPage from '../Reports';
+import ReportsPage from './components/Reports';
 
 const drawerWidth = 240;
 

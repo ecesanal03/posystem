@@ -15,7 +15,7 @@ import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 
 const EmployeeTable = ({ employees, onEdit, onDelete }) => {
   // For debugging - log the received employees data
-  console.log('EmployeeTable received:', employees);
+  //console.log('EmployeeTable received:', employees);
 
   const getRoleColor = (role) => {
     role = (role || '').toLowerCase();

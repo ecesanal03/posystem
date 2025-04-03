@@ -1,10 +1,25 @@
-// src/api/ordersApi.js
 import axios from './axiosInstance';
 
+/**
+ * API client for order-related operations.
+ * Provides methods for retrieving and managing orders.
+ */
 const ordersApi = {
+    /**
+     * Retrieves a list of orders with pagination.
+     * @param {Object} params - Query parameters for pagination
+     * @returns {Promise<Object>} Response containing orders and total count
+     */
     getOrders: async (params = {}) => {
         try {
-            const response = await axios.get('/orders', { params });
+            // Simplify parameters to avoid 500 errors
+            const queryParams = {
+                skip: params.skip || 0,
+                take: params.take || 100 // Fetch more records for client-side filtering
+            };
+            
+            const response = await axios.get('/orders', { params: queryParams });
+            
             if (response.data && response.data.orders && Array.isArray(response.data.orders)) {
                 return {
                     orders: response.data.orders,
@@ -36,10 +51,16 @@ const ordersApi = {
         }
     },
 
+    /**
+     * Retrieves detailed information about a single order.
+     * @param {string} id - The unique identifier of the order
+     * @returns {Promise<Object>} Response containing order details
+     */
     getOrder: async (id) => {
         try {
             const response = await axios.get(`/orders/${id}`);
-            if (response.data?.order) {
+    
+            if (response.data && response.data.order) {
                 const order = response.data.order;
                 return {
                     id: order.id,
@@ -76,7 +97,7 @@ const ordersApi = {
 
     updateOrderStatus: async (id, status) => {
         try {
-            const response = await axios.put(`/orders/${id}/status`, {
+            const response = await axios.put(`/orders/${id}/status`, { 
                 Id: id,
                 Order_Status: status
             });
@@ -115,6 +136,8 @@ const ordersApi = {
     deleteOrder: async (id) => {
         try {
             const response = await axios.delete(`/orders/${id}`);
+
+            // Handle the response based on the updated DTO structure
             if (response.data) {
                 return {
                     success: response.data.Success,

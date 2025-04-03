@@ -63,13 +63,10 @@ const DiscountsSection = () => {
       if (filter) {
         params.searchTerm = filter;
       }
-      
-      console.log('Sending request to get discounts with params:', params);
+
       const response = await discountApi.getDiscounts(params);
-      console.log('Raw API response:', response);
       
       if (response && response.discounts) {
-        console.log('Discounts from API:', response.discounts);
         // Map API response to component state format, ensure correct property casing
         const mappedDiscounts = response.discounts.map(discount => ({
           id: discount.id,
@@ -83,7 +80,6 @@ const DiscountsSection = () => {
           employeeId: discount.employee_id
         }));
         
-        console.log('Mapped discounts:', mappedDiscounts);
         setDiscounts(mappedDiscounts);
       } else {
         console.warn('No discounts property in response:', response);
@@ -260,7 +256,7 @@ const DiscountsSection = () => {
         const employeeId = localStorage.getItem('employeeId');
         
         // Log to help debug
-        console.log('Using employee ID for new discount:', employeeId);
+        //console.log('Using employee ID for new discount:', employeeId);
         
         if (!employeeId) {
           // If no employee ID in localStorage, fetch a valid employee to use
@@ -276,7 +272,7 @@ const DiscountsSection = () => {
             if (employeesResponse && employeesResponse.employees && employeesResponse.employees.length > 0) {
               const firstEmployee = employeesResponse.employees[0];
               discountData.employee_id = firstEmployee.Id;
-              console.log('Using fallback employee ID:', firstEmployee.Id);
+              //console.log('Using fallback employee ID:', firstEmployee.Id);
             } else {
               setNotification({
                 open: true,

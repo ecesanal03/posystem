@@ -58,21 +58,26 @@ const OrdersSection = () => {
 
   /**
    * Memoized filtered orders list based on search term.
-   * Filters orders by customer name, email, status, or order ID.
+   * Filters orders by customer email, status, or order ID.
    */
   const filteredOrders = useMemo(() => {
-    if (!orderFilter) return orders;
+    if (!orderFilter.trim()) return orders;
     
-    const searchTerm = orderFilter.toLowerCase();
-    return orders.filter((order) =>
-      order.customerEmail?.toLowerCase().includes(searchTerm) ||
-      order.status?.toLowerCase().includes(searchTerm) ||
-      order.id?.toString().includes(searchTerm)
-    );
+    const searchTerm = orderFilter.toLowerCase().trim();
+    return orders.filter((order) => {
+      // Check both camelCase and snake_case property names to handle API inconsistencies
+      const customerEmail = order.customerEmail || order.customer_Email || '';
+      const status = order.status || order.order_Status || '';
+      const id = order.id || order.Id || '';
+      
+      return customerEmail.toLowerCase().includes(searchTerm) ||
+             status.toLowerCase().includes(searchTerm) ||
+             id.toString().includes(searchTerm);
+    });
   }, [orders, orderFilter]);
 
   /**
-   * Fetches orders from the API with optional filtering.
+   * Fetches orders from the API.
    * Updates the orders state and handles loading/error states.
    */
   const fetchOrders = useCallback(async () => {
@@ -81,18 +86,14 @@ const OrdersSection = () => {
         setError(null);
         
         const response = await ordersApi.getOrders({
-            searchTerm: orderFilter,
-            sortBy: 'Order_Date',
-            sortDesc: true
+            skip: 0,
+            take: 100 // Fetch more records for client-side filtering
         });
         
         if (response && Array.isArray(response.orders)) {
             // Check if we need to map property names
             const firstOrder = response.orders[0];
             if (firstOrder) {
-                // Log the first order to see its structure
-                console.log("First order structure:", firstOrder);
-                
                 // If the properties are in snake_case or PascalCase, map them to camelCase
                 if (firstOrder.Id || firstOrder.Order_Date || firstOrder.Customer_Email) {
                     const mappedOrders = response.orders.map(order => ({
@@ -123,7 +124,7 @@ const OrdersSection = () => {
     } finally {
         setLoading(false);
     }
-}, [orderFilter]);
+}, []); // Remove orderFilter dependency since we're filtering client-side now
 
 
   useEffect(() => {
@@ -132,16 +133,12 @@ const OrdersSection = () => {
 
   /**
    * Handles changes to the search filter input.
-   * Implements debounced search for better performance.
+   * Updates the filter state for client-side filtering without API calls.
    * @param {Event} e - The change event
    */
   const handleOrderFilterChange = (e) => {
     setOrderFilter(e.target.value);
-    // Debounce the API call
-    const timeoutId = setTimeout(() => {
-      fetchOrders();
-    }, 500);
-    return () => clearTimeout(timeoutId);
+    // No need to call fetchOrders() since we're filtering client-side
   };
 
   /**

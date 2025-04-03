@@ -15,9 +15,6 @@ const employeeApi = {
   getEmployees: async (params = {}) => {
     try {
       const queryParams = {
-        searchTerm: params.searchTerm || '',
-        sortBy: params.sortBy || '',
-        sortDesc: params.sortDesc || false,
         skip: params.skip || 0,
         take: params.take || 20
       };
@@ -123,7 +120,9 @@ function formatToIsoDate(value) {
   try {
     const date = new Date(value);
     if (!isNaN(date.getTime())) return date.toISOString();
-  } catch {}
+  } catch (error) {
+    console.warn('Error formatting date:', error);
+  }
   return new Date().toISOString();
 }
 
