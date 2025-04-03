@@ -1,80 +1,286 @@
-import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  CircularProgress,
-  Alert
+import React, { useState } from 'react';
+import {
+  Box, Typography, Paper, Grid, TextField, MenuItem, Button, Divider, Stack, ToggleButton, ToggleButtonGroup
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { subMonths, subYears } from 'date-fns';
+import { DataGrid } from '@mui/x-data-grid';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import reportApi from '../../../../api/reportApi';
 
+const filterOptions = [
+  { label: 'Overall Sales', value: 'overall' },
+  { label: 'By Customer', value: 'customer' },
+  { label: 'By Book', value: 'book' },
+  { label: 'By Supplier', value: 'supplier' }
+];
 
-const Report1 = () => {
-  // State management
+const topOptions = [10, 25, 50, 100, 'All'];
+
+const SalesReports = () => {
+  const [filterType, setFilterType] = useState('overall');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [reportResult, setReportResult] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [reportData, setReportData] = useState([]);
+  const [viewMode, setViewMode] = useState('summary');
+  const [topCount, setTopCount] = useState(10);
 
-  // Fetch data for the report
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Your data fetching logic will go here
-        // Example:
-        // const response = await someApi.getData();
-        // setReportData(response.data);
-        
-        // Placeholder data
-        setReportData([]);
-        
-      } catch (err) {
-        console.error('Error fetching report data:', err);
-        setError('Failed to load report data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleGenerate = async () => {
+    try {
+      setLoading(true);
+      const reportName = filterType === 'customer' ? 'Sales by Customer' : 'Sales Summary Report';
+      const response = await reportApi.generateReport(reportName, startDate, endDate);
+      setReportResult(response.data || []);
+    } catch (error) {
+      console.error("Failed to generate report:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  const setRangeFromToday = (months) => {
+    const now = new Date();
+    if (months === 12) setStartDate(subYears(now, 1));
+    else setStartDate(subMonths(now, months));
+    setEndDate(now);
+  };
+
+  const formatDate = (date) =>
+    date ? new Intl.DateTimeFormat('en-US').format(new Date(date)) : '';
+
+  const columns = Object.keys(reportResult[0] || {}).map(key => ({
+    field: key,
+    headerName: key,
+    flex: 1
+  }));
+
+  const renderGraph = () => {
+    if (filterType === 'customer') {
+      const customerData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={customerData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="CustomerName"
+              stroke="#ccc"
+              angle={-45}
+              textAnchor="end"
+              interval={0}
+            />
+            <YAxis stroke="#ccc" />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+              labelStyle={{ color: "#fff" }}
+            />
+            <Bar dataKey="TotalSpent" fill="#8499D9" radius={[6, 6, 0, 0]}>
+              <LabelList dataKey="TotalSpent" position="top" fill="#fff" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart
+          data={Object.entries(reportResult[0] || {}).map(([key, value]) => ({
+            label: key,
+            value: typeof value === "number" ? Number(value.toFixed(2)) : 0
+          }))}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+          <XAxis dataKey="label" stroke="#ccc" />
+          <YAxis stroke="#ccc" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+            labelStyle={{ color: "#fff" }}
+          />
+          <Bar dataKey="value" fill="#8499D9" radius={[6, 6, 0, 0]}>
+            <LabelList dataKey="value" position="top" fill="#fff" />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-        Report 1
-      </Typography>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ p: 4, overflowY: 'auto' }}>
+        <Paper sx={{ p: 4, backgroundColor: '#2b2b2b', color: '#fff' }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 4 }}>Generate Sales Report</Typography>
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={3}>
+              <TextField
+                select
+                label="Filter Type"
+                fullWidth
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                sx={{ backgroundColor: '#1f1f1f' }}
+                InputLabelProps={{ style: { color: '#ccc' } }}
+                InputProps={{ style: { color: '#fff' } }}
+              >
+                {filterOptions.map(option => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
 
-      {error && (
-        <Alert severity="error" sx={{ my: 2 }}>
-          {error}
-        </Alert>
-      )}
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="Start Date"
+                value={startDate}
+                onChange={(newValue) => setStartDate(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                    InputLabelProps={{ style: { color: '#ccc' } }}
+                    InputProps={{ style: { color: '#fff' } }}
+                  />
+                )}
+              />
+            </Grid>
 
-      {!loading && !error && (
-        <Paper elevation={2} sx={{ p: 3, bgcolor: '#2A2D2A', borderRadius: 1, border: '1px solid #61677A' }}>
-          <Typography variant="body1">
-            This is the Report 1 sandbox. Team members can implement their report UI and logic here.
-          </Typography>
-          
-          {/* Display report data when available */}
-          {reportData.length > 0 && (
-            <Box mt={3}>
-              {/* Your report content will go here */}
-              {/* Examples: charts, tables, statistics, etc. */}
-            </Box>
-          )}
+            <Grid item xs={12} md={3}>
+              <DatePicker
+                label="End Date"
+                value={endDate}
+                onChange={(newValue) => setEndDate(newValue)}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                    InputLabelProps={{ style: { color: '#ccc' } }}
+                    InputProps={{ style: { color: '#fff' } }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={3}>
+              <Stack spacing={1}>
+                <Stack direction="row" spacing={1}>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(1)}>Last 1M</Button>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(6)}>Last 6M</Button>
+                  <Button variant="outlined" onClick={() => setRangeFromToday(12)}>Last 1Y</Button>
+                </Stack>
+                <Button variant="contained" color="primary" fullWidth onClick={handleGenerate} disabled={loading}>
+                  {loading ? 'Loading...' : 'Generate Report'}
+                </Button>
+              </Stack>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 4, borderColor: '#444' }} />
+
+          <Box>
+            <Typography variant="h6" gutterBottom>Report Preview</Typography>
+
+            <ToggleButtonGroup
+              color="primary"
+              value={viewMode}
+              exclusive
+              onChange={(e, val) => val && setViewMode(val)}
+              sx={{ mb: 2 }}
+            >
+              <ToggleButton value="summary">Summary</ToggleButton>
+              <ToggleButton value="table">Table</ToggleButton>
+              <ToggleButton value="graph">Graph</ToggleButton>
+            </ToggleButtonGroup>
+
+            {viewMode === 'graph' && filterType === 'customer' && reportResult.length > 0 && (
+              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#ccc', mt: 1 }}>Show top:</Typography>
+                <TextField
+                  select
+                  value={topCount}
+                  onChange={(e) => setTopCount(e.target.value)}
+                  size="small"
+                  sx={{ width: 100, backgroundColor: '#1f1f1f' }}
+                  InputProps={{ style: { color: '#fff' } }}
+                  InputLabelProps={{ style: { color: '#ccc' } }}
+                >
+                  {topOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
+            )}
+
+            {viewMode === 'summary' && filterType === 'customer' && reportResult.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Customers</Typography>
+                <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+                  {reportResult.slice(0, 3).map((row, index) => (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      {Object.entries(row).map(([key, value]) => (
+                        <Typography key={key} variant="body2">
+                          <strong>{key}:</strong> {value}
+                        </Typography>
+                      ))}
+                    </Box>
+                  ))}
+                </Paper>
+              </>
+            )}
+
+            {viewMode === 'summary' && filterType !== 'customer' && (
+              <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+                {reportResult.length > 0 ? (
+                  <Box>
+                    {reportResult.map((row, index) => (
+                      <Box key={index} sx={{ mb: 2 }}>
+                        {Object.entries(row).map(([key, value]) => (
+                          <Typography key={key} variant="body2">
+                            <strong>{key}:</strong> {value}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2">
+                    Report data will be shown here after generation.
+                  </Typography>
+                )}
+              </Paper>
+            )}
+
+            {viewMode === 'table' && reportResult.length > 0 && (
+              <Box sx={{ backgroundColor: '#1a1a1a', p: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#ccc', mb: 1 }}>
+                  Table View ({formatDate(startDate)} - {formatDate(endDate)})
+                </Typography>
+                <Box sx={{ height: 400 }}>
+                  <DataGrid
+                    rows={reportResult.map((r, i) => ({ id: i, ...r }))}
+                    columns={columns}
+                    sx={{ color: '#fff' }}
+                  />
+                </Box>
+              </Box>
+            )}
+
+            {viewMode === 'graph' && reportResult.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Graph View ({formatDate(startDate)} - {formatDate(endDate)})
+                </Typography>
+                {renderGraph()}
+              </Box>
+            )}
+          </Box>
         </Paper>
-      )}
-    </Box>
+      </Box>
+    </LocalizationProvider>
   );
 };
 
-export default Report1;
+export default SalesReports;

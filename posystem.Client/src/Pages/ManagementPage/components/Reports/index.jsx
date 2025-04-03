@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 
 // Import individual report components
-import Report1 from './R1';
+import SalesReports from './R1';
 import Report2 from './R2';
 import Report3 from './R3';
 
@@ -89,7 +89,7 @@ const ReportsPage = () => {
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         <TabPanel value={activeTab} index={0}>
           {/* Ece you should be able to see the report 1 here */}
-          <Report1 />
+          <SalesReports />
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
           <Report2 />
