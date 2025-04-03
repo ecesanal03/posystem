@@ -7,7 +7,6 @@ import {
 import { ArrowBack } from '@mui/icons-material';
 import cartApi from '../api/cartApi';
 import customerApi from '../api/customerApi';
-import { jwtDecode } from 'jwt-decode'; 
 import { useNavigate, Link } from 'react-router-dom';
 import orderApi from '../api/ordersAPI';
 
@@ -77,7 +76,12 @@ const Checkout = () => {
       
     
 
-    const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+      const subtotal = cartItems.reduce((total, item) => {
+        const discountedPrice = item.discount_Value
+          ? item.price - (item.price * item.discount_Value / 100)
+          : item.price;
+        return total + (discountedPrice * item.quantity);
+      }, 0);
     const shipping = 8.0;
     const tax = 0.0;
     const total = subtotal + shipping + tax;
@@ -250,13 +254,30 @@ const Checkout = () => {
                                             <CircularProgress />
                                         ) : (
                                             <Box>
-                                                {cartItems.map((item) => (
+                                                {cartItems.map((item) => {
+                                                const hasDiscount = item.discount_Value && item.discount_Value > 0;
+                                                const discountedPrice = hasDiscount
+                                                    ? item.price - (item.price * item.discount_Value / 100)
+                                                    : item.price;
+
+                                                return (
                                                     <Box key={item.id} sx={{ mb: 2 }}>
-                                                        <Typography variant="body1">
-                                                            {item.bookTitle} — ${item.price.toFixed(2)} x {item.quantity}
+                                                    <Typography variant="body1">
+                                                        {item.bookTitle} — ${item.price.toFixed(2)} x {item.quantity}
+                                                    </Typography>
+                                                    {hasDiscount && (
+                                                        <>
+                                                        <Typography variant="body2" color="success.main">
+                                                            Discount: {item.discount_Name} ({item.discount_Value}% off)
                                                         </Typography>
+                                                        <Typography variant="body2" color="secondary">
+                                                            Discounted Price: ${discountedPrice.toFixed(2)} x {item.quantity}
+                                                        </Typography>
+                                                        </>
+                                                    )}
                                                     </Box>
-                                                ))}
+                                                );
+                                                })}
                                                 <Typography variant="body1" sx={{ mb: 1 }}>
                                                     <strong>Payment Method:</strong> {paymentInfo.method}
                                                 </Typography>

@@ -19,7 +19,7 @@ const employeeApi = {
         take: params.take || 20
       };
 
-      const response = await axios.get('/employees', { params: queryParams });
+      const response = await axios.get('/employee/getall', { params: queryParams });
 
       if (response.data && Array.isArray(response.data.employees)) {
         const processedEmployees = response.data.employees.map(employee => ({

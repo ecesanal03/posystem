@@ -35,16 +35,22 @@ const ShoppingCart = () => {
   const updateQuantity = async (bookId, newQuantity) => {
     try {
       await cartApi.updateCartQuantity(bookId, newQuantity);
-      setCartItems(prev => prev.map(item =>
-        item.bookId === bookId ? { ...item, quantity: newQuantity } : item
-      ));
+  
+      // Re-fetch the cart after quantity update to reflect updated discounts
+      const response = await cartApi.getCart();
+      setCartItems(response.items || []);
     } catch (error) {
       console.error("Failed to update quantity:", error);
     }
   };
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2);
+    return cartItems.reduce((total, item) => {
+      const discounted = item.discount_Value
+        ? item.price - (item.price * item.discount_Value / 100)
+        : item.price;
+      return total + (discounted * item.quantity);
+    }, 0).toFixed(2);
   };
 
   const goBack = () => {
@@ -92,32 +98,64 @@ const ShoppingCart = () => {
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={8}>
                     <Paper sx={{ padding: 3 }}>
-                        {cartItems.length > 0 ? (
-                        cartItems.map((item) => (
-                            <Grid container key={item.id} spacing={2} sx={{ marginBottom: 2 }}>
-                            <Grid item xs={8}>
-                                <Typography variant="h6">{item.bookTitle}</Typography>
-                                <Typography variant="body2">{`$${item.price} x ${item.quantity}`}</Typography>
-                            </Grid>
-                            <Grid item xs={3}>
-                                <TextField
-                                type="number"
-                                label="Quantity"
-                                value={item.quantity}
-                                onChange={(e) => updateQuantity(item.bookId, parseInt(e.target.value))}
-                                sx={{ width: '100%' }}
-                                />
-                            </Grid>
-                            <Grid item xs={1}>
-                                <IconButton color="error" onClick={() => removeItem(item.bookId)}>
-                                <Delete />
-                                </IconButton>
-                            </Grid>
-                            </Grid>
-                        ))
-                        ) : (
-                        <Typography variant="h6">Your cart is empty!</Typography>
-                        )}
+                    {cartItems.length > 0 ? (
+                    cartItems.map((item) => {
+                      const discountAmount = item.discount_Value
+                        ? (item.price * item.discount_Value / 100).toFixed(2)
+                        : null;
+
+                      const discountedPrice = item.discount_Value
+                        ? (item.price - (item.price * item.discount_Value / 100)).toFixed(2)
+                        : item.price.toFixed(2);
+
+                      const itemTotal = item.discount_Value
+                        ? (item.price - (item.price * item.discount_Value / 100)) * item.quantity
+                        : item.price * item.quantity;
+
+                      return (
+                        <Grid container key={item.id} spacing={2} sx={{ marginBottom: 2 }}>
+                          <Grid item xs={8}>
+                            <Typography variant="h6">{item.bookTitle}</Typography>
+
+                            <Typography variant="body2">
+                              Price: ${item.price.toFixed(2)} x {item.quantity}
+                            </Typography>
+
+                            {item.discount_Name && (
+                              <>
+                                <Typography variant="body2" color="success.main">
+                                  Discount: {item.discount_Name} ({item.discount_Value}% off)
+                                </Typography>
+                                <Typography variant="body2" color="secondary">
+                                  Discounted Price: ${discountedPrice} x {item.quantity}
+                                </Typography>
+                              </>
+                            )}
+                          </Grid>
+
+                          <Grid item xs={3}>
+                            <TextField
+                              type="number"
+                              label="Quantity"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateQuantity(item.bookId, parseInt(e.target.value))
+                              }
+                              sx={{ width: '100%' }}
+                            />
+                          </Grid>
+
+                          <Grid item xs={1}>
+                            <IconButton color="error" onClick={() => removeItem(item.bookId)}>
+                              <Delete />
+                            </IconButton>
+                          </Grid>
+                        </Grid>
+                      );
+                    })
+                  ) : (
+                    <Typography variant="h6">Your cart is empty!</Typography>
+                  )}
                     </Paper>
                     </Grid>
 

@@ -22,8 +22,8 @@ import { Search as SearchIcon, Add as AddIcon } from '@mui/icons-material';
 import CustomersTable from './CustomersTable';
 import EmployeeTable from './EmployeeTable';
 import EmployeeForm from './EmployeeForm';
-import customerApi from '../../../../api/customerAPI';
-import employeeApi from '../../../../api/EmployeeAPI';
+import customerApi from '../../../../api/customerApi';
+import employeeApi from '../../../../api/employeeApi';
 
 const AccountsSection = () => {
   // State management for data

@@ -130,25 +130,43 @@ namespace posystem.ServiceInterface.Services
                 }
 
                 var query = db.From<CartItems>()
-                    .Where(ci => ci.Cart_Id == cart.Id)
-                    .Join<CartItems, Books>((ci, b) => ci.Book_Id == b.Id)
-                    .Select<CartItems, Books>((ci, b) => new { ci.Id, ci.Quantity, b.Title, b.Price });
+                            .Where(ci => ci.Cart_Id == cart.Id)
+                            .Join<CartItems, Books>((ci, b) => ci.Book_Id == b.Id)
+                            .LeftJoin<CartItems, Discounts>((ci, d) => ci.Discount_Id == d.Id);
 
-                var results = db.SelectMulti<CartItems, Books>(query);
+                var results = db.SelectMulti<CartItems, Books, Discounts>(query);
 
-                var items = results.Select(row => new GetCartItemsDTO
+                var items = results.Select(row =>
                 {
-                    Id = row.Item1.Id,
-                    BookId = row.Item1.Book_Id,
-                    BookTitle = row.Item2.Title,
-                    Price = row.Item2.Price,
-                    Quantity = row.Item1.Quantity
+                    var cartItem = row.Item1;
+                    var book = row.Item2;
+                    var discount = row.Item3;
+
+                    return new GetCartItemsDTO
+                    {
+                        Id = cartItem.Id,
+                        BookId = cartItem.Book_Id,
+                        BookTitle = book.Title,
+                        Price = book.Price,
+                        Quantity = cartItem.Quantity,
+                        Discount_Id = discount?.Id,
+                        Discount_Name = discount?.Discount_Name,
+                        Discount_Value = discount?.Percentage
+                    };
                 }).ToList();
 
                 return new GetCartResponse
                 {
                     Items = items,
-                    Total = items.Sum(i => i.Price * i.Quantity)
+                    Total = items.Sum(i =>
+                    {
+                        var price = i.Price;
+                        if (i.Discount_Value.HasValue)
+                        {
+                            price -= price * i.Discount_Value.Value / 100;
+                        }
+                        return price * i.Quantity;
+                    })
                 };
             }
         }
@@ -265,9 +283,9 @@ namespace posystem.ServiceInterface.Services
                     return;
                 }
 
-                if (book.Units > 5)
+                if (book.Units > 10)
                 {
-                    book.Units = 5;
+                    book.Units = 10;
                     db.Update(book);
                 }
             }

@@ -8,7 +8,7 @@ namespace posystem.ServiceModel.Models
         [PrimaryKey]
         public Guid Id { get; set; }
 
-        public float Percentage { get; set; }
+        public decimal Percentage { get; set; }
         public DateTime? Start_Date { get; set; }
         public DateTime? End_Date { get; set; }
         public string? Discount_Name { get; set; }

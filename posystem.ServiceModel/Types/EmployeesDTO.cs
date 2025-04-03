@@ -9,7 +9,7 @@ namespace posystem.ServiceModel.Types
 {
     #region request/Response DTOs
 
-    [Route("/employees", "GET")]
+    [Route("/employee/getall", "GET")]
     public class GetEmployeesDTO : IReturn<GetEmployeesResponse>
     {
         public string? SearchTerm { get; set; }
