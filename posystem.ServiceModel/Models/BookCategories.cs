@@ -6,10 +6,10 @@ namespace posystem.ServiceModel.Models
     public class BookCategories
     {
         [PrimaryKey, References(typeof(Books))]
-        public Guid BookId { get; set; }
+        public Guid Book_Id { get; set; }
 
         [PrimaryKey, References(typeof(Categories))]
-        public Guid CategoryId { get; set; }
+        public Guid Category_Id { get; set; }
     }
 }
 

@@ -20,6 +20,7 @@ namespace posystem.ServiceModel.Types
         public bool SortDesc { get; set; }
         public int Skip { get; set; }
         public int Take { get; set; }
+        public string? Category { get; set; }
     }
 
     /// <summary>
@@ -149,6 +150,7 @@ namespace posystem.ServiceModel.Types
         public Guid Discount_Id { get; set; }
         public DateTime Added_At { get; set; }
         public string? SupplierName { get; set; }
+        public List<string>? Categories { get; set; }
 
     }
 

@@ -37,6 +37,13 @@ namespace posystem.ServiceInterface.Services
                 b.ISBN.Contains(request.SearchTerm));
             }
 
+            if (!string.IsNullOrEmpty(request.Category))
+            {
+                query.Join<BookCategories>((book, bc) => book.Id == bc.Book_Id)
+                    .Join<BookCategories, Categories>((bc, cat) => bc.Category_Id == cat.Id)
+                    .Where<Categories>(c => c.Name == request.Category);
+            }
+
             // Apply Sorting
             if(!string.IsNullOrEmpty(request.SortBy))
             {
@@ -77,6 +84,19 @@ namespace posystem.ServiceInterface.Services
             // Build dictionary for quick lookup
             var supplierMap = suppliers.ToDictionary(s => s.Id, s => s.SupplierName);
 
+            // Get unique Category_Ids from books
+            var bookIds = books.Select(b => b.Id).ToList();
+
+            var bookCategories = await db.SelectAsync<BookCategories>(bc => Sql.In(bc.Book_Id, bookIds));
+            var categoryIds = bookCategories.Select(bc => bc.Category_Id).Distinct().ToList();
+
+            var categories = await db.SelectAsync<Categories>(c => Sql.In(c.Id, categoryIds));
+
+            var categoryMap = bookCategories
+                .Join(categories, bc => bc.Category_Id, c => c.Id, (bc, c) => new { bc.Book_Id, c.Name })
+                .GroupBy(x => x.Book_Id)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Name ?? "").ToList());
+
             // Map to DTOs
             var bookDtos = books.Select(b => new BookListItemDTO
             {
@@ -94,6 +114,7 @@ namespace posystem.ServiceInterface.Services
                 SupplierName = b.Supplier_Id != null && supplierMap.ContainsKey(b.Supplier_Id.Value)
                                 ? supplierMap[b.Supplier_Id.Value]
                                 : null, 
+                Categories = categoryMap.ContainsKey(b.Id) ? categoryMap[b.Id] : new List<string>()
             }).ToList();
 
             return new GetBooksResponse

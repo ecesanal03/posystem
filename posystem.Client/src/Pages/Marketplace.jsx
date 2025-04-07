@@ -51,6 +51,7 @@ import notificationApi from '../api/notificationApi';
 // -----------------------------------------------------------------------------
 const NAVIGATION = [
   { kind: 'header', title: 'Categories' },
+  { segment: 'featured', title: 'Featured', icon: <DashboardIcon /> },
   { segment: 'fiction', title: 'Fiction', icon: <MenuBookIcon /> },
   { segment: 'non-fiction', title: 'Non-fiction', icon: <SubjectIcon /> },
   { segment: 'mystery', title: 'Mystery', icon: <AutoStoriesIcon /> },
@@ -256,7 +257,7 @@ ToolbarActionsSearch.propTypes = {
 // PageContent
 // (This component now fetches books from the database based on the current searchTerm.)
 // -----------------------------------------------------------------------------
-function PageContent({ searchTerm }) {
+function PageContent({ searchTerm, selectedCategory }) {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -265,6 +266,7 @@ function PageContent({ searchTerm }) {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
+  const isFeatured = !selectedCategory;
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -272,10 +274,11 @@ function PageContent({ searchTerm }) {
         setLoading(true);
         const response = await bookApi.getBooks({
           SearchTerm: searchTerm,
+          Category: selectedCategory,
           SortBy: 'Added_At',
           SortDesc: true,
           Skip: 0,
-          Take: 12
+          Take: isFeatured ? 12 : 0
         });
         setBooks(response.books || []);
         setLoading(false);
@@ -287,7 +290,7 @@ function PageContent({ searchTerm }) {
     };
 
     fetchBooks();
-  }, [searchTerm]);
+  }, [searchTerm, selectedCategory]);
 
   const handleBookClick = (book) => {
     setSelectedBook(book);
@@ -325,7 +328,7 @@ function PageContent({ searchTerm }) {
   return (
     <Box sx={{ flexGrow: 1, p: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ textAlign: "center", mb: 3 }}>
-        Featured
+        {selectedCategory ? `${selectedCategory} Books` : "Featured"}
       </Typography>
       {loading && (
         <Typography variant="body1" align="center">Loading...</Typography>
@@ -510,6 +513,7 @@ function PageContent({ searchTerm }) {
 
 PageContent.propTypes = {
   searchTerm: PropTypes.string.isRequired,
+  selectedCategory: PropTypes.string,
 };
 
 // -----------------------------------------------------------------------------
@@ -518,14 +522,18 @@ PageContent.propTypes = {
 // -----------------------------------------------------------------------------
 function Marketplace(props) {
   const { window } = props;
-  const [searchTerm, setSearchTerm] = useState("");
-  const router = useDemoRouter('/page');
+  const router = useDemoRouter('/featured'); 
+  const [searchTerm, setSearchTerm] = useState('');
+  const selectedCategory = router.pathname?.replace('/', '') === 'featured'
+  ? null
+  : NAVIGATION.find(nav => nav.segment === router.pathname?.replace('/', ''))?.title ?? null;
+
   const demoWindow = window !== undefined ? window() : undefined;
 
   return (
     <AppProvider
       navigation={NAVIGATION}
-      branding={{ title: 'Cougar Catalog', logo: <img src="/logo.png" alt="png" /> }}
+      branding={{ title: 'Cougar Catalog', logo: <img src="/logo.png" alt="logo" /> }}
       router={router}
       theme={demoTheme}
       window={demoWindow}
@@ -533,16 +541,21 @@ function Marketplace(props) {
       <DashboardLayout
         slots={{
           toolbarActions: () => (
-            <ToolbarActionsSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-          )
+            <ToolbarActionsSearch
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+          ),
         }}
       >
-        <PageContent searchTerm={searchTerm} />
+        <PageContent searchTerm={searchTerm} selectedCategory={selectedCategory} />
       </DashboardLayout>
     </AppProvider>
   );
 }
 
-Marketplace.propTypes = {};
+Marketplace.propTypes = {
+  window: PropTypes.func,
+};
 
 export default Marketplace;

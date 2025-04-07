@@ -31,8 +31,6 @@ namespace posystem.ServiceModel.Models
         [Default(0)]
         public int Units { get; set; }
 
-        [StringLength(2000)]
-        [Input(Type = "textarea")]
         public string? Description { get; set; }
 
         public string? Cover_Image { get; set; }
