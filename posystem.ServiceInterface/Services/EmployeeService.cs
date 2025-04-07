@@ -344,7 +344,8 @@ namespace posystem.ServiceInterface.Services
                     Success = true, 
                     Message = "Login successful.", 
                     Token = token,
-                    EmployeeId = employee.Id
+                    EmployeeId = employee.Id,
+                    Role = employee.Role
                 };
             }
         }

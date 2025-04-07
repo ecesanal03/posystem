@@ -32,6 +32,9 @@ const AccountsSection = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  //Get employee role
+  const employeeRole = localStorage.getItem('employeeRole') || '';
   
   // Form state
   const [customerFilter, setCustomerFilter] = useState('');
@@ -609,12 +612,26 @@ const AccountsSection = () => {
           customers={filteredCustomers} 
           onDelete={handleDeleteCustomer} 
         />
-      ) : (
+      ) : employeeRole.toLowerCase() !== 'associate' ? (
         <EmployeeTable 
           employees={filteredEmployees} 
           onEdit={handleEditEmployee} 
           onDelete={handleDeleteEmployee} 
         />
+      ) : (
+        <Box 
+          sx={{ 
+            mt: 4, 
+            p: 2, 
+            bgcolor: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid #ffc107', 
+            color: '#ffc107', 
+            borderRadius: 1, 
+            textAlign: 'center' 
+          }}
+        >
+          You do not have access to view the employee table.
+        </Box>
       )}
 
       {/* Delete Customer Dialog */}

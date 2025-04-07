@@ -76,6 +76,7 @@ namespace posystem.ServiceModel.Types
         public string Message { get; set; }
         public string Token { get; set; }
         public Guid EmployeeId { get; set; }
+        public string Role { get; set; } //send in the role here for authentication purposes
     }
 
     [Route("/employee", "PUT")]

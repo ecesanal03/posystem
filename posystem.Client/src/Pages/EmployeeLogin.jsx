@@ -156,6 +156,7 @@ export default function SlotsSignIn() {
         
         if (data.employeeId) {
           localStorage.setItem('employeeId', data.employeeId);
+          localStorage.setItem('employeeRole', data.role);
           console.log('Saved employee ID to localStorage:', data.employeeId);
         } else {
           console.warn('No employee ID found in login response');

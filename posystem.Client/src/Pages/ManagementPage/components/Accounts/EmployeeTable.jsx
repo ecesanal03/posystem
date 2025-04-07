@@ -25,7 +25,7 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
         return { bg: 'rgba(156, 39, 176, 0.1)', color: '#9c27b0', border: '#9c27b0' };
       case 'manager':
         return { bg: 'rgba(33, 150, 243, 0.1)', color: '#2196f3', border: '#2196f3' };
-      case 'cashier':
+      case 'associate':
       default:
         return { bg: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', border: '#4caf50' };
     }

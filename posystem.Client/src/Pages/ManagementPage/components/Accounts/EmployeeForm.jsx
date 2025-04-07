@@ -33,7 +33,7 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
     State: '',
     ZipCode: '',
     Country: '',
-    Role: 'cashier',
+    Role: 'associate',
     IsActive: true
   });
   
@@ -59,7 +59,7 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
         State: employee.State || '',
         ZipCode: employee.ZipCode || '',
         Country: employee.Country || '',
-        Role: employee.Role || 'cashier',
+        Role: employee.Role || 'Associate',
         IsActive: typeof employee.IsActive === 'boolean' ? employee.IsActive : true
       });
     }
@@ -306,13 +306,13 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
             <Select
               labelId="role-label"
               name="Role"
-              value={formData.Role || 'cashier'}
+              value={formData.Role || 'Associate'}
               onChange={handleChange}
               label="Role"
               required
             >
               <MenuItem value="manager">Manager</MenuItem>
-              <MenuItem value="cashier">Cashier</MenuItem>
+              <MenuItem value="associate">Associate</MenuItem>
             </Select>
             {errors.Role && <FormHelperText>{errors.Role}</FormHelperText>}
           </FormControl>
