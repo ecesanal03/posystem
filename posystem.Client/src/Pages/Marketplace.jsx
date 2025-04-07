@@ -424,7 +424,7 @@ function PageContent({ searchTerm }) {
             <Box>
               <Typography variant="subtitle1" gutterBottom><strong>Author:</strong> {selectedBook?.author}</Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Price:</strong> ${selectedBook?.price?.toFixed(2)}</Typography>
-              <Typography variant="subtitle1" gutterBottom><strong>Supplier:</strong> {selectedBook?.supplierName || 'Unknown'}</Typography>
+              <Typography variant="subtitle1" gutterBottom><strong>Publisher:</strong> {selectedBook?.supplierName || 'Unknown'}</Typography>
             </Box>
           </Box>
 

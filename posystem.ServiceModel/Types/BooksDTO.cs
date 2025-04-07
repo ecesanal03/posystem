@@ -148,7 +148,7 @@ namespace posystem.ServiceModel.Types
         public Guid Supplier_Id { get; set; }
         public Guid Discount_Id { get; set; }
         public DateTime Added_At { get; set; }
-        
+        public string? SupplierName { get; set; }
 
     }
 
@@ -170,6 +170,7 @@ namespace posystem.ServiceModel.Types
         public Guid? Discount_Id { get; set; }
         public DateTime Added_At { get; set; }
         public DateTime Updated_At { get; set; }
+        public string? SupplierName { get; set; }
     }
 
     #endregion

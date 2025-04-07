@@ -11,11 +11,6 @@ using posystem.ServiceModel.Models;
 
 namespace posystem.ServiceInterface.Services
 {
-    /// <summary>
-    /// Service responsible for handling all book-related operations in the system.
-    /// This includes CRUD operations (Create, Read, Update, Delete) for books.
-    /// Uses ServiceStack's ORM Lite for database operations.
-    /// </summary>
     public class BookService : Service
     {
         private readonly IDbConnectionFactory _dbConnectionFactory;
@@ -25,11 +20,8 @@ namespace posystem.ServiceInterface.Services
             _dbConnectionFactory = dbConnectionFactory;
         }
 
-        /// <summary>
+
         /// Retrieves a list of books with optional filtering, sorting, and pagination.
-        /// </summary>
-        /// <param name="request">GetBooksDTO containing search parameters, sorting options, and pagination settings</param>
-        /// <returns>GetBooksResponse containing the list of books and total count</returns>
         public async Task<GetBooksResponse> Get(GetBooksDTO request)
         {
             using var db = _dbConnectionFactory.OpenDbConnection();
@@ -72,6 +64,19 @@ namespace posystem.ServiceInterface.Services
             // Execute Query
             var books = await db.SelectAsync(query);
 
+            // Get unique Supplier_Ids from books
+            var supplierIds = books
+                .Where(b => b.Supplier_Id != null)
+                .Select(b => b.Supplier_Id!.Value)
+                .Distinct()
+                .ToList();
+
+            // Fetch all suppliers in one query
+            var suppliers = await db.SelectAsync<Suppliers>(s => Sql.In(s.Id, supplierIds));
+
+            // Build dictionary for quick lookup
+            var supplierMap = suppliers.ToDictionary(s => s.Id, s => s.SupplierName);
+
             // Map to DTOs
             var bookDtos = books.Select(b => new BookListItemDTO
             {
@@ -85,7 +90,10 @@ namespace posystem.ServiceInterface.Services
                 CoverImage = b.Cover_Image,
                 Supplier_Id = b.Supplier_Id ?? Guid.Empty,
                 Discount_Id = b.Discount_Id ?? Guid.Empty,
-                Added_At = b.Added_At
+                Added_At = b.Added_At,
+                SupplierName = b.Supplier_Id != null && supplierMap.ContainsKey(b.Supplier_Id.Value)
+                                ? supplierMap[b.Supplier_Id.Value]
+                                : null, 
             }).ToList();
 
             return new GetBooksResponse
@@ -95,12 +103,8 @@ namespace posystem.ServiceInterface.Services
             };
         }
 
-        /// <summary>
+
         /// Retrieves a single book by its ID.
-        /// </summary>
-        /// <param name="request">GetBookDTO containing the book ID</param>
-        /// <returns>GetBookResponse containing the detailed book information</returns>
-        /// <exception cref="HttpError">Throws 404 if book is not found</exception>
         public async Task<GetBookResponse> Get(GetBookDTO request)
         {
             using var db = _dbConnectionFactory.OpenDbConnection();
@@ -109,6 +113,15 @@ namespace posystem.ServiceInterface.Services
 
             if (book == null)
                 throw HttpError.NotFound("Book not found");
+
+            // Fetch the supplier if Supplier_Id is not null
+            string? supplierName = null;
+            if (book.Supplier_Id != null)
+            {
+                var supplier = await db.SingleByIdAsync<Suppliers>(book.Supplier_Id.Value);
+                supplierName = supplier?.SupplierName;
+            }
+
 
             var bookDto = new BookDetailsDTO
             {
@@ -123,18 +136,15 @@ namespace posystem.ServiceInterface.Services
                 Supplier_Id = book.Supplier_Id,
                 Discount_Id = book.Discount_Id,
                 Added_At = book.Added_At,
-                Updated_At = book.Updated_At
+                Updated_At = book.Updated_At,
+                SupplierName = supplierName
             };
 
             return new GetBookResponse { Book = bookDto };
         }
 
-        /// <summary>
         /// Creates a new book in the system.
         /// Validates ISBN uniqueness before creation.
-        /// </summary>
-        /// <param name="request">CreateBookDTO containing the new book's information</param>
-        /// <returns>CreateBookResponse indicating success/failure and containing the created book</returns>
         public async Task<CreateBookResponse> Post(CreateBookDTO request)
         {
             try
@@ -210,12 +220,8 @@ namespace posystem.ServiceInterface.Services
             }
         }
 
-        /// <summary>
         /// Updates an existing book's information.
         /// Validates ISBN uniqueness if being changed.
-        /// </summary>
-        /// <param name="request">UpdateBookDTO containing the updated book information</param>
-        /// <returns>UpdateBookResponse indicating success/failure and containing the updated book</returns>
         public async Task<UpdateBookResponse> Put(UpdateBookDTO request)
         {
             try
@@ -305,11 +311,7 @@ namespace posystem.ServiceInterface.Services
             }
         }
 
-        /// <summary>
         /// Deletes a book from the system.
-        /// </summary>
-        /// <param name="request">DeleteBookDTO containing the ID of the book to delete</param>
-        /// <returns>DeleteBookResponse indicating success/failure of the deletion</returns>
         public async Task<DeleteBookResponse> Delete(DeleteBookDTO request)
         {
             try
