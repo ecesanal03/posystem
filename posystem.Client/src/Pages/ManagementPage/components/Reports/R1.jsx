@@ -7,7 +7,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { subMonths, subYears } from 'date-fns';
 import { DataGrid } from '@mui/x-data-grid';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, LineChart, Line } from 'recharts';
 import reportApi from '../../../../api/reportApi';
 
 const filterOptions = [
@@ -18,6 +18,7 @@ const filterOptions = [
 ];
 
 const topOptions = [10, 25, 50, 100, 'All'];
+const pieColors = ['#8499D9', '#21AFBF', '#F25E5E', '#8C5E26', '#A569BD', '#F4D03F', '#58D68D', '#5DADE2'];
 
 const SalesReports = () => {
   const [filterType, setFilterType] = useState('overall');
@@ -31,7 +32,12 @@ const SalesReports = () => {
   const handleGenerate = async () => {
     try {
       setLoading(true);
-      const reportName = filterType === 'customer' ? 'Sales by Customer' : 'Sales Summary Report';
+      let reportName = 'Sales Summary Report';
+      if (filterType === 'customer') reportName = 'Sales by Customer';
+      else if (filterType === 'book') reportName = 'Sales by Book';
+      else if (filterType === 'supplier') reportName = 'Sales by Supplier';
+      else if (filterType === 'overall' && viewMode === 'graph') reportName = 'Sales Summary Over Time'; 
+
       const response = await reportApi.generateReport(reportName, startDate, endDate);
       setReportResult(response.data || []);
     } catch (error) {
@@ -40,6 +46,7 @@ const SalesReports = () => {
       setLoading(false);
     }
   };
+
 
   const setRangeFromToday = (months) => {
     const now = new Date();
@@ -57,55 +64,173 @@ const SalesReports = () => {
     flex: 1
   }));
 
+  const renderBookSummary = () => {
+    const topBooks = reportResult.slice(0, 3);
+    return (
+      <>
+        <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Books</Typography>
+        <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+          {topBooks.map((book, idx) => (
+            <Box key={idx} sx={{ mb: 2 }}>
+              <Typography variant="body2"><strong>Title:</strong> {book.BookTitle || 'N/A'}</Typography>
+              <Typography variant="body2"><strong>Category:</strong> {book.Category || 'N/A'}</Typography>
+              <Typography variant="body2"><strong>Total Sales:</strong> ${book.TotalSales != null ? book.TotalSales.toFixed(2) : '0.00'}</Typography>
+              <Typography variant="body2"><strong>Total Orders:</strong> {book.TotalOrders ?? 0}</Typography>
+              <Typography variant="body2"><strong>Total Quantity Sold:</strong> {book.TotalQuantity ?? 0}</Typography>
+              <Typography variant="body2"><strong>Avg Quantity Per Invoice:</strong> {book.AvgQuantityPerInvoiceItem != null ? book.AvgQuantityPerInvoiceItem.toFixed(2) : '0.00'}</Typography>
+            </Box>
+          ))}
+        </Paper>
+      </>
+    );
+  };
+
+  const renderSupplierSummary = () => {
+    const topSuppliers = reportResult.slice(0, 3);
+    return (
+      <>
+        <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Suppliers</Typography>
+        <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+          {topSuppliers.map((supplier, idx) => (
+            <Box key={idx} sx={{ mb: 2 }}>
+              <Typography variant="body2"><strong>Supplier:</strong> {supplier.SupplierName || 'N/A'}</Typography>
+              <Typography variant="body2"><strong>Total Sales:</strong> ${supplier.TotalSales != null ? supplier.TotalSales.toFixed(2) : '0.00'}</Typography>
+            </Box>
+          ))}
+        </Paper>
+      </>
+    );
+  };
+  
+
   const renderGraph = () => {
-    if (filterType === 'customer') {
-      const customerData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
+    if (filterType === 'overall') {
+      const graphData = reportResult
+        .map((entry) => {
+          const rawDate = entry.Date;
+          if (!rawDate) return null;
+
+          const date = new Date(rawDate);
+          if (isNaN(date)) return null;
+
+          return {
+            ...entry,
+            FormattedDate: date.toISOString().split('T')[0],
+          };
+        })
+        .filter((entry) => entry !== null);
+
+        console.log("✅ Final graph data:", graphData);
+
+      if (graphData.length === 1) {
+        const cloneDate = new Date(graphData[0].FormattedDate);
+        cloneDate.setDate(cloneDate.getDate() - 1);
+        graphData.unshift({
+          ...graphData[0],
+          TotalSales: 0,
+          FormattedDate: cloneDate.toISOString().split('T')[0]
+        });
+      }
+
       return (
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={customerData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
-            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+          <LineChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
             <XAxis
-              dataKey="CustomerName"
+              dataKey="FormattedDate"
               stroke="#ccc"
               angle={-45}
               textAnchor="end"
               interval={0}
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return isNaN(date)
+                  ? ''
+                  : new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+              }}
+              label={{ value: "Date", position: "insideBottom", offset: -40, fill: "#ccc" }}
             />
-            <YAxis stroke="#ccc" />
+            <YAxis
+              stroke="#ccc"
+              label={{
+                value: "Total Sales ($)",
+                angle: -90,
+                position: "insideLeft",
+                offset: 10,
+                fill: "#ccc"
+              }}
+            />
             <Tooltip
-              contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
-              labelStyle={{ color: "#fff" }}
+              contentStyle={{ backgroundColor: '#333', borderColor: '#555', color: '#fff' }}
+              labelFormatter={(value) => {
+                const date = new Date(value);
+                return isNaN(date)
+                  ? ''
+                  : new Intl.DateTimeFormat('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }).format(date);
+              }}
             />
-            <Bar dataKey="TotalSpent" fill="#8499D9" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="TotalSpent" position="top" fill="#fff" />
-            </Bar>
-          </BarChart>
+            <Line
+              type="monotone"
+              dataKey="TotalSales"
+              stroke="#8499D9"
+              strokeWidth={3}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       );
     }
 
-    return (
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={Object.entries(reportResult[0] || {}).map(([key, value]) => ({
-            label: key,
-            value: typeof value === "number" ? Number(value.toFixed(2)) : 0
-          }))}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-        >
-          <CartesianGrid stroke="#444" strokeDasharray="3 3" />
-          <XAxis dataKey="label" stroke="#ccc" />
-          <YAxis stroke="#ccc" />
-          <Tooltip
-            contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
-            labelStyle={{ color: "#fff" }}
-          />
-          <Bar dataKey="value" fill="#8499D9" radius={[6, 6, 0, 0]}>
-            <LabelList dataKey="value" position="top" fill="#fff" />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    );
+    if (filterType === 'customer' || filterType === 'supplier') {
+      const key = filterType === 'customer' ? 'CustomerName' : 'SupplierName';
+      const valueKey = filterType === 'customer' ? 'TotalSpent' : 'TotalSales';
+      const graphData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+            <XAxis dataKey={key} stroke="#ccc" angle={-45} textAnchor="end" interval={0} />
+            <YAxis stroke="#ccc" />
+            <Tooltip contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }} labelStyle={{ color: "#fff" }} />
+            <Bar dataKey={valueKey} fill="#8499D9" radius={[6, 6, 0, 0]}>
+              <LabelList dataKey={valueKey} position="top" fill="#fff" />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    } else if (filterType === 'book') {
+      const categoryData = reportResult.reduce((acc, row) => {
+        const existing = acc.find(x => x.name === row.Category);
+        if (existing) existing.value += row.TotalSales;
+        else acc.push({ name: row.Category, value: row.TotalSales });
+        return acc;
+      }, []);
+
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <PieChart>
+            <Pie
+              data={categoryData}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={150}
+              label={({ name }) => name}
+            >
+              {categoryData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      );
+    }
+    return null;
   };
 
   return (
@@ -192,8 +317,11 @@ const SalesReports = () => {
               <ToggleButton value="table">Table</ToggleButton>
               <ToggleButton value="graph">Graph</ToggleButton>
             </ToggleButtonGroup>
+            
+            {viewMode === 'summary' && filterType === 'book' && reportResult.length > 0 && renderBookSummary()}
+            {viewMode === 'summary' && filterType === 'supplier' && reportResult.length > 0 && renderSupplierSummary()}
 
-            {viewMode === 'graph' && filterType === 'customer' && reportResult.length > 0 && (
+            {viewMode === 'graph' && ['customer', 'supplier'].includes(filterType) && reportResult.length > 0 && (
               <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ color: '#ccc', mt: 1 }}>Show top:</Typography>
                 <TextField
@@ -231,7 +359,7 @@ const SalesReports = () => {
               </>
             )}
 
-            {viewMode === 'summary' && filterType !== 'customer' && (
+              {viewMode === 'summary' && !['customer', 'book'].includes(filterType) && (
               <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
                 {reportResult.length > 0 ? (
                   <Box>

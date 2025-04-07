@@ -9,8 +9,8 @@ import {
 
 // Import individual report components
 import SalesReports from './R1';
-import Report2 from './R2';
-import Report3 from './R3';
+import CustomerSubscriptionReport from './R2';
+import AuthorSalesReport from './R3';
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
@@ -92,10 +92,10 @@ const ReportsPage = () => {
           <SalesReports />
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
-          <Report2 />
+          <CustomerSubscriptionReport />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
-          <Report3 />
+          <AuthorSalesReport />
         </TabPanel>
       </Box>
     </Box>

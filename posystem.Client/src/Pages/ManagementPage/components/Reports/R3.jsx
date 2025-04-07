@@ -1,82 +1,148 @@
-import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  CircularProgress,
-  Alert,
-  Divider
+import React, { useState } from 'react';
+import {
+  Box, Typography, Paper, Grid, TextField, MenuItem, Button, Divider, Stack
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { subMonths, subYears } from 'date-fns';
+import { DataGrid } from '@mui/x-data-grid';
+import reportApi from '../../../../api/reportApi';
 
-const Report3 = () => {
-  // State management
+const AuthorSalesReport = () => {
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [reportResult, setReportResult] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [reportData, setReportData] = useState([]);
 
-  // Fetch data for the report
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Your data fetching logic will go here
-        // Example:
-        // const response = await someApi.getData();
-        // setReportData(response.data);
-        
-        // Placeholder data
-        setReportData([]);
-        
-      } catch (err) {
-        console.error('Error fetching report data:', err);
-        setError('Failed to load report data. Please try again later.');
-      } finally {
-        setLoading(false);
+  const formatDateString = (date) =>
+  date ? date.toISOString().split('T')[0] : null;
+
+  const handleGenerate = async () => {
+    try {
+      setLoading(true);
+
+      const formattedStart = formatDateString(startDate);
+      const formattedEnd = formatDateString(endDate);
+
+      console.log("Sending formatted dates:", {
+        formattedStart,
+        formattedEnd
+      });
+
+      const response = await reportApi.generateReport(
+        'Sales by Author',
+        formattedStart,
+        formattedEnd
+      );
+
+      setReportResult(response.data || []);
+    } catch (error) {
+      console.error("Failed to generate author sales report:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setRangeFromToday = (months) => {
+    const now = new Date();
+    if (months === 12) setStartDate(subYears(now, 1));
+    else setStartDate(subMonths(now, months));
+    setEndDate(now);
+  };
+
+  const formatDate = (date) =>
+    date ? new Intl.DateTimeFormat('en-US').format(new Date(date)) : '';
+
+  const columns = [
+    { field: 'AuthorName', headerName: 'Author', flex: 1 },
+    { field: 'NumberOfBooks', headerName: 'Number of Books', flex: 1 },
+    { field: 'TotalBooksSold', headerName: 'Total Books Sold', flex: 1 },
+    {
+      field: 'TotalRevenue',
+      headerName: 'Total Revenue',
+      flex: 1,
+      renderCell: (params) => {
+        const value = params.row.TotalRevenue;
+        return <span>${Number(value).toFixed(2)}</span>;
       }
-    };
-
-    fetchData();
-  }, []);
+    },
+    {
+      field: 'AverageRevenuePerBook',
+      headerName: 'Avg Revenue/Book',
+      flex: 1,
+      renderCell: (params) => {
+        const value = params.row.AverageRevenuePerBook;
+        return <span>${Number(value).toFixed(2)}</span>;
+      }
+    },
+    { field: 'AvgUnitsPerOrder', headerName: 'Avg Units per Order', flex: 1 },
+    { field: 'TopSellingBook', headerName: 'Top Selling Book', flex: 1 },
+  ];
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-        Report 3
-      </Typography>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box sx={{ p: 4, overflowY: 'auto' }}>
+        <Paper sx={{ p: 4, backgroundColor: '#2b2b2b', color: '#fff' }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 4 }}>Sales Report by Author</Typography>
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
+          <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+            <Grid item xs={12} md={6}>
+              <Stack direction="row" spacing={2}>
+                <DatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(newValue) => setStartDate(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                      InputLabelProps={{ style: { color: '#ccc' } }}
+                      InputProps={{ style: { color: '#fff' } }}
+                    />
+                  )}
+                />
+                <DatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(newValue) => setEndDate(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
+                      InputLabelProps={{ style: { color: '#ccc' } }}
+                      InputProps={{ style: { color: '#fff' } }}
+                    />
+                  )}
+                />
+              </Stack>
+            </Grid>
 
-      {error && (
-        <Alert severity="error" sx={{ my: 2 }}>
-          {error}
-        </Alert>
-      )}
+            <Grid item xs={12} md={6}>
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button variant="outlined" onClick={() => setRangeFromToday(1)}>Last 1M</Button>
+                <Button variant="outlined" onClick={() => setRangeFromToday(6)}>Last 6M</Button>
+                <Button variant="outlined" onClick={() => setRangeFromToday(12)}>Last 1Y</Button>
+                <Button variant="contained" color="primary" onClick={handleGenerate} disabled={loading}>
+                  {loading ? 'Loading...' : 'Generate Report'}
+                </Button>
+              </Stack>
+            </Grid>
+          </Grid>
 
-      {!loading && !error && (
-        <Paper elevation={2} sx={{ p: 3, bgcolor: '#2A2D2A', borderRadius: 1, border: '1px solid #61677A' }}>
-          <Typography variant="body1">
-            This is the Report 3 sandbox. Team members can implement their report UI and logic here.
+          <Divider sx={{ my: 4, borderColor: '#444' }} />
+
+          <Typography variant="h6" gutterBottom>
+            Author Sales Data ({formatDate(startDate)} - {formatDate(endDate)})
           </Typography>
-          
-          <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.1)' }} />
-          
-          {/* Display report data when available */}
-          {reportData.length > 0 && (
-            <Box mt={3}>
-              {/* Your report content will go here */}
-              {/* Examples: charts, tables, statistics, etc. */}
-            </Box>
-          )}
+          <Box sx={{ height: 500, backgroundColor: '#1a1a1a', p: 2 }}>
+            <DataGrid
+              rows={reportResult.map((r, i) => ({ id: i, ...r }))}
+              columns={columns}
+              sx={{ color: '#fff' }}
+            />
+          </Box>
         </Paper>
-      )}
-    </Box>
+      </Box>
+    </LocalizationProvider>
   );
 };
 
-export default Report3;
+export default AuthorSalesReport;
+
