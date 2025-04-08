@@ -5,11 +5,7 @@ import axios from './axiosInstance';
  * Provides methods for retrieving and managing orders.
  */
 const ordersApi = {
-    /**
-     * Retrieves a list of orders with pagination.
-     * @param {Object} params - Query parameters for pagination
-     * @returns {Promise<Object>} Response containing orders and total count
-     */
+
     getOrders: async (params = {}) => {
         try {
             // Simplify parameters to avoid 500 errors
@@ -51,11 +47,6 @@ const ordersApi = {
         }
     },
 
-    /**
-     * Retrieves detailed information about a single order.
-     * @param {string} id - The unique identifier of the order
-     * @returns {Promise<Object>} Response containing order details
-     */
     getOrder: async (id) => {
         try {
             const response = await axios.get(`/orders/${id}`);

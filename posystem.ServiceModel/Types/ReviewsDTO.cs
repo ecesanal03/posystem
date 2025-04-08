@@ -10,7 +10,6 @@ namespace posystem.ServiceModel.Types
     [Route("/reviews/create", "POST")]
     public class CreateReviewDTO : IGet, IReturn<CreateReviewResponse>
     {
-        public Guid CustomerId { get; set; }
         public Guid BookId { get; set; }
         public int Rating { get; set; }
         public string? Description { get; set; }
@@ -24,19 +23,21 @@ namespace posystem.ServiceModel.Types
     }
 
     [Route("/reviews/retrieve", "GET")]
-    public class RetrieveReviewDTO : IGet, IReturn<RetrieveReviewResponse>
+    public class RetrieveReviewsDTO : IGet, IReturn<RetrieveReviewsResponse>
     {
-        public Guid Id { get; set; }
         public Guid BookId { get; set; }
     }
 
-    public class RetrieveReviewResponse
+    public class ReviewItem
     {
-        public Guid Id { get; set; }
-        public Guid CustomerId { get; set; }
-        public Guid BookId { get; set; }
         public int Rating { get; set; }
         public string? Description { get; set; }
         public DateTime ReviewDate { get; set; }
+        public string? ReviewerName { get; set; }
+    }
+
+    public class RetrieveReviewsResponse
+    {
+        public List<ReviewItem> Reviews { get; set; } 
     }
 }

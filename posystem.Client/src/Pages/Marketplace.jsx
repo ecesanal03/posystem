@@ -45,6 +45,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import bookApi from '../api/bookApi';
 import cartApi from '../api/cartApi';
 import notificationApi from '../api/notificationApi';
+import reviewApi from '../api/reviewApi';
 
 // -----------------------------------------------------------------------------
 // Navigation configuration (categories, etc.)
@@ -292,13 +293,15 @@ function PageContent({ searchTerm, selectedCategory }) {
     fetchBooks();
   }, [searchTerm, selectedCategory]);
 
-  const handleBookClick = (book) => {
+  const handleBookClick = async (book) => {
     setSelectedBook(book);
-    // TODO: Fetch real reviews via API if needed
-    setReviews([
-      { user: "Alice", content: "Amazing book!" },
-      { user: "Bob", content: "Loved the character development." }
-    ]);
+    try {
+      const reviewData = await reviewApi.getReviews(book.id);
+      setReviews(reviewData.reviews || []);
+    } catch (error) {
+      console.error("Failed to load reviews:", error);
+      setReviews([]);
+    }
     setShowDialog(true);
   };
   
@@ -308,12 +311,34 @@ function PageContent({ searchTerm, selectedCategory }) {
     setNewReview('');
   };
   
-  const handleAddReview = () => {
-    if (newReview.trim()) {
-      setReviews(prev => [...prev, { user: "You", content: newReview }]);
-      setNewReview('');
+  const handleAddReview = async () => {
+    if (!newReview.trim() || reviewRating === 0) {
+      alert("Please enter a review and rating.");
+      return;
+    }
+  
+    try {
+      const response = await reviewApi.createReview(
+        selectedBook.id,
+        reviewRating,
+        newReview.trim()
+      );
+  
+      if (response.result === "Success") {
+        // Reload reviews after posting
+        const updatedReviews = await reviewApi.getReviews(selectedBook.id);
+        setReviews(updatedReviews.reviews || []);
+        setNewReview('');
+        setReviewRating(0);
+      } else {
+        alert(response.message || "Failed to submit review.");
+      }
+    } catch (error) {
+      console.error("Failed to submit review:", error);
+      alert("Error submitting review.");
     }
   };
+  
 
   const handleAddToCart = async () => {
     try {
@@ -445,17 +470,18 @@ function PageContent({ searchTerm, selectedCategory }) {
 
           {/* Reviews Section */}
           <Box>
-            <Typography variant="h6" gutterBottom>Reviews</Typography>
-
             {reviews.length === 0 ? (
               <Typography variant="body2" color="text.secondary">No reviews yet.</Typography>
             ) : (
               <Box sx={{ maxHeight: 150, overflowY: 'auto', mb: 2, px: 1 }}>
                 {reviews.map((review, idx) => (
                   <Box key={idx} sx={{ mb: 2 }}>
-                    <Typography variant="body2" fontWeight="bold">{review.user}</Typography>
+                    <Typography variant="body2" fontWeight="bold">{review.reviewerName}</Typography>
                     <Rating value={review.rating || 0} readOnly size="small" sx={{ mb: 0.5 }} />
-                    <Typography variant="body2">{review.content}</Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>{review.description}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(review.reviewDate).toLocaleDateString()}
+                    </Typography>
                   </Box>
                 ))}
               </Box>
