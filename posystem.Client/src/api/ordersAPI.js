@@ -142,6 +142,30 @@ const ordersApi = {
         }
     },
 
+    getMyOrders: async () => {
+        try {
+            console.log('Fetching my orders...');
+            const response = await axios.get('/orders/me');
+            console.log('Received orders:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching my orders:', error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    getMyInvoices: async () => {
+        try {
+            console.log('Fetching my invoices...');
+            const response = await axios.get('/orders/me/invoices');
+            console.log('Received invoices:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching my invoices:', error.response?.data || error.message);
+            throw error;
+        }
+    },
+
     placeOrder: async (orderData) => {
         const response = await axios.post('/orders/create', orderData);
         return response.data;

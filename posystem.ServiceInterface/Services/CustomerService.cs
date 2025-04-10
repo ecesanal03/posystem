@@ -126,6 +126,8 @@ namespace posystem.ServiceInterface.Services
                 First_Name = customer.First_Name,
                 Middle_Name = customer.Middle_Name,
                 Last_Name = customer.Last_Name,
+                PhoneNumber = customer.PhoneNumber,
+                DateOfBirth = customer.DateOfBirth,
                 AddressLineOne = customer.AddressLineOne,
                 AddressLineTwo = customer.AddressLineTwo,
                 City = customer.City,
@@ -281,6 +283,44 @@ namespace posystem.ServiceInterface.Services
             return new DeleteCustomerResponse {
                 Success = true,
                 Message = "Customer deleted successfully"
+            };
+        }
+
+        [Authenticate]
+        public async Task<UpdateProfileResponse> Put(UpdateMyProfileDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var email = base.GetSession().Email;
+
+            if (string.IsNullOrEmpty(email))
+                throw HttpError.Unauthorized("User email not found in session");
+
+            var customer = await db.SingleAsync<Customers>(c => c.Email == email);
+
+            if (customer == null)
+                throw HttpError.NotFound("Customer not found");
+
+            // Update customer fields
+            customer.First_Name = request.FirstName;
+            customer.Middle_Name = request.MiddleName;
+            customer.Last_Name = request.LastName;
+            customer.PhoneNumber = request.PhoneNumber;
+            customer.DateOfBirth = request.DateOfBirth;
+            customer.AddressLineOne = request.AddressLineOne;
+            customer.AddressLineTwo = request.AddressLineTwo;
+            customer.City = request.City;
+            customer.State = request.State;
+            customer.ZipCode = request.ZipCode;
+            customer.Country = request.Country;
+            customer.Updated_At = DateTime.UtcNow;
+
+            await db.UpdateAsync(customer);
+
+            return new UpdateProfileResponse 
+            { 
+                Success = true,
+                Message = "Profile updated successfully"
             };
         }
     }

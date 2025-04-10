@@ -54,14 +54,25 @@ const customerApi = {
 
   getMyProfile: async () => {
     try {
+      console.log('Fetching profile data...');
       const response = await axios.get('/customers/me');
+      console.log('Received profile:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching current customer profile:', error);
+      console.error('Error fetching profile:', error.response?.data || error.message);
       throw error;
     }
   },
   
+  updateProfile: async (formData) => {
+    try {
+      const response = await axios.put('/customers/me', formData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating customer profile:', error);
+      throw error;
+    }
+  },
 
   deleteCustomer: async (id) => {
     try {
@@ -75,10 +86,17 @@ const customerApi = {
 
   login: async (email, password) => {
     try {
+      console.log('Attempting login for:', email);
       const response = await axios.post('/customers/login', { email, password });
+      console.log('Login response:', response.data);
+      if (response.data.success) {
+        console.log('Setting token:', response.data.token);
+        localStorage.setItem('authToken', response.data.token);
+      }
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
+      console.error('Error details:', error.response?.data);
       throw error;
     }
   },
@@ -89,6 +107,30 @@ const customerApi = {
       return response.data;
     } catch (error) {
       console.error('Registration error:', error);
+      throw error;
+    }
+  },
+
+  updateMyProfile: async (profileData) => {
+    try {
+      console.log('Updating profile with data:', profileData);
+      const response = await axios.put('/customers/me', {
+        firstName: profileData.firstName,
+        middleName: profileData.middleName,
+        lastName: profileData.lastName,
+        phoneNumber: profileData.phoneNumber,
+        dateOfBirth: profileData.dateOfBirth,
+        addressLineOne: profileData.addressLineOne,
+        addressLineTwo: profileData.addressLineTwo,
+        city: profileData.city,
+        state: profileData.state,
+        zipCode: profileData.zipCode,
+        country: profileData.country
+      });
+      console.log('Profile update response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error.response?.data || error.message);
       throw error;
     }
   }

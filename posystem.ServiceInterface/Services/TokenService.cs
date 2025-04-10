@@ -20,8 +20,8 @@ public class TokenService
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: "https://localhost", // Placeholder for the issuer
-            audience: "https://localhost",  // Define your audience
+            issuer: "http://localhost", // Changed from https to http
+            audience: "http://localhost",  // Changed from https to http
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),  // Set token expiration time
             signingCredentials: creds

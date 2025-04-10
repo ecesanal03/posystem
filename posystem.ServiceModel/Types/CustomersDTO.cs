@@ -23,6 +23,27 @@ namespace posystem.ServiceModel.Types
     [Route("/customers/me", "GET")]
     public class GetMyCustomerProfile : IReturn<ReturnCustomerByIdResponse> { }
 
+    [Route("/customers/me", "PUT")]
+    public class UpdateMyProfileDTO : IReturn<UpdateProfileResponse>
+    {
+        public string FirstName { get; set; }
+        public string? MiddleName { get; set; }
+        public string LastName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string AddressLineOne { get; set; }
+        public string? AddressLineTwo { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public string ZipCode { get; set; }
+        public string Country { get; set; }
+    }
+
+    public class UpdateProfileResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
 
     public class ReturnCustomerByIdResponse
     {
@@ -30,13 +51,14 @@ namespace posystem.ServiceModel.Types
         public string First_Name { get; set; }
         public string? Middle_Name { get; set; }
         public string Last_Name { get; set; }
+        public string? PhoneNumber { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public string AddressLineOne { get; set; }
         public string? AddressLineTwo { get; set; }
         public string City { get; set; }
         public string State { get; set; }
         public string ZipCode { get; set; }
         public string Country { get; set; }
-
     }
 
 
