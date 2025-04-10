@@ -276,6 +276,12 @@ function PageContent({ searchTerm, selectedCategory }) {
   const booksPerPage = 12;
   const isFeatured = !selectedCategory;
 
+  const calculateAverageRating = (reviews) => {
+    if (!reviews || reviews.length === 0) return 0;
+    const sum = reviews.reduce((total, review) => total + review.rating, 0);
+    return (sum / reviews.length).toFixed(1);
+  };
+
   useEffect(() => {
     // Modify the fetchBooks function in your useEffect
     const fetchBooks = async () => {
@@ -562,6 +568,24 @@ function PageContent({ searchTerm, selectedCategory }) {
               }}
             />
             <Box>
+            <Typography variant="subtitle1" gutterBottom>
+                {reviews.length > 0 ? (
+                  <>
+                    {calculateAverageRating(reviews)}
+                    <Rating
+                      value={parseFloat(calculateAverageRating(reviews))}
+                      readOnly
+                      size="small"
+                      sx={{ ml: 1, verticalAlign: 'middle' }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                    </Typography>
+                  </>
+                ) : (
+                  'No reviews yet'
+                )}
+              </Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Author:</strong> {selectedBook?.author}</Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Price:</strong> ${selectedBook?.price?.toFixed(2)}</Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Publisher:</strong> {selectedBook?.supplierName || 'Unknown'}</Typography>
