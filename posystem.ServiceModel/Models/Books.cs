@@ -70,7 +70,7 @@ namespace posystem.ServiceModel.Models
   // `Price` decimal(10,2) NOT NULL,
   // `Units` int NOT NULL,
   // `Description` text NOT NULL,
-  // `Cover_Image` blob,
+  // `Cover_Image` varchar(1000),
   // `Added_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   // `Updated_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   // `Created_By` varchar(25) DEFAULT NULL,
