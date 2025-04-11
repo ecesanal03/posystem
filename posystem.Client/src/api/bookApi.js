@@ -71,9 +71,13 @@ const bookApi = {
         Discount_Id: bookData.discountId || null
       };
 
-      // For VARCHAR, we directly set the image URL
-      if (bookData.imageUrl) {
-        requestData.Cover_Image = bookData.imageUrl;
+      // Handle cover image - this could now be a URL string
+      if (typeof bookData.coverImage === 'string' && bookData.coverImage.trim() !== '') {
+        requestData.Cover_Image = bookData.coverImage;
+      } else if (bookData.coverImage instanceof File) {
+        // If it's a file, handle it appropriately
+        // This would need to be changed if you're moving to storing only URLs
+        requestData.Cover_Image = bookData.coverImage;
       }
 
       const response = await axios.post('/books', requestData);
@@ -99,10 +103,10 @@ const bookApi = {
         Discount_Id: bookData.discountId || null
       };
 
-      // For VARCHAR, we directly set the image URL
-      if (bookData.imageUrl) {
-        requestData.Cover_Image = bookData.imageUrl;
-      }
+      // Handle cover image - this could now be a URL string
+      if (typeof bookData.coverImage === 'string' && bookData.coverImage.trim() !== '') {
+        requestData.Cover_Image = bookData.coverImage;
+      } 
 
       const response = await axios.put(`/books/${id}`, requestData);
       return response.data;

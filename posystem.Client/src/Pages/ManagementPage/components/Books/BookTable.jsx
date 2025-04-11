@@ -19,14 +19,14 @@ const BookTable = ({ books, onEdit, onDelete }) => {
         <Table stickyHeader>
           <TableHead sx={{ borderBottom: '3px solid #61677A' }}>
             <TableRow>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Title</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Author</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>ISBN</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Supplier ID</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Price</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Units</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Added Date</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}></TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Title</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Author</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>ISBN</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Supplier</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Price</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Units</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}>Added Date</TableCell>
+              <TableCell sx={{ py: 1.0, bgcolor: '#2A2D2A' }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -43,34 +43,26 @@ const BookTable = ({ books, onEdit, onDelete }) => {
                   <TableCell>{book.title}</TableCell>
                   <TableCell>{book.author}</TableCell>
                   <TableCell>{book.isbn || 'N/A'}</TableCell>
-                  <TableCell>{book.supplier_Id ? book.supplier_Id.substring(0, 8) : 'N/A'}</TableCell>
+                  <TableCell>{book.supplierName || 'N/A'}</TableCell>
                   <TableCell>${book.price.toFixed(2)}</TableCell>
-                  <TableCell>{book.units}</TableCell>
+
+                  <TableCell sx={{ color: book.units <= 10 ? '#FF3333' : 'inherit'}}>
+                    {book.units}
+                  </TableCell>
                   <TableCell>{book.added_At ? new Date(book.added_At).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton 
                         size="small" 
                         onClick={() => onEdit(book)}
-                        sx={{ 
-                          color: '#6D7386',
-                          mr: 1,
-                          '&:hover': { 
-                            bgcolor: 'rgba(109, 115, 134, 0.1)' 
-                          }
-                        }}
+                        sx={{ color: '#61677A' }}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton 
                         size="small" 
                         onClick={() => onDelete(book)}
-                        sx={{ 
-                          color: '#ff6b6b',
-                          '&:hover': { 
-                            bgcolor: 'rgba(255, 107, 107, 0.1)' 
-                          }
-                        }}
+                        sx={{ color: '#EF4040' }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -80,7 +72,7 @@ const BookTable = ({ books, onEdit, onDelete }) => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
                   No books found
                 </TableCell>
               </TableRow>
@@ -93,18 +85,7 @@ const BookTable = ({ books, onEdit, onDelete }) => {
 };
 
 BookTable.propTypes = {
-  books: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      title: PropTypes.string.isRequired,
-      author: PropTypes.string.isRequired,
-      isbn: PropTypes.string,
-      supplierId: PropTypes.string,
-      price: PropTypes.number.isRequired,
-      units: PropTypes.number.isRequired,
-      addedAt: PropTypes.string
-    })
-  ).isRequired,
+  books: PropTypes.array.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired
 };
