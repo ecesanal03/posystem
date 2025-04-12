@@ -7,8 +7,9 @@ const processBookData = (book) => {
   // Create a processed book object with consistent field naming
   return {
     ...book,
-    // Make sure we have a fallback for CoverImage
+    // Make sure we have a fallback for cover image (handle both naming conventions)
     coverImage: book.Cover_Image || book.coverImage || null,
+    CoverImage: book.Cover_Image || book.coverImage || null,
     supplier_Id: book.Supplier_Id || book.supplier_Id,
     category_Id: book.Category_Id || book.category_Id,
     discount_Id: book.Discount_Id || book.discount_Id,
@@ -25,7 +26,7 @@ const formatBookDataForRequest = (bookData, isUpdate = false, id = null) => {
     Units: parseInt(bookData.units),
     Description: bookData.description || '',
     Supplier_Id: bookData.supplier_Id || null,
-    Discount_Id: bookData.discount_Id || null
+    Discount_Id: bookData.discount_Id || null,
   };
   
   // Add ID if updating
