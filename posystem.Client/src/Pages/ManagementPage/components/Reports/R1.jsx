@@ -58,11 +58,76 @@ const SalesReports = () => {
   const formatDate = (date) =>
     date ? new Intl.DateTimeFormat('en-US').format(new Date(date)) : '';
 
-  const columns = Object.keys(reportResult[0] || {}).map(key => ({
-    field: key,
-    headerName: key,
-    flex: 1
-  }));
+  const columns = Object.keys(reportResult[0] || {}).map((key) => {
+    const isCurrencyField =
+      key.toLowerCase().includes('sales') ||
+      key.toLowerCase().includes('value') ||
+      key.toLowerCase().includes('amount');
+  
+    const isNumericField =
+      key.toLowerCase().includes('total') ||
+      key.toLowerCase().includes('count') ||
+      typeof reportResult[0][key] === 'number';
+  
+    return {
+      field: key,
+      headerName: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Make headers prettier
+      flex: 1,
+      valueFormatter: ({ value }) => {
+        if (isCurrencyField && typeof value === 'number') {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(value);
+        }
+  
+        if (isNumericField && typeof value === 'number') {
+          return new Intl.NumberFormat('en-US').format(value);
+        }
+  
+        return value;
+      }
+    };
+  });
+
+  const rows = reportResult.map((row, i) => {
+    const formattedRow = { id: i };
+  
+    for (const [key, value] of Object.entries(row)) {
+      const lowerKey = key.toLowerCase();
+  
+      if (
+        (lowerKey.includes('sales') || lowerKey.includes('value') || lowerKey.includes('amount') || lowerKey.includes('spent')) &&
+        !isNaN(value)
+      ) {
+        // Format as currency
+        formattedRow[key] = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(Number(value));
+      } else if (
+        (lowerKey.includes('total') || lowerKey.includes('count') || lowerKey.includes('orders')) &&
+        !isNaN(value)
+      ) {
+        // Format as plain number with commas
+        formattedRow[key] = new Intl.NumberFormat('en-US').format(Number(value));
+      } else {
+        // Leave other values as-is
+        formattedRow[key] = value;
+      }
+    }
+  
+    return formattedRow;
+  });
+  
+    
+    
+    
+    
 
   const renderBookSummary = () => {
     const topBooks = reportResult.slice(0, 3);
@@ -86,15 +151,81 @@ const SalesReports = () => {
   };
 
   const renderSupplierSummary = () => {
-    const topSuppliers = reportResult.slice(0, 3);
+    const supplierMap = {};
+  
+    reportResult.forEach(entry => {
+      const supplier = entry.SupplierName || 'Unknown Supplier';
+      const book = entry.BookTitle || 'Untitled';
+      const category = entry.Category || 'Uncategorized';
+      const sales = Number(entry.TotalSales || 0);
+  
+      if (!supplierMap[supplier]) {
+        supplierMap[supplier] = {
+          totalSales: 0,
+          books: {}
+        };
+      }
+  
+      supplierMap[supplier].totalSales += sales;
+  
+      if (!supplierMap[supplier].books[book]) {
+        supplierMap[supplier].books[book] = {
+          title: book,
+          category: category,
+          sales: 0
+        };
+      }
+  
+      supplierMap[supplier].books[book].sales += sales;
+    });
+  
+    const topSuppliers = Object.entries(supplierMap)
+      .map(([name, data]) => ({
+        name,
+        totalSales: data.totalSales,
+        topBooks: Object.values(data.books)
+          .sort((a, b) => b.sales - a.sales)
+          .slice(0, 3)
+      }))
+      .sort((a, b) => b.totalSales - a.totalSales)
+      .slice(0, 3);
+  
     return (
       <>
         <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Suppliers</Typography>
         <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
           {topSuppliers.map((supplier, idx) => (
-            <Box key={idx} sx={{ mb: 2 }}>
-              <Typography variant="body2"><strong>Supplier:</strong> {supplier.SupplierName || 'N/A'}</Typography>
-              <Typography variant="body2"><strong>Total Sales:</strong> ${supplier.TotalSales != null ? supplier.TotalSales.toFixed(2) : '0.00'}</Typography>
+            <Box key={idx} sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                {supplier.name}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Total Sales:</strong> {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD'
+                }).format(supplier.totalSales)}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1, fontStyle: 'italic' }}>
+                Top 3 books sold by this supplier during the selected date range:
+              </Typography>
+              <Box sx={{ pl: 2 }}>
+                {supplier.topBooks.map((book, bIdx) => (
+                  <Box key={bIdx} sx={{ mb: 1 }}>
+                    <Typography variant="body2">
+                      📚 <strong>{book.title}</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Category:</strong> {book.category}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Sales:</strong> {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                      }).format(book.sales)}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
           ))}
         </Paper>
@@ -105,50 +236,49 @@ const SalesReports = () => {
 
   const renderGraph = () => {
     if (filterType === 'overall') {
-      const graphData = reportResult
-        .map((entry) => {
-          const rawDate = entry.Date;
-          if (!rawDate) return null;
-
-          const date = new Date(rawDate);
-          if (isNaN(date)) return null;
-
-          return {
-            ...entry,
-            FormattedDate: date.toISOString().split('T')[0],
+      const monthlyTotals = {};
+  
+      reportResult.forEach((entry) => {
+        const rawDate = entry.Date;
+        const totalSales = Number(entry.TotalSales);
+  
+        if (!rawDate || isNaN(new Date(rawDate)) || isNaN(totalSales)) return;
+  
+        const date = new Date(rawDate);
+        const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, '0')}`; // e.g. "2024-04"
+  
+        if (!monthlyTotals[monthKey]) {
+          monthlyTotals[monthKey] = {
+            month: monthKey,
+            TotalSales: 0
           };
-        })
-        .filter((entry) => entry !== null);
-
-        console.log("✅ Final graph data:", graphData);
-
-      if (graphData.length === 1) {
-        const cloneDate = new Date(graphData[0].FormattedDate);
-        cloneDate.setDate(cloneDate.getDate() - 1);
-        graphData.unshift({
-          ...graphData[0],
-          TotalSales: 0,
-          FormattedDate: cloneDate.toISOString().split('T')[0]
-        });
-      }
-
+        }
+  
+        monthlyTotals[monthKey].TotalSales += totalSales;
+      });
+  
+      const aggregatedData = Object.values(monthlyTotals).sort((a, b) =>
+        a.month.localeCompare(b.month)
+      );
+  
       return (
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+          <LineChart data={aggregatedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
             <XAxis
-              dataKey="FormattedDate"
+              dataKey="month"
               stroke="#ccc"
-              angle={-45}
-              textAnchor="end"
-              interval={0}
+              interval="preserveStartEnd" // reduce crowding dynamically
               tickFormatter={(value) => {
-                const date = new Date(value);
-                return isNaN(date)
-                  ? ''
-                  : new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+                const [year, month] = value.split('-');
+                return new Intl.DateTimeFormat('en-US', {
+                  month: 'short',
+                  year: '2-digit'
+                }).format(new Date(year, month - 1));
               }}
-              label={{ value: "Date", position: "insideBottom", offset: -40, fill: "#ccc" }}
+              label={{ value: "Month", position: "insideBottom", offset: -40, fill: "#ccc" }}
             />
             <YAxis
               stroke="#ccc"
@@ -163,15 +293,18 @@ const SalesReports = () => {
             <Tooltip
               contentStyle={{ backgroundColor: '#333', borderColor: '#555', color: '#fff' }}
               labelFormatter={(value) => {
-                const date = new Date(value);
-                return isNaN(date)
-                  ? ''
-                  : new Intl.DateTimeFormat('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    }).format(date);
+                const [year, month] = value.split('-');
+                return new Intl.DateTimeFormat('en-US', {
+                  year: 'numeric',
+                  month: 'long'
+                }).format(new Date(year, month - 1));
               }}
+              formatter={(value) =>
+                new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD'
+                }).format(value)
+              }
             />
             <Line
               type="monotone"
@@ -186,52 +319,207 @@ const SalesReports = () => {
       );
     }
 
-    if (filterType === 'customer' || filterType === 'supplier') {
+    if (filterType === 'customer') {
       const key = filterType === 'customer' ? 'CustomerName' : 'SupplierName';
       const valueKey = filterType === 'customer' ? 'TotalSpent' : 'TotalSales';
       const graphData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
+    
       return (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
-            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
-            <XAxis dataKey={key} stroke="#ccc" angle={-45} textAnchor="end" interval={0} />
-            <YAxis stroke="#ccc" />
-            <Tooltip contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }} labelStyle={{ color: "#fff" }} />
-            <Bar dataKey={valueKey} fill="#8499D9" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey={valueKey} position="top" fill="#fff" />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      );
-    } else if (filterType === 'book') {
-      const categoryData = reportResult.reduce((acc, row) => {
-        const existing = acc.find(x => x.name === row.Category);
-        if (existing) existing.value += row.TotalSales;
-        else acc.push({ name: row.Category, value: row.TotalSales });
-        return acc;
-      }, []);
-
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <PieChart>
-            <Pie
-              data={categoryData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={150}
-              label={({ name }) => name}
-            >
-              {categoryData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        <Box sx={{ overflowX: 'auto' }}>
+          <ResponsiveContainer width={Math.max(600, graphData.length * 100)} height={400}>
+            <BarChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }} barCategoryGap="20%">
+              <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+              <XAxis
+                dataKey={key}
+                stroke="#ccc"
+                angle={-45}
+                textAnchor="end"
+                interval={0}
+                height={80}
+                minTickGap={10}
+              />
+              <YAxis
+                stroke="#ccc"
+                tickFormatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+              />
+              <Tooltip
+                formatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+                contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+                labelStyle={{ color: "#fff" }}
+              />
+              <Bar dataKey={valueKey} fill="#8499D9" radius={[6, 6, 0, 0]}>
+                <LabelList
+                  dataKey={valueKey}
+                  position="top"
+                  fill="#fff"
+                  formatter={(value) =>
+                    new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(value)
+                  }
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
       );
     }
+
+    if (filterType === 'supplier') {
+      const supplierTotals = {};
+    
+      reportResult.forEach(entry => {
+        const name = entry.SupplierName || 'Unknown Supplier';
+        const sales = Number(entry.TotalSales || 0);
+        if (!supplierTotals[name]) {
+          supplierTotals[name] = 0;
+        }
+        supplierTotals[name] += sales;
+      });
+    
+      const graphData = Object.entries(supplierTotals)
+        .map(([name, totalSales]) => ({ SupplierName: name, TotalSales: totalSales }))
+        .sort((a, b) => b.TotalSales - a.TotalSales);
+    
+      const displayedData = topCount === 'All' ? graphData : graphData.slice(0, topCount);
+    
+      return (
+        <Box sx={{ overflowX: 'auto' }}>
+          <ResponsiveContainer width={Math.max(600, displayedData.length * 100)} height={400}>
+            <BarChart data={displayedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }} barCategoryGap="20%">
+              <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+              <XAxis
+                dataKey="SupplierName"
+                stroke="#ccc"
+                angle={-45}
+                textAnchor="end"
+                interval={0}
+                height={80}
+                minTickGap={10}
+              />
+              <YAxis
+                stroke="#ccc"
+                tickFormatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+              />
+              <Tooltip
+                formatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+                contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+                labelStyle={{ color: "#fff" }}
+              />
+              <Bar dataKey="TotalSales" fill="#8499D9" radius={[6, 6, 0, 0]}>
+                <LabelList
+                  dataKey="TotalSales"
+                  position="top"
+                  fill="#fff"
+                  formatter={(value) =>
+                    new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(value)
+                  }
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      );
+    }
+    
+
+    else if (filterType === 'book') {
+      const categoryTotals = {};
+    
+      reportResult.forEach((entry) => {
+        const category = entry.Category || 'Uncategorized';
+        const sales = Number(entry.TotalSales || 0);
+        if (!categoryTotals[category]) {
+          categoryTotals[category] = { name: category, value: 0 };
+        }
+        categoryTotals[category].value += sales;
+      });
+    
+      const categoryData = Object.values(categoryTotals);
+      const graphData = topCount === 'All' ? categoryData : categoryData.slice(0, topCount);
+    
+      return (
+        <Box sx={{ overflowX: 'auto' }}>
+          <ResponsiveContainer width={Math.max(600, graphData.length * 100)} height={400}>
+            <BarChart
+              data={graphData}
+              layout="vertical"
+              margin={{ top: 20, right: 30, left: 120, bottom: 20 }}
+            >
+              <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+              <XAxis
+                type="number"
+                stroke="#ccc"
+                tickFormatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                stroke="#ccc"
+                width={200}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip
+                formatter={(value) =>
+                  new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                  }).format(value)
+                }
+                contentStyle={{ backgroundColor: "#333", borderColor: "#555", color: "#fff" }}
+                labelStyle={{ color: "#fff" }}
+              />
+              <Bar dataKey="value" fill="#21AFBF" radius={[0, 6, 6, 0]}>
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  fill="#fff"
+                  formatter={(value) =>
+                    new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(value)
+                  }
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      );
+    }
+    
+    
     return null;
-  };
+  }    
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -246,7 +534,11 @@ const SalesReports = () => {
                 label="Filter Type"
                 fullWidth
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  setFilterType(newType);
+                  setReportResult([]);
+                }}
                 sx={{ backgroundColor: '#1f1f1f' }}
                 InputLabelProps={{ style: { color: '#ccc' } }}
                 InputProps={{ style: { color: '#fff' } }}
@@ -263,7 +555,10 @@ const SalesReports = () => {
               <DatePicker
                 label="Start Date"
                 value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
+                onChange={(newValue) => {
+                  setStartDate(newValue);
+                  setReportResult([]);
+                }}                
                 renderInput={(params) => (
                   <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
                     InputLabelProps={{ style: { color: '#ccc' } }}
@@ -277,7 +572,10 @@ const SalesReports = () => {
               <DatePicker
                 label="End Date"
                 value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
+                onChange={(newValue) => {
+                  setEndDate(newValue);
+                  setReportResult([]);
+                }}              
                 renderInput={(params) => (
                   <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
                     InputLabelProps={{ style: { color: '#ccc' } }}
@@ -310,7 +608,12 @@ const SalesReports = () => {
               color="primary"
               value={viewMode}
               exclusive
-              onChange={(e, val) => val && setViewMode(val)}
+              onChange={(e, val) => {
+                if (val && val !== viewMode) {
+                  setReportResult([]); // Clear the report data
+                  setViewMode(val);    // Update the view mode
+                }
+              }}
               sx={{ mb: 2 }}
             >
               <ToggleButton value="summary">Summary</ToggleButton>
@@ -318,8 +621,62 @@ const SalesReports = () => {
               <ToggleButton value="graph">Graph</ToggleButton>
             </ToggleButtonGroup>
             
-            {viewMode === 'summary' && filterType === 'book' && reportResult.length > 0 && renderBookSummary()}
-            {viewMode === 'summary' && filterType === 'supplier' && reportResult.length > 0 && renderSupplierSummary()}
+            {viewMode === 'summary' && filterType === 'book' && reportResult.length > 0 && (
+              <>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  This report highlights the top-performing books based on total sales within the selected date range.
+                  It helps identify which book categories and titles generate the most revenue, guiding decisions on restocking,
+                  promotions, and customer preferences.
+                </Typography>
+
+                <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc', mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Report Summary</Typography>
+                  <Typography variant="body2"><strong>Total Categories:</strong> {
+                    new Set(reportResult.map(book => book.Category || 'Uncategorized')).size
+                  }</Typography>
+                  <Typography variant="body2"><strong>Total Unique Books:</strong> {
+                    reportResult.length
+                  }</Typography>
+                  <Typography variant="body2"><strong>Total Sales:</strong> {
+                    new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(
+                      reportResult.reduce((sum, book) => sum + (book.TotalSales || 0), 0)
+                    )
+                  }</Typography>
+                </Paper>
+
+                {renderBookSummary()}
+              </>
+            )}
+
+            {viewMode === 'summary' && filterType === 'supplier' && reportResult.length > 0 && (
+              <>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  This report shows which suppliers contribute the most to your sales. It helps identify key supplier partnerships,
+                  track supply chain value, and support decisions around procurement, negotiations, and vendor prioritization.
+                </Typography>
+
+                <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc', mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Report Summary</Typography>
+                  <Typography variant="body2"><strong>Total Suppliers:</strong> {
+                    new Set(reportResult.map(s => s.SupplierName || 'Unknown')).size
+                  }</Typography>
+                  <Typography variant="body2"><strong>Total Sales Across All Suppliers:</strong> {
+                    new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(
+                      reportResult.reduce((sum, s) => sum + (s.TotalSales || 0), 0)
+                    )
+                  }</Typography>
+                </Paper>
+
+                {renderSupplierSummary()}
+              </>
+            )}
+
 
             {viewMode === 'graph' && ['customer', 'supplier'].includes(filterType) && reportResult.length > 0 && (
               <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
@@ -344,32 +701,67 @@ const SalesReports = () => {
 
             {viewMode === 'summary' && filterType === 'customer' && reportResult.length > 0 && (
               <>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  This report highlights the top-performing customers based on total spending within the selected date range. 
+                  It helps identify loyal and high-value customers, guiding retention strategies, personalized offers, and marketing focus.
+                </Typography>
+
                 <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Customers</Typography>
                 <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
                   {reportResult.slice(0, 3).map((row, index) => (
                     <Box key={index} sx={{ mb: 2 }}>
-                      {Object.entries(row).map(([key, value]) => (
-                        <Typography key={key} variant="body2">
-                          <strong>{key}:</strong> {value}
-                        </Typography>
-                      ))}
+                      {Object.entries(row).map(([key, value]) => {
+                        let formattedValue = value;
+                        if (key.toLowerCase().includes('spent') || key.toLowerCase().includes('sales')) {
+                          formattedValue = new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD'
+                          }).format(value);
+                        } else if (typeof value === 'number') {
+                          formattedValue = new Intl.NumberFormat('en-US').format(value);
+                        }
+
+                        return (
+                          <Typography key={key} variant="body2">
+                            <strong>{key}:</strong> {formattedValue}
+                          </Typography>
+                        );
+                      })}
                     </Box>
                   ))}
                 </Paper>
               </>
             )}
 
-              {viewMode === 'summary' && !['customer', 'book'].includes(filterType) && (
+
+            {viewMode === 'summary' && !['customer', 'book', 'supplier'].includes(filterType) && (
               <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
                 {reportResult.length > 0 ? (
                   <Box>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      This report provides a comprehensive overview of total sales, average order value, and total number of orders placed within the selected date range. 
+                      It is essential for tracking overall business performance, identifying revenue trends, and making informed decisions on marketing, inventory, and customer engagement strategies.
+                    </Typography>
+
                     {reportResult.map((row, index) => (
                       <Box key={index} sx={{ mb: 2 }}>
-                        {Object.entries(row).map(([key, value]) => (
-                          <Typography key={key} variant="body2">
-                            <strong>{key}:</strong> {value}
-                          </Typography>
-                        ))}
+                        {Object.entries(row).map(([key, value]) => {
+                          let formattedValue = value;
+                          if (key.toLowerCase().includes('sales') || key.toLowerCase().includes('value')) {
+                            formattedValue = new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: 'USD'
+                            }).format(value);
+                          } else if (typeof value === 'number') {
+                            formattedValue = new Intl.NumberFormat('en-US').format(value);
+                          }
+
+                          return (
+                            <Typography key={key} variant="body2">
+                              <strong>{key}:</strong> {formattedValue}
+                            </Typography>
+                          );
+                        })}
                       </Box>
                     ))}
                   </Box>
@@ -381,17 +773,34 @@ const SalesReports = () => {
               </Paper>
             )}
 
+
             {viewMode === 'table' && reportResult.length > 0 && (
               <Box sx={{ backgroundColor: '#1a1a1a', p: 2 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: '#ccc', mb: 1 }}>
                   Table View ({formatDate(startDate)} - {formatDate(endDate)})
                 </Typography>
                 <Box sx={{ height: 400 }}>
-                  <DataGrid
-                    rows={reportResult.map((r, i) => ({ id: i, ...r }))}
-                    columns={columns}
-                    sx={{ color: '#fff' }}
-                  />
+                <DataGrid
+                  rows={rows}
+                  columns={columns}
+                  sx={{
+                    color: '#fff',
+                    '& .MuiDataGrid-columnHeaders': {
+                      backgroundColor: '#333',
+                      color: '#fff',
+                      fontWeight: 'bold'
+                    },
+                    '& .MuiDataGrid-row:nth-of-type(even)': {
+                      backgroundColor: '#2a2a2a'
+                    },
+                    '& .MuiDataGrid-row:nth-of-type(odd)': {
+                      backgroundColor: '#1e1e1e'
+                    },
+                    border: '1px solid #444'
+                  }}
+                />
+
+
                 </Box>
               </Box>
             )}

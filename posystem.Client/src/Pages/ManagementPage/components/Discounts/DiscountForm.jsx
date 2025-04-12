@@ -3,10 +3,11 @@ import {
   Grid, 
   TextField, 
   Box,
-  InputAdornment
+  InputAdornment,
+  Button
 } from '@mui/material';
 
-const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) => {
+const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onApplyToAll, onRemoveFromAll }) => {
   return (
     <Grid container spacing={2} sx={{ pt: 2 }}>
       <Grid item xs={9}>
@@ -30,6 +31,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+
       <Grid item xs={3}>
         <TextField
           fullWidth
@@ -55,6 +57,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+
       <Grid item xs={10} sm={6}>
         <TextField
           fullWidth
@@ -77,6 +80,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+
       <Grid item xs={10} sm={6}>
         <TextField
           fullWidth
@@ -99,6 +103,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+
       {discount.employeeName && (
         <Grid item xs={12}>
           <Box sx={{ 
@@ -110,12 +115,33 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           </Box>
         </Grid>
       )}
+
+      {discount.id && (
+        <Grid item xs={12}>
+          <Button 
+            variant="outlined"
+            onClick={() => onApplyToAll(discount.id)}
+            sx={{ fontWeight: 'bold', color: '#fff', borderColor: '#ccc' }}
+          >
+            Apply to All Books
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => onRemoveFromAll(discount.id)}
+            sx={{ mt: 2 }}
+          >
+            Remove Discount from All Books
+          </Button>
+        </Grid>
+      )}
     </Grid>
   );
 };
 
 DiscountForm.propTypes = {
   discount: PropTypes.shape({
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     discountPercentage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     startDate: PropTypes.string.isRequired,
@@ -123,7 +149,9 @@ DiscountForm.propTypes = {
     employeeName: PropTypes.string
   }).isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  validationErrors: PropTypes.object
+  validationErrors: PropTypes.object,
+  onApplyToAll: PropTypes.func.isRequired,
+  onRemoveFromAll: PropTypes.func.isRequired,
 };
 
-export default DiscountForm;  
+export default DiscountForm;

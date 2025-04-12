@@ -41,6 +41,8 @@ const Checkout = () => {
         email: '', address1: '', address2: '', city: '', state: '', zip: '', country: 'United States'
     });
     const [paymentInfo, setPaymentInfo] = useState({ method: '', cardNumber: '', nameOnCard: '', expiry: '', cvv: '' });
+    const [orderLimitError, setOrderLimitError] = useState(false);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -73,7 +75,6 @@ const Checkout = () => {
       
         fetchData();
       }, []);
-      
     
 
       const subtotal = cartItems.reduce((total, item) => {
@@ -85,6 +86,10 @@ const Checkout = () => {
     const shipping = 8.0;
     const tax = 0.0;
     const total = subtotal + shipping + tax;
+
+    useEffect(() => {
+        setOrderLimitError(total > 3000);
+    }, [total]);
 
     const handleNext = () => setActiveStep((prev) => prev + 1);
     const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -254,30 +259,32 @@ const Checkout = () => {
                                             <CircularProgress />
                                         ) : (
                                             <Box>
+                                                {/* Order Items */}
                                                 {cartItems.map((item) => {
-                                                const hasDiscount = item.discount_Value && item.discount_Value > 0;
-                                                const discountedPrice = hasDiscount
-                                                    ? item.price - (item.price * item.discount_Value / 100)
-                                                    : item.price;
+                                                    const hasDiscount = item.discount_Value && item.discount_Value > 0;
+                                                    const discountedPrice = hasDiscount
+                                                        ? item.price - (item.price * item.discount_Value / 100)
+                                                        : item.price;
 
-                                                return (
-                                                    <Box key={item.id} sx={{ mb: 2 }}>
-                                                    <Typography variant="body1">
-                                                        {item.bookTitle} — ${item.price.toFixed(2)} x {item.quantity}
-                                                    </Typography>
-                                                    {hasDiscount && (
-                                                        <>
-                                                        <Typography variant="body2" color="success.main">
-                                                            Discount: {item.discount_Name} ({item.discount_Value}% off)
-                                                        </Typography>
-                                                        <Typography variant="body2" color="secondary">
-                                                            Discounted Price: ${discountedPrice.toFixed(2)} x {item.quantity}
-                                                        </Typography>
-                                                        </>
-                                                    )}
-                                                    </Box>
-                                                );
+                                                    return (
+                                                        <Box key={item.id} sx={{ mb: 2 }}>
+                                                            <Typography variant="body1">
+                                                                {item.bookTitle} — ${item.price.toFixed(2)} x {item.quantity}
+                                                            </Typography>
+                                                            {hasDiscount && (
+                                                                <>
+                                                                    <Typography variant="body2" color="success.main">
+                                                                        Discount: {item.discount_Name} ({item.discount_Value}% off)
+                                                                    </Typography>
+                                                                    <Typography variant="body2" color="secondary">
+                                                                        Discounted Price: ${discountedPrice.toFixed(2)} x {item.quantity}
+                                                                    </Typography>
+                                                                </>
+                                                            )}
+                                                        </Box>
+                                                    );
                                                 })}
+
                                                 <Typography variant="body1" sx={{ mb: 1 }}>
                                                     <strong>Payment Method:</strong> {paymentInfo.method}
                                                 </Typography>
@@ -290,9 +297,22 @@ const Checkout = () => {
                                                     Total: ${total.toFixed(2)}
                                                 </Typography>
                                                 <Divider sx={{ my: 2 }} />
-                                                <Button variant="contained" color="primary" onClick={handlePlaceOrder}>
+
+                                                {/* Order Limit Constraint */}
+                                                <Button 
+                                                    variant="contained" 
+                                                    color="primary" 
+                                                    onClick={handlePlaceOrder}
+                                                    disabled={orderLimitError}
+                                                >
                                                     PLACE ORDER
                                                 </Button>
+                                                {orderLimitError && (
+                                                    <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                                                        Orders over $3000 are not allowed. Please reduce your cart total.
+                                                    </Typography>
+                                                )}
+
                                                 <Button sx={{ ml: 2 }} onClick={handleBack}>Back</Button>
                                             </Box>
                                         )}

@@ -2,6 +2,7 @@ using ServiceStack;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace posystem.ServiceModel.Types
 {
@@ -149,7 +150,11 @@ namespace posystem.ServiceModel.Types
         public string? Description { get; set; }
         public string? CoverImage { get; set; }
         public Guid Supplier_Id { get; set; }
+        
+        [JsonPropertyName("discountId")]
         public Guid Discount_Id { get; set; }
+
+        public decimal? DiscountPercentage { get; set; }
         public DateTime Added_At { get; set; }
         public string? SupplierName { get; set; }
         public List<string>? Categories { get; set; }
@@ -171,13 +176,29 @@ namespace posystem.ServiceModel.Types
         public string? Description { get; set; }
         public string? CoverImage { get; set; }
         public Guid? Supplier_Id { get; set; }
+
+        [JsonPropertyName("discountId")]
         public Guid? Discount_Id { get; set; }
         public Guid? Category_Id { get; set; }
         public DateTime Added_At { get; set; }
         public DateTime Updated_At { get; set; }
         public string? SupplierName { get; set; }
         public string? CategoryName { get; set; }
+        public decimal? DiscountPercentage { get; set; }
     }
+
+    [Route("/books/apply-discount", "POST")]
+    public class ApplyDiscountToAllBooks : IReturn<ApplyDiscountResponse>
+    {
+        public Guid DiscountId { get; set; }
+    }
+
+    public class ApplyDiscountResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
 
     #endregion
 }

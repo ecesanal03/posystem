@@ -8,11 +8,16 @@ const cartApi = {
     },
 
     //Add item to cart
-    addToCart: async (bookId, quantity = 1) => {
-        const response = await axios.post('/cart/add', { bookId, quantity });
+    addToCart: async (bookId, quantity = 1, discountId = null) => {
+        const payload = { bookId, quantity };
+        if (discountId) {
+          payload.discountId = discountId;
+        }
+      
+        const response = await axios.post('/cart/add', payload);
         return response.data;
-
-    },
+      },
+      
 
     //Update quantity of item in cart
     updateCartQuantity: async (bookId, quantity) => {
