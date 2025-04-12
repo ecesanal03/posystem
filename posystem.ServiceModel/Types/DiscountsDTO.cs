@@ -81,6 +81,18 @@ namespace posystem.ServiceModel.Types
         public bool Success { get; set; }
         public string Message { get; set; }
     }
+
+    [Route("/discounts/remove-from-all/{DiscountId}", "POST")]
+    public class RemoveDiscountFromBooksDTO : IReturn<GenericResponse>
+    {
+        public Guid DiscountId { get; set; }
+    }
+
+    public class GenericResponse
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+    }
     
     #endregion
 

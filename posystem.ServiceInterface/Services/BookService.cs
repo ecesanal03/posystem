@@ -97,6 +97,17 @@ namespace posystem.ServiceInterface.Services
                 .GroupBy(x => x.Book_Id)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.Name ?? "").ToList());
 
+            // Get unique Discount_Ids
+            var discountIds = books
+                .Where(b => b.Discount_Id != null)
+                .Select(b => b.Discount_Id!.Value)
+                .Distinct()
+                .ToList();
+
+            var discounts = await db.SelectAsync<Discounts>(d => Sql.In(d.Id, discountIds));
+            var discountMap = discounts.ToDictionary(d => d.Id, d => d.Percentage);
+
+
             // Map to DTOs
             var bookDtos = books.Select(b => new BookListItemDTO
             {
@@ -114,7 +125,10 @@ namespace posystem.ServiceInterface.Services
                 SupplierName = b.Supplier_Id != null && supplierMap.ContainsKey(b.Supplier_Id.Value)
                                 ? supplierMap[b.Supplier_Id.Value]
                                 : null, 
-                Categories = categoryMap.ContainsKey(b.Id) ? categoryMap[b.Id] : new List<string>()
+                Categories = categoryMap.ContainsKey(b.Id) ? categoryMap[b.Id] : new List<string>(),
+                DiscountPercentage = b.Discount_Id != null && discountMap.ContainsKey(b.Discount_Id.Value)
+                                ? discountMap[b.Discount_Id.Value]
+                                : null
             }).ToList();
 
             return new GetBooksResponse
@@ -366,6 +380,29 @@ namespace posystem.ServiceInterface.Services
                     Message = $"Error deleting book: {ex.Message}"
                 };
             }
+        }
+
+        public object Post(ApplyDiscountToAllBooks request)
+        {
+            using var db = base.Db;
+
+            var discountExists = db.Exists<Discounts>(x => x.Id == request.DiscountId);
+            if (!discountExists)
+            {
+                return new ApplyDiscountResponse { Success = false, Message = "Discount not found." };
+            }
+
+            // Apply discount to all books
+            db.UpdateOnly(
+                () => new Books { Discount_Id = request.DiscountId },
+                where: x => true // apply to all books
+            );
+
+            return new ApplyDiscountResponse
+            {
+                Success = true,
+                Message = "Discount successfully applied to all books."
+            };
         }
     }
 }

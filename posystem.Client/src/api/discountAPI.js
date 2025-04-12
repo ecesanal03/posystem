@@ -45,7 +45,19 @@ const discountApi = {
             console.error(`❌ DELETE /discounts/${id} - Error:`, error.response?.data || error.message);
             throw error;
         }
-    }
+    },
+
+    applyToAllBooks: async (discountId) => {
+        const response = await axios.post('/books/apply-discount', { DiscountId: discountId });
+        return response.data;
+    },
+
+    removeDiscountFromAllBooks: async (discountId) => {
+        const response = await axios.post(`/discounts/remove-from-all/${discountId}`);
+        return response.data;
+      },
+
+      
 };
 
 export default discountApi;

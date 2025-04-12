@@ -237,5 +237,22 @@ namespace posystem.ServiceInterface.Services
                 Message = "Discount deleted successfully" 
             };
         }
+
+        public async Task<GenericResponse> Post(RemoveDiscountFromBooksDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var affectedRows = await db.ExecuteSqlAsync(@"
+                UPDATE Books
+                SET Discount_Id = NULL
+                WHERE Discount_Id = @discountId",
+                new { discountId = request.DiscountId });
+
+            return new GenericResponse
+            {
+                Success = true,
+                Message = $"{affectedRows} books were updated to remove the discount."
+            };
+        }
     }
 }
