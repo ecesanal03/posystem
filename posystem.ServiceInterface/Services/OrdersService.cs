@@ -160,26 +160,81 @@ namespace posystem.ServiceInterface.Services
         }
 
         public async Task<DeleteOrderResponse> Delete(DeleteOrderDTO request)
+{
+    using var db = _dbConnectionFactory.OpenDbConnection();
+
+    Console.WriteLine($"[DeleteOrder] Request to delete order ID: {request.Id}");
+
+    var order = await db.SingleByIdAsync<Orders>(request.Id);
+    if (order == null)
+    {
+        Console.WriteLine("[DeleteOrder] Order not found.");
+        return new DeleteOrderResponse {
+            Success = false,
+            Message = "Order not found"
+        };
+    }
+
+    try
+    {
+        using var trx = db.OpenTransaction();
+
+        Console.WriteLine("[DeleteOrder] Found order. Proceeding with cascading delete...");
+
+        // Step 1: Find the invoice linked to this order
+        var invoice = await db.SingleAsync<Invoices>(i => i.Order_Id == request.Id);
+        if (invoice != null)
         {
-            using var db = _dbConnectionFactory.OpenDbConnection();
+            Console.WriteLine($"[DeleteOrder] Found Invoice ID: {invoice.Id}");
 
-            var order = await db.SingleByIdAsync<Orders>(request.Id);
-            if(order == null)
-                return new DeleteOrderResponse {
-                    Success = false,
-                    Message = "Order not found"
-                };
+            // Step 2: Delete InvoiceItems
+            var invoiceItemsDeleted = await db.DeleteAsync<InvoiceItems>(x => x.Invoice_Id == invoice.Id);
+            Console.WriteLine($"[DeleteOrder] Deleted {invoiceItemsDeleted} invoice items");
 
-            // Delete associated order items
-            await db.DeleteAsync<OrderItems>(x => x.Order_Id == request.Id);
+            // Step 3: Delete related Payment
+            var paymentDeleted = await db.DeleteAsync<Payments>(x => x.Id == invoice.Payment_Id);
+            Console.WriteLine($"[DeleteOrder] Deleted {paymentDeleted} payment(s)");
 
-            // Delete the order
-            await db.DeleteAsync(order);
+            // Step 4: Attempt to delete invoice
+            var invoiceDeleted = await db.DeleteAsync<Invoices>(x => x.Id == invoice.Id);
+            Console.WriteLine($"[DeleteOrder] Deleted invoice: {invoiceDeleted}");
 
-            return new DeleteOrderResponse {
-                Success = true,
-                Message = "Order deleted successfully"
-            };
+            if (invoiceDeleted == 0)
+            {
+                Console.WriteLine("[DeleteOrder] WARNING: Invoice was found but not deleted.");
+            }
         }
+        else
+        {
+            Console.WriteLine("[DeleteOrder] No invoice found for this order.");
+        }
+
+        // Step 5: Delete OrderItems
+        var orderItemsDeleted = await db.DeleteAsync<OrderItems>(x => x.Order_Id == request.Id);
+        Console.WriteLine($"[DeleteOrder] Deleted {orderItemsDeleted} order items");
+
+        // Step 6: Delete Order
+        var orderDeleted = await db.DeleteAsync<Orders>(x => x.Id == order.Id);
+        Console.WriteLine($"[DeleteOrder] Deleted order: {orderDeleted}");
+
+        trx.Commit();
+
+        return new DeleteOrderResponse {
+            Success = true,
+            Message = "Order and related records deleted successfully"
+        };
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DeleteOrder] Exception during deletion: {ex}");
+        return new DeleteOrderResponse {
+            Success = false,
+            Message = $"Error during deletion: {ex.Message}"
+        };
+    }
+}
+
+
+
     }
 }
