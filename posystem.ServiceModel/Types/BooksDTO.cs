@@ -66,6 +66,7 @@ namespace posystem.ServiceModel.Types
         public string Cover_Image { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
+        public Guid? Category_Id { get; set; }
         public Guid? Created_By { get; set; }
     }
 
@@ -96,6 +97,7 @@ namespace posystem.ServiceModel.Types
         public string Cover_Image { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
+        public Guid? Category_Id { get; set; }
         public Guid? Updated_By { get; set; }
     }
 
@@ -170,9 +172,11 @@ namespace posystem.ServiceModel.Types
         public string? CoverImage { get; set; }
         public Guid? Supplier_Id { get; set; }
         public Guid? Discount_Id { get; set; }
+        public Guid? Category_Id { get; set; }
         public DateTime Added_At { get; set; }
         public DateTime Updated_At { get; set; }
         public string? SupplierName { get; set; }
+        public string? CategoryName { get; set; }
     }
 
     #endregion

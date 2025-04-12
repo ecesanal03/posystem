@@ -31,71 +31,113 @@ namespace posystem.ServiceInterface.Services
             // Filter by search term if provided
             if(!string.IsNullOrEmpty(request.SearchTerm))
             {
+                // Ensure case-insensitive search
+                var searchTerm = request.SearchTerm.ToLower();
+                
+                // Search by direct book properties - using case-insensitive comparison
                 query = query.Where(b => 
-                b.Title.Contains(request.SearchTerm) || 
-                b.Author.Contains(request.SearchTerm) ||
-                b.ISBN.Contains(request.SearchTerm));
+                    b.Title.ToLower().Contains(searchTerm) || 
+                    b.Author.ToLower().Contains(searchTerm) ||
+                    b.ISBN.ToLower().Contains(searchTerm));
+                    
+                // Search by supplier name - using case-insensitive comparison
+                var matchingSupplierIds = await db.ColumnAsync<Guid>(
+                    db.From<Suppliers>()
+                    .Where(s => s.SupplierName.ToLower().Contains(searchTerm))
+                    .Select(s => s.Id));
+                
+                if (matchingSupplierIds.Count > 0)
+                {
+                    query = query.Or(b => Sql.In(b.Supplier_Id, matchingSupplierIds));
+                }
+                
+                // Search by category name - using case-insensitive comparison
+                var bookIdsWithMatchingCategories = await db.ColumnAsync<Guid>(
+                    db.From<Books>()
+                    .Join<BookCategories>((book, bc) => book.Id == bc.Book_Id)
+                    .Join<BookCategories, Categories>((bc, cat) => bc.Category_Id == cat.Id)
+                    .Where<Categories>(c => c.Name.ToLower().Contains(searchTerm))
+                    .Select<Books>(b => b.Id));
+                    
+                if (bookIdsWithMatchingCategories.Count > 0)
+                {
+                    query = query.Or(b => Sql.In(b.Id, bookIdsWithMatchingCategories));
+                }
             }
 
+            // Filter by specific category if provided - this is for exact category matching
             if (!string.IsNullOrEmpty(request.Category))
             {
-                query.Join<BookCategories>((book, bc) => book.Id == bc.Book_Id)
+                // Get books that have this exact category name
+                var bookIdsWithExactCategory = await db.ColumnAsync<Guid>(
+                    db.From<Books>()
+                    .Join<BookCategories>((book, bc) => book.Id == bc.Book_Id)
                     .Join<BookCategories, Categories>((bc, cat) => bc.Category_Id == cat.Id)
-                    .Where<Categories>(c => c.Name == request.Category);
+                    .Where<Categories>(c => c.Name == request.Category)
+                    .Select<Books>(b => b.Id));
+                
+                if (bookIdsWithExactCategory.Count > 0)
+                {
+                    // Create a new query that only includes books with this category
+                    query = db.From<Books>().Where(b => Sql.In(b.Id, bookIdsWithExactCategory));
+                }
+                else
+                {
+                    // No books found with this exact category, return empty result
+                    query = db.From<Books>().Where(b => b.Id == Guid.Empty); // Will return no results
+                }
             }
 
             // Apply Sorting
-            if(!string.IsNullOrEmpty(request.SortBy))
-            {
-                query = request.SortDesc
-                    ? query.OrderByDescending(request.SortBy)
-                    : query.OrderBy(request.SortBy);
-            } else {
-                query = query.OrderByDescending(b => b.Added_At);
-            }
+            query = !string.IsNullOrEmpty(request.SortBy)
+                ? (request.SortDesc ? query.OrderByDescending(request.SortBy) : query.OrderBy(request.SortBy))
+                : query.OrderByDescending(b => b.Added_At);
 
             // Get total count for pagination
             var totalCount = await db.CountAsync(query);
 
             // Apply Pagination
-            if (request.Skip > 0)
-            {
-                query = query.Skip(request.Skip);
-            }
-
-            if (request.Take > 0)
-            {
-                query = query.Take(request.Take);
-            }
+            if (request.Skip > 0) query = query.Skip(request.Skip);
+            if (request.Take > 0) query = query.Take(request.Take);
 
             // Execute Query
             var books = await db.SelectAsync(query);
-
-            // Get unique Supplier_Ids from books
-            var supplierIds = books
-                .Where(b => b.Supplier_Id != null)
-                .Select(b => b.Supplier_Id!.Value)
-                .Distinct()
-                .ToList();
-
-            // Fetch all suppliers in one query
-            var suppliers = await db.SelectAsync<Suppliers>(s => Sql.In(s.Id, supplierIds));
-
-            // Build dictionary for quick lookup
-            var supplierMap = suppliers.ToDictionary(s => s.Id, s => s.SupplierName);
-
-            // Get unique Category_Ids from books
             var bookIds = books.Select(b => b.Id).ToList();
 
-            var bookCategories = await db.SelectAsync<BookCategories>(bc => Sql.In(bc.Book_Id, bookIds));
-            var categoryIds = bookCategories.Select(bc => bc.Category_Id).Distinct().ToList();
+            // Get supplier data in one efficient query
+            var supplierMap = new Dictionary<Guid, string>();
+            var supplierIds = books.Where(b => b.Supplier_Id.HasValue)
+                                .Select(b => b.Supplier_Id.Value)
+                                .Distinct()
+                                .ToList();
+            
+            if (supplierIds.Count > 0)
+            {
+                var suppliers = await db.SelectAsync<Suppliers>(s => Sql.In(s.Id, supplierIds));
+                supplierMap = suppliers.ToDictionary(s => s.Id, s => s.SupplierName);
+            }
 
-            var categories = await db.SelectAsync<Categories>(c => Sql.In(c.Id, categoryIds));
-
-            var categoryMap = bookCategories
-                .Join(categories, bc => bc.Category_Id, c => c.Id, (bc, c) => new { bc.Book_Id, c.Name })
-                .GroupBy(x => x.Book_Id)
-                .ToDictionary(g => g.Key, g => g.Select(x => x.Name ?? "").ToList());
+            // Get category data in one efficient query
+            var categoryMap = new Dictionary<Guid, List<string>>();
+            if (bookIds.Count > 0)
+            {
+                var categoryData = await db.SelectAsync<dynamic>(
+                    db.From<BookCategories>()
+                    .Join<Categories>((bc, c) => bc.Category_Id == c.Id)
+                    .Where(bc => Sql.In(bc.Book_Id, bookIds))
+                    .Select<BookCategories, Categories>((bc, c) => new { BookId = bc.Book_Id, CategoryName = c.Name }));
+                    
+                foreach (var item in categoryData)
+                {
+                    var bookId = (Guid)item.BookId;
+                    var categoryName = (string)item.CategoryName;
+                    
+                    if (!categoryMap.ContainsKey(bookId))
+                        categoryMap[bookId] = new List<string>();
+                        
+                    categoryMap[bookId].Add(categoryName);
+                }
+            }
 
             // Map to DTOs
             var bookDtos = books.Select(b => new BookListItemDTO
@@ -111,7 +153,7 @@ namespace posystem.ServiceInterface.Services
                 Supplier_Id = b.Supplier_Id ?? Guid.Empty,
                 Discount_Id = b.Discount_Id ?? Guid.Empty,
                 Added_At = b.Added_At,
-                SupplierName = b.Supplier_Id != null && supplierMap.ContainsKey(b.Supplier_Id.Value)
+                SupplierName = b.Supplier_Id.HasValue && supplierMap.ContainsKey(b.Supplier_Id.Value)
                                 ? supplierMap[b.Supplier_Id.Value]
                                 : null, 
                 Categories = categoryMap.ContainsKey(b.Id) ? categoryMap[b.Id] : new List<string>()
@@ -123,7 +165,6 @@ namespace posystem.ServiceInterface.Services
                 TotalCount = (int)totalCount
             };
         }
-
 
         /// Retrieves a single book by its ID.
         public async Task<GetBookResponse> Get(GetBookDTO request)
@@ -143,6 +184,17 @@ namespace posystem.ServiceInterface.Services
                 supplierName = supplier?.SupplierName;
             }
 
+            // Fetch the book's category
+            Guid? categoryId = null;
+            string? categoryName = null;
+            var bookCategories = await db.SelectAsync<BookCategories>(bc => bc.Book_Id == book.Id);
+            if (bookCategories.Count > 0)
+            {
+                var bookCategory = bookCategories[0];
+                categoryId = bookCategory.Category_Id;
+                var category = await db.SingleByIdAsync<Categories>(bookCategory.Category_Id);
+                categoryName = category?.Name;
+            }
 
             var bookDto = new BookDetailsDTO
             {
@@ -153,12 +205,14 @@ namespace posystem.ServiceInterface.Services
                 Price = book.Price,
                 Units = book.Units,
                 Description = book.Description,
-                CoverImage = book.Cover_Image ,
+                CoverImage = book.Cover_Image,
                 Supplier_Id = book.Supplier_Id,
                 Discount_Id = book.Discount_Id,
+                Category_Id = categoryId,
                 Added_At = book.Added_At,
                 Updated_At = book.Updated_At,
-                SupplierName = supplierName
+                SupplierName = supplierName,
+                CategoryName = categoryName
             };
 
             return new GetBookResponse { Book = bookDto };
@@ -206,7 +260,27 @@ namespace posystem.ServiceInterface.Services
 
                 await db.SaveAsync(newBook);
 
+                // Create book-category relationship if a category was provided
+                if (request.Category_Id.HasValue)
+                {
+                    var bookCategory = new BookCategories
+                    {
+                        Book_Id = newBook.Id,
+                        Category_Id = request.Category_Id.Value
+                    };
+                    
+                    await db.SaveAsync(bookCategory);
+                }
+
                 var createdBook = await db.SingleByIdAsync<Books>(newBook.Id);
+
+                // Fetch the category information if available
+                string? categoryName = null;
+                if (request.Category_Id.HasValue)
+                {
+                    var category = await db.SingleByIdAsync<Categories>(request.Category_Id.Value);
+                    categoryName = category?.Name;
+                }
 
                 var bookDto = new BookDetailsDTO
                 {
@@ -217,11 +291,13 @@ namespace posystem.ServiceInterface.Services
                     Price = createdBook.Price,
                     Units = createdBook.Units,
                     Description = createdBook.Description,
-                    CoverImage = createdBook.Cover_Image ,
+                    CoverImage = createdBook.Cover_Image,
                     Supplier_Id = createdBook.Supplier_Id,
                     Discount_Id = createdBook.Discount_Id,
+                    Category_Id = request.Category_Id,
                     Added_At = createdBook.Added_At,
-                    Updated_At = createdBook.Updated_At
+                    Updated_At = createdBook.Updated_At,
+                    CategoryName = categoryName
                 };
 
                 return new CreateBookResponse
@@ -297,7 +373,69 @@ namespace posystem.ServiceInterface.Services
 
                 await db.UpdateAsync(existingBook);
 
+                // Update book categories
+                // First, check if there's an existing book category
+                var existingBookCategories = await db.SelectAsync<BookCategories>(bc => bc.Book_Id == request.Id);
+                var existingBookCategory = existingBookCategories.Count > 0 ? existingBookCategories[0] : null;
+                
+                // If category has changed
+                if (request.Category_Id.HasValue)
+                {
+                    // If there's no existing book category, create a new one
+                    if (existingBookCategory == null)
+                    {
+                        var newBookCategory = new BookCategories
+                        {
+                            Book_Id = request.Id,
+                            Category_Id = request.Category_Id.Value
+                        };
+                        await db.SaveAsync(newBookCategory);
+                    }
+                    // If category exists but has changed, recreate it (delete and add)
+                    // This approach is more reliable than updating for GUID comparison issues
+                    else if (existingBookCategory.Category_Id.ToString() != request.Category_Id.Value.ToString())
+                    {
+                        // Delete the old relationship
+                        await db.DeleteAsync(existingBookCategory);
+                        
+                        // Create a new relationship
+                        var newBookCategory = new BookCategories
+                        {
+                            Book_Id = request.Id,
+                            Category_Id = request.Category_Id.Value
+                        };
+                        await db.SaveAsync(newBookCategory);
+                    }
+                }
+                // If category was removed (set to null), delete the book category relation
+                else if (existingBookCategory != null)
+                {
+                    await db.DeleteAsync(existingBookCategory);
+                }
+
                 var updatedBook = await db.SingleByIdAsync<Books>(existingBook.Id);
+
+                // Fetch the category information if available
+                string? categoryName = null;
+                Guid? categoryId = null;
+                
+                // Refresh our view of the book categories to ensure we have the most up-to-date data
+                var refreshedBookCategories = await db.SelectAsync<BookCategories>(bc => bc.Book_Id == updatedBook.Id);
+                if (refreshedBookCategories.Count > 0)
+                {
+                    var bookCategory = refreshedBookCategories[0];
+                    categoryId = bookCategory.Category_Id;
+                    var category = await db.SingleByIdAsync<Categories>(bookCategory.Category_Id);
+                    categoryName = category?.Name;
+                }
+                else if (request.Category_Id.HasValue)
+                {
+                    // This should not happen, but if for some reason the category association wasn't properly created
+                    // but we did have a category ID in the request, use that as a fallback
+                    categoryId = request.Category_Id;
+                    var category = await db.SingleByIdAsync<Categories>(request.Category_Id.Value);
+                    categoryName = category?.Name;
+                }
 
                 var bookDto = new BookDetailsDTO
                 {
@@ -311,8 +449,10 @@ namespace posystem.ServiceInterface.Services
                     CoverImage = updatedBook.Cover_Image,
                     Supplier_Id = updatedBook.Supplier_Id ?? Guid.Empty,
                     Discount_Id = updatedBook.Discount_Id ?? Guid.Empty,
+                    Category_Id = categoryId,
                     Added_At = updatedBook.Added_At,
-                    Updated_At = updatedBook.Updated_At
+                    Updated_At = updatedBook.Updated_At,
+                    CategoryName = categoryName
                 };
 
                 return new UpdateBookResponse
@@ -350,6 +490,10 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
+                // Delete any book category relationships first
+                await db.DeleteAsync<BookCategories>(bc => bc.Book_Id == request.Id);
+
+                // Then delete the book
                 await db.DeleteByIdAsync<Books>(request.Id);
 
                 return new DeleteBookResponse
