@@ -1,19 +1,38 @@
 import axios from './axiosInstance'; // 👈 Use the shared instance
 
-const convertFileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
+// Helper function to process book data returned from API
+const processBookData = (book) => {
+  if (!book) return null;
+
+  // Log what we're processing
+  console.log("Processing book:", book.title, {
+    originalCoverImage: book.CoverImage,
+    originalCover_Image: book.Cover_Image
   });
+
+  // Create a processed book object with consistent field naming
+  return {
+    ...book,
+    // Make sure we have a fallback for CoverImage
+    CoverImage: book.Cover_Image || book.coverImage || null,
+  };
 };
 
 const bookApi = {
   getBooks: async (params = {}) => {
     try {
       const response = await axios.get('/books', { params });
-      return response.data;
+
+      // Log the raw response data
+      console.log("Raw API response:", JSON.stringify(response.data, null, 2));
+
+      // Process the books data to ensure consistent field naming
+      const processedData = {
+        ...response.data,
+        books: response.data.books?.map(book => processBookData(book)) || []
+      };
+
+      return processedData;
     } catch (error) {
       console.error('Error fetching books:', error);
       throw error;
@@ -23,11 +42,19 @@ const bookApi = {
   getBook: async (id) => {
     try {
       const response = await axios.get(`/books/${id}`);
+
+      // Process the book data
+      if (response.data.book) {
+        response.data.book = processBookData(response.data.book);
+      }
+
       return response.data;
     } catch (error) {
       console.error(`Error fetching book with ID ${id}:`, error);
       throw error;
     }
+
+
   },
 
   createBook: async (bookData) => {
@@ -44,11 +71,13 @@ const bookApi = {
         Discount_Id: bookData.discountId || null
       };
 
-      // Handle image conversion separately if it exists
-      if (bookData.image instanceof File) {
-        // Convert file to base64 for sending to API
-        const base64Image = await convertFileToBase64(bookData.image);
-        requestData.Cover_Image = base64Image;
+      // Handle cover image - this could now be a URL string
+      if (typeof bookData.coverImage === 'string' && bookData.coverImage.trim() !== '') {
+        requestData.Cover_Image = bookData.coverImage;
+      } else if (bookData.coverImage instanceof File) {
+        // If it's a file, handle it appropriately
+        // This would need to be changed if you're moving to storing only URLs
+        requestData.Cover_Image = bookData.coverImage;
       }
 
       const response = await axios.post('/books', requestData);
@@ -74,12 +103,10 @@ const bookApi = {
         Discount_Id: bookData.discountId || null
       };
 
-      // Handle image conversion separately if it exists
-      if (bookData.image instanceof File) {
-        // Convert file to base64 for sending to API
-        const base64Image = await convertFileToBase64(bookData.image);
-        requestData.CoverImage = base64Image;
-      }
+      // Handle cover image - this could now be a URL string
+      if (typeof bookData.coverImage === 'string' && bookData.coverImage.trim() !== '') {
+        requestData.Cover_Image = bookData.coverImage;
+      } 
 
       const response = await axios.put(`/books/${id}`, requestData);
       return response.data;
@@ -98,8 +125,7 @@ const bookApi = {
       throw error;
     }
   },
-  
+
 };
 
 export default bookApi;
-

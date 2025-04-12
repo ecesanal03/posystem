@@ -12,7 +12,8 @@ import {
   DialogTitle,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  Typography
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -21,6 +22,7 @@ import {
 import BookForm from './BookForm';
 import BookTable from './BookTable';
 import bookApi from '../../../../api/bookApi';
+import supplierApi from '../../../../api/supplierAPI';
 
 /**
  * BookSection Component
@@ -50,6 +52,7 @@ const BookSection = () => {
   
   // State management for form and UI
   const [filter, setFilter] = useState('');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
   const [newBook, setNewBook] = useState({ 
     Title: '', 
     Author: '', 
@@ -61,6 +64,9 @@ const BookSection = () => {
     Discount_Id: '',
     Cover_Image: null 
   });
+  
+  // New state for suppliers
+  const [suppliers, setSuppliers] = useState([]);
 
   // UI state management
   const [showAddForm, setShowAddForm] = useState(false);
@@ -72,11 +78,12 @@ const BookSection = () => {
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
 
   /**
-   * Effect hook to fetch books when component mounts or filter changes
+   * Effect hook to fetch books when component mounts, filter changes, or low stock filter is toggled
    */
   useEffect(() => {
     fetchBooks();
-  }, [filter]);
+    fetchSuppliers();
+  }, [filter, lowStockOnly]);
 
   /**
    * Fetches books from the API with optional filtering
@@ -95,7 +102,13 @@ const BookSection = () => {
       const response = await bookApi.getBooks(params);
       
       if (response.books) {
-        setBooks(response.books);
+        // If low stock filter is enabled, filter books client-side
+        let filteredBooks = response.books;
+        if (lowStockOnly) {
+          filteredBooks = response.books.filter(book => book.units <= 10);
+        }
+        
+        setBooks(filteredBooks);
         setTotalCount(response.totalCount);
       }
     } catch (err) {
@@ -103,6 +116,22 @@ const BookSection = () => {
       setError('Failed to load books. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Fetches suppliers from the API.
+   * Updates the suppliers state and handles loading/error states.
+   */
+  const fetchSuppliers = async () => {
+    try {
+      const response = await supplierApi.getSuppliers();
+      if (response && response.suppliers) {
+        setSuppliers(response.suppliers);
+      }
+    } catch (err) {
+      console.error('Failed to fetch suppliers:', err);
+      // We don't set an error state here to not block the main UI functionality
     }
   };
 
@@ -120,16 +149,12 @@ const BookSection = () => {
    */
   const handleNewBookChange = (e) => {
     const { name, value } = e.target;
-    setNewBook((prev) => ({ ...prev, [name]: value }));
-  };
-
-  /**
-   * Handles image file selection for book cover
-   * @param {Event} e - The file input change event
-   */
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewBook((prev) => ({ ...prev, Cover_Image: e.target.files[0] }));
+    
+    // If this is the image URL field, update the Cover_Image with the URL string
+    if (name === 'Cover_Image_URL') {
+      setNewBook((prev) => ({ ...prev, Cover_Image: value }));
+    } else {
+      setNewBook((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -149,10 +174,14 @@ const BookSection = () => {
     if (!book.Units || isNaN(parseInt(book.Units)) || parseInt(book.Units) < 0) 
       errors.Units = 'Valid units count is required';
     
-    // Validate Supplier_Id format if provided
-    if (book.Supplier_Id && book.Supplier_Id.trim() !== '') {
-      if (formatGuid(book.Supplier_Id) === null) {
-        errors.Supplier_Id = 'Invalid Supplier ID format';
+    // Validate image URL if provided
+    if (!book.Cover_Image || !book.Cover_Image.trim()) {
+      errors.Cover_Image_URL = 'Image URL is required';
+    } else {
+      try {
+        new URL(book.Cover_Image);
+      } catch {
+        errors.Cover_Image_URL = 'Please enter a valid URL';
       }
     }
     
@@ -183,7 +212,7 @@ const BookSection = () => {
           ISBN: bookDetails.isbn || '',
           Supplier_Id: bookDetails.supplierId || '',
           Discount_Id: bookDetails.discountId || '',
-          Cover_Image: bookDetails.coverImage || null
+          Cover_Image: bookDetails.coverImage || bookDetails.CoverImage || null
         });
         setIsEditingBook(true);
         setShowAddForm(true);
@@ -324,7 +353,7 @@ const BookSection = () => {
         description: newBook.Description || '',
         supplierId: formatGuid(newBook.Supplier_Id),
         discountId: formatGuid(newBook.Discount_Id),
-        image: newBook.Cover_Image
+        coverImage: newBook.Cover_Image // Now this is always a URL string
       };
       
       try {
@@ -378,7 +407,7 @@ const BookSection = () => {
           ISBN: '',
           Supplier_Id: '',
           Discount_Id: '',
-          Cover_Image: null 
+          Cover_Image: '' // Reset to empty string instead of null
         });
         setValidationErrors({});
         setShowAddForm(false);
@@ -404,10 +433,10 @@ const BookSection = () => {
   };
 
   /**
-   * Closes the notification snackbar
+   * Handles toggling the low stock filter
    */
-  const handleCloseNotification = () => {
-    setNotification(prev => ({ ...prev, open: false }));
+  const handleLowStockToggle = () => {
+    setLowStockOnly(!lowStockOnly);
   };
 
   return (
@@ -416,11 +445,11 @@ const BookSection = () => {
       <Snackbar 
         open={notification.open} 
         autoHideDuration={6000} 
-        onClose={handleCloseNotification}
+        onClose={() => setNotification({ ...notification, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert 
-          onClose={handleCloseNotification} 
+          onClose={() => setNotification({ ...notification, open: false })} 
           severity={notification.severity} 
           sx={{ width: '100%' }}
         >
@@ -431,99 +460,126 @@ const BookSection = () => {
       {/* Book Add Form */}
       {showAddForm && (
         <Paper elevation={0} sx={{ 
-          p: 3, 
-          mb: 3, 
+          p: 3,  
           bgcolor: '#1E201E',
           borderRadius: 1
         }}>
           <BookForm 
             newBook={newBook}
             handleNewBookChange={handleNewBookChange}
-            handleImageChange={handleImageChange}
             validationErrors={validationErrors}
+            suppliers={suppliers}
           />
         </Paper>
       )}
 
       {/* Search controls and Table */}
-      <Paper elevation={0} sx={{ mb: 3, bgcolor: '#1E201E' }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <TextField
-            placeholder="Search Books"
-            size="small"
-            value={filter}
-            onChange={handleFilterChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'white' }} />
-                </InputAdornment>
-              ),
-              style: { color: 'white' }
-            }}
+      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', mb: 2 }}>
+        <Paper elevation={0} sx={{ bgcolor: '#1E201E', p: 2, width: '80%', maxWidth: 1200 }}>
+          <Box 
             sx={{ 
-              width: '60%',
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#2A2D2A',
-                borderRadius: 1,
-                borderColor: '#61677A',
-                color: 'white'
-              },
-              '& .MuiOutlinedInput-input': {
-                color: 'white'
-              }
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2
             }}
-          />
-          <Box sx={{ display: 'flex', gap: 0, ml: 2 }}>
-            {showAddForm && (
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
+              <TextField
+                placeholder="Search Books"
+                size="small"
+                value={filter}
+                onChange={handleFilterChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'white' }} />
+                    </InputAdornment>
+                  ),
+                  style: { color: 'white' }
+                }}
+                sx={{ 
+                  minWidth: 250,
+                  flexGrow: 1,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#2A2D2A',
+                    borderRadius: 1,
+                    borderColor: '#61677A',
+                    color: 'white'
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: 'white'
+                  }
+                }}
+              />
+              
+                <Button
+                  variant={lowStockOnly ? "contained" : "outlined"}
+                  size="medium"
+                  onClick={handleLowStockToggle}
+                  disabled={loading}
+                  sx={{ 
+                    minWidth: 90,
+                    p: 1,
+                    borderColor: lowStockOnly ? '#FF3333' : '#61677A',
+                    bgcolor: lowStockOnly ? '#FF3333' : 'transparent',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: lowStockOnly ? '#FF5555' : '#6D7386',
+                      bgcolor: lowStockOnly ? '#FF5555' : 'rgba(109, 115, 134, 0.1)'
+                    }
+                  }}
+                >
+                  <Typography variant="body2" component="span" sx={{fontWeight: lowStockOnly ? 'bold' : 'normal',}}>
+                    Low Stock
+                  </Typography>
+                </Button>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {showAddForm && (
+                <Button
+                  variant="outlined"
+                  size="medium"
+                  onClick={handleCancel}
+                  disabled={loading}
+                  sx={{ 
+                    minWidth: 100,
+                    borderColor: '#61677A',
+                    color: '#D8D9DA',
+                    '&:hover': {
+                      borderColor: '#6D7386',
+                      bgcolor: 'rgba(109, 115, 134, 0.1)'
+                    }
+                  }}
+                >
+                  CANCEL
+                </Button>
+              )}
               <Button
-                variant="outlined"
+                variant="contained"
                 size="medium"
-                onClick={handleCancel}
+                onClick={handleAddOrUpdateBook}
                 disabled={loading}
                 sx={{ 
-                  minWidth: 100,
-                  borderColor: '#61677A',
-                  color: '#D8D9DA',
+                  minWidth: 120,
+                  bgcolor: '#61677A',
+                  color: 'white',
                   '&:hover': {
-                    borderColor: '#6D7386',
-                    bgcolor: 'rgba(109, 115, 134, 0.1)'
+                    bgcolor: '#6D7386'
                   }
                 }}
               >
-                CANCEL
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'
+                )}
               </Button>
-            )}
-            <Button
-              variant="contained"
-              size="medium"
-              onClick={handleAddOrUpdateBook}
-              disabled={loading}
-              sx={{ 
-                ml: 2,
-                minWidth: 120,
-                bgcolor: '#61677A',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: '#6D7386'
-                }
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'
-              )}
-            </Button>
+            </Box>
           </Box>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
 
       {/* Loading state */}
       {loading && !showAddForm && (

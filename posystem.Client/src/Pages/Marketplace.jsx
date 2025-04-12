@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
-import { Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, Tooltip, IconButton, Typography, Grid, Dialog,
+import {
+  Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, Tooltip, IconButton, Typography, Grid, Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -13,12 +14,13 @@ import { Box, Menu, MenuItem, Card, CardMedia, CardContent, TextField, Stack, To
   TextareaAutosize,
   Rating,
   Badge,
- } from '@mui/material';
+} from '@mui/material';
 import { createTheme } from '@mui/material/styles';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import CheckroomIcon from '@mui/icons-material/Checkroom';
 import SearchIcon from '@mui/icons-material/Search';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -26,10 +28,12 @@ import SubjectIcon from '@mui/icons-material/Subject';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import ScienceIcon from '@mui/icons-material/Science';
 import StarRateIcon from '@mui/icons-material/StarRate';
 import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
+import AutoFixNormalIcon from '@mui/icons-material/AutoFixNormal';
 import MoodIcon from '@mui/icons-material/Mood';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import SchoolIcon from '@mui/icons-material/School';
@@ -55,10 +59,10 @@ const NAVIGATION = [
   { segment: 'featured', title: 'Featured', icon: <DashboardIcon /> },
   { segment: 'fiction', title: 'Fiction', icon: <MenuBookIcon /> },
   { segment: 'non-fiction', title: 'Non-fiction', icon: <SubjectIcon /> },
-  { segment: 'mystery', title: 'Mystery', icon: <AutoStoriesIcon /> },
-  { segment: 'romance', title: 'Romance', icon: <StarRateIcon /> },
+  { segment: 'mystery', title: 'Mystery', icon: <QuestionMarkIcon /> },
+  { segment: 'romance', title: 'Romance', icon: <FavoriteIcon /> },
   { segment: 'science-fiction', title: 'Science Fiction', icon: <ScienceIcon /> },
-  { segment: 'fantasy', title: 'Fantasy', icon: <MoodIcon /> },
+  { segment: 'fantasy', title: 'Fantasy', icon: <AutoFixNormalIcon /> },
   { segment: 'biography', title: 'Biography', icon: <LocalLibraryIcon /> },
   { segment: 'history', title: 'History', icon: <HistoryEduIcon /> },
   { segment: 'self-help', title: 'Self-Help', icon: <PsychologyIcon /> },
@@ -267,9 +271,19 @@ function PageContent({ searchTerm, selectedCategory }) {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const booksPerPage = 12;
   const isFeatured = !selectedCategory;
 
+  const calculateAverageRating = (reviews) => {
+    if (!reviews || reviews.length === 0) return 0;
+    const sum = reviews.reduce((total, review) => total + review.rating, 0);
+    return (sum / reviews.length).toFixed(1);
+  };
+
   useEffect(() => {
+    // Modify the fetchBooks function in your useEffect
     const fetchBooks = async () => {
       try {
         setLoading(true);
@@ -278,10 +292,13 @@ function PageContent({ searchTerm, selectedCategory }) {
           Category: selectedCategory,
           SortBy: 'Added_At',
           SortDesc: true,
-          Skip: 0,
-          Take: isFeatured ? 12 : 0
+          Skip: (currentPage - 1) * booksPerPage,
+          Take: booksPerPage
         });
+
         setBooks(response.books || []);
+        // Calculate total pages based on the total count returned from API
+        setTotalPages(Math.ceil(response.totalCount / booksPerPage));
         setLoading(false);
       } catch (err) {
         console.error('Error fetching books:', err);
@@ -291,6 +308,10 @@ function PageContent({ searchTerm, selectedCategory }) {
     };
 
     fetchBooks();
+  }, [searchTerm, selectedCategory, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [searchTerm, selectedCategory]);
 
   const handleBookClick = async (book) => {
@@ -304,26 +325,26 @@ function PageContent({ searchTerm, selectedCategory }) {
     }
     setShowDialog(true);
   };
-  
+
   const handleCloseDialog = () => {
     setShowDialog(false);
     setSelectedBook(null);
     setNewReview('');
   };
-  
+
   const handleAddReview = async () => {
     if (!newReview.trim() || reviewRating === 0) {
       alert("Please enter a review and rating.");
       return;
     }
-  
+
     try {
       const response = await reviewApi.createReview(
         selectedBook.id,
         reviewRating,
         newReview.trim()
       );
-  
+
       if (response.result === "Success") {
         // Reload reviews after posting
         const updatedReviews = await reviewApi.getReviews(selectedBook.id);
@@ -338,7 +359,7 @@ function PageContent({ searchTerm, selectedCategory }) {
       alert("Error submitting review.");
     }
   };
-  
+
 
   const handleAddToCart = async () => {
     try {
@@ -383,8 +404,16 @@ function PageContent({ searchTerm, selectedCategory }) {
             >
               <CardMedia
                 component="img"
-                image={book.CoverImage || "/defaultbookcover.png"}
+                image={book.CoverImage || book.Cover_Image || "/defaultbookcover.png"}
                 alt={book.title}
+                onError={(e) => {
+                  console.error("Failed to load image for book:", {
+                    title: book.title,
+                    imageUrl: book.CoverImage || book.Cover_Image,
+                    fallbackUsed: !book.CoverImage && !book.Cover_Image
+                  });
+                  e.target.src = "/defaultbookcover.png";
+                }}
                 sx={{ objectFit: "contain", height: 200, backgroundColor: "#f5f5f5" }}
               />
               <CardContent sx={{
@@ -412,7 +441,7 @@ function PageContent({ searchTerm, selectedCategory }) {
                 >
                   {book.title}
                 </Typography>
-                
+
                 <Typography
                   variant="body2"
                   color="primary"
@@ -425,6 +454,99 @@ function PageContent({ searchTerm, selectedCategory }) {
           </Grid>
         ))}
       </Grid>
+      {/* Enhanced pagination with accessible first/last page */}
+      {!loading && books.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {/* Previous button */}
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            >
+              Prev
+            </Button>
+
+            {/* First page is always visible */}
+            <Button
+              size="small"
+              variant={currentPage === 1 ? "contained" : "outlined"}
+              onClick={() => setCurrentPage(1)}
+              sx={{ minWidth: '36px' }}
+            >
+              1
+            </Button>
+
+            {/* Ellipsis after first page if there's a gap */}
+            {currentPage > 3 && (
+              <Typography variant="body2" sx={{ mx: 0.5 }}>...</Typography>
+            )}
+
+            {/* Page before current (if not first page) */}
+            {currentPage > 2 && (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                sx={{ minWidth: '36px' }}
+              >
+                {currentPage - 1}
+              </Button>
+            )}
+
+            {/* Current page (if not first or last) */}
+            {currentPage !== 1 && currentPage !== totalPages && (
+              <Button
+                size="small"
+                variant="contained"
+                sx={{ minWidth: '36px' }}
+              >
+                {currentPage}
+              </Button>
+            )}
+
+            {/* Page after current (if not last page) */}
+            {currentPage < totalPages - 1 && (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                sx={{ minWidth: '36px' }}
+              >
+                {currentPage + 1}
+              </Button>
+            )}
+
+            {/* Ellipsis before last page if there's a gap */}
+            {currentPage < totalPages - 2 && (
+              <Typography variant="body2" sx={{ mx: 0.5 }}>...</Typography>
+            )}
+
+            {/* Last page is always visible (if more than 1 page) */}
+            {totalPages > 1 && (
+              <Button
+                size="small"
+                variant={currentPage === totalPages ? "contained" : "outlined"}
+                onClick={() => setCurrentPage(totalPages)}
+                sx={{ minWidth: '36px' }}
+              >
+                {totalPages}
+              </Button>
+            )}
+
+            {/* Next button */}
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              Next
+            </Button>
+          </Stack>
+        </Box>
+      )}
       <Dialog open={showDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold', fontSize: 22 }}>
           {selectedBook?.title}
@@ -436,11 +558,7 @@ function PageContent({ searchTerm, selectedCategory }) {
           <Box display="flex" gap={3} mb={3}>
             <Avatar
               variant="square"
-              src={
-                selectedBook?.CoverImage
-                  ? `data:image/jpeg;base64,${selectedBook.CoverImage}`
-                  : '/defaultbookcover.png'
-              }
+              src={selectedBook?.CoverImage || '/defaultbookcover.png'}
               sx={{
                 width: 130,
                 height: 180,
@@ -450,9 +568,28 @@ function PageContent({ searchTerm, selectedCategory }) {
               }}
             />
             <Box>
+            <Typography variant="subtitle1" gutterBottom>
+                {reviews.length > 0 ? (
+                  <>
+                    {calculateAverageRating(reviews)}
+                    <Rating
+                      value={parseFloat(calculateAverageRating(reviews))}
+                      readOnly
+                      size="small"
+                      sx={{ ml: 1, verticalAlign: 'middle' }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                    </Typography>
+                  </>
+                ) : (
+                  'No reviews yet'
+                )}
+              </Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Author:</strong> {selectedBook?.author}</Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Price:</strong> ${selectedBook?.price?.toFixed(2)}</Typography>
               <Typography variant="subtitle1" gutterBottom><strong>Publisher:</strong> {selectedBook?.supplierName || 'Unknown'}</Typography>
+              <Typography variant="subtitle1" gutterBottom><strong>Quantity:</strong> {selectedBook?.units || 'Unknown'}</Typography>
             </Box>
           </Box>
 
@@ -548,11 +685,11 @@ PageContent.propTypes = {
 // -----------------------------------------------------------------------------
 function Marketplace(props) {
   const { window } = props;
-  const router = useDemoRouter('/featured'); 
+  const router = useDemoRouter('/featured');
   const [searchTerm, setSearchTerm] = useState('');
   const selectedCategory = router.pathname?.replace('/', '') === 'featured'
-  ? null
-  : NAVIGATION.find(nav => nav.segment === router.pathname?.replace('/', ''))?.title ?? null;
+    ? null
+    : NAVIGATION.find(nav => nav.segment === router.pathname?.replace('/', ''))?.title ?? null;
 
   const demoWindow = window !== undefined ? window() : undefined;
 
