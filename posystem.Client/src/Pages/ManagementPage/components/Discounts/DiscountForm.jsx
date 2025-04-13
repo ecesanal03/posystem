@@ -6,6 +6,7 @@ import {
   InputAdornment,
   Button
 } from '@mui/material';
+import { useState, useEffect } from 'react';
 
 const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onApplyToAll, onRemoveFromAll }) => {
   
@@ -59,7 +60,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onAp
         />
       </Grid>
 
-      <Grid item xs={10} sm={6}>
+      <Grid item xs={10} sm={4.5}>
         <TextField
           fullWidth
           label="Start Date"
@@ -82,7 +83,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onAp
         />
       </Grid>
 
-      <Grid item xs={10} sm={6}>
+      <Grid item xs={10} sm={4.5}>
         <TextField
           fullWidth
           label="End Date"
