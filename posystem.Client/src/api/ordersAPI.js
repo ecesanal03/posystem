@@ -55,29 +55,31 @@ const ordersApi = {
                 const order = response.data.order;
                 return {
                     id: order.id,
-                    orderDate: order.order_Date,
-                    deliveryDate: order.delivery_Date,
-                    status: order.order_Status || "Processing",
-                    customerId: order.customer_Id,
-                    customerEmail: order.customer_Email,
-                    customerName: order.customer_Name,
-                    customerPhone: order.customer_Phone,
-                    customerAddress: order.customer_Address,
+                    orderDate: order.orderDate,
+                    deliveryDate: order.deliveryDate,
+                    status: order.status || "Processing",
+                    customerId: order.customerId,
+                    customerEmail: order.customerEmail,
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone,
+                    customerAddress: order.customerAddress,
                     items: (order.items || []).map(item => ({
-                        id: item.id,
-                        bookId: item.bookId,
-                        name: item.name,
-                        isbn: item.isbn,
-                        quantity: item.quantity,
-                        price: item.price,
-                        total: item.total
+                      id: item.id,
+                      bookId: item.bookId,
+                      name: item.name,
+                      isbn: item.isbn,
+                      quantity: item.quantity,
+                      price: item.price,
+                      total: item.total
                     })),
                     subtotal: order.subtotal || 0,
                     tax: order.tax || 0,
                     total: order.total || 0,
-                    paymentMethod: order.payment_Method || "N/A",
-                    cardNumber: order.card_Number || "N/A"
-                };
+                    paymentMethod: order.paymentMethod || "N/A",
+                    cardNumber: order.cardNumber || "N/A"
+                  };
+                  
+                  
             }
             throw new Error('Invalid response format');
         } catch (error) {
