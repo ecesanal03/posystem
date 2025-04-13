@@ -31,12 +31,6 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
     }
   };
 
-  const getStatusColor = (status) => {
-    return status
-      ? { bg: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', border: '#4caf50' }
-      : { bg: 'rgba(244, 67, 54, 0.1)', color: '#f44336', border: '#f44336' };
-  };
-
   return (
     <Paper elevation={2} sx={{ 
       bgcolor: '#2A2D2A', 
@@ -54,7 +48,6 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Email</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Role</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Start Date</TableCell>
-              <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}>Status</TableCell>
               <TableCell sx={{ py: 1.5, bgcolor: '#2A2D2A' }}></TableCell>
             </TableRow>
           </TableHead>
@@ -62,7 +55,6 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
             {employees.length > 0 ? (
               employees.map((employee, index) => {
                 const roleStyles = getRoleColor(employee.Role);
-                const statusStyles = getStatusColor(employee.Status);
                 
                 return (
                   <TableRow 
@@ -100,20 +92,6 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
                     </TableCell>
                     <TableCell>{employee.Start_Date || 'N/A'}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={employee.Status ? 'Active' : 'Inactive'}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          bgcolor: statusStyles.bg,
-                          color: statusStyles.color,
-                          borderColor: statusStyles.border,
-                          fontWeight: 500,
-                          fontSize: '0.75rem'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <IconButton 
                           size="small" 
@@ -146,7 +124,7 @@ const EmployeeTable = ({ employees, onEdit, onDelete }) => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={6} align="center">
                   No employees found
                 </TableCell>
               </TableRow>

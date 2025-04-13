@@ -1,28 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
-  TextField,
-  Button,
-  Paper,
-  InputAdornment,
+  Button, 
+  Typography, 
+  TextField, 
+  Paper, 
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress,
-  Alert,
   Snackbar,
-  Typography
+  Alert,
+  InputAdornment
 } from '@mui/material';
 import {
   Search as SearchIcon,
-} from '@mui/icons-material'; 
+} from '@mui/icons-material';
 
 import BookForm from './BookForm';
 import BookTable from './BookTable';
 import bookApi from '../../../../api/bookApi';
 import supplierApi from '../../../../api/supplierAPI';
+import categoryApi from '../../../../api/categoryApi';
 
 /**
  * BookSection Component
@@ -61,12 +62,14 @@ const BookSection = () => {
     Description: '', 
     ISBN: '',
     Supplier_Id: '',
+    Category_Id: '',
     Discount_Id: '',
     Cover_Image: null 
   });
   
-  // New state for suppliers
+  // New state for suppliers and categories
   const [suppliers, setSuppliers] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   // UI state management
   const [showAddForm, setShowAddForm] = useState(false);
@@ -83,6 +86,7 @@ const BookSection = () => {
   useEffect(() => {
     fetchBooks();
     fetchSuppliers();
+    fetchCategories();
   }, [filter, lowStockOnly]);
 
   /**
@@ -135,28 +139,46 @@ const BookSection = () => {
     }
   };
 
-  /**
-   * Handles changes to the search filter input
-   * @param {Event} e - The change event
-   */
+  const fetchCategories = async () => {
+    try {
+      // Use the cached version when possible to prevent unnecessary renders
+      const response = await categoryApi.getCategories({}, true);
+      if (response && response.categories) {
+        // Only update state if categories are different to prevent re-renders
+        if (!categoriesAreEqual(categories, response.categories)) {
+          setCategories(response.categories);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+      // We don't set an error state here to not block the main UI functionality
+    }
+  };
+  const categoriesAreEqual = (currentCategories, newCategories) => {
+    if (!currentCategories || !newCategories) return false;
+    if (currentCategories.length !== newCategories.length) return false;
+    
+    // Create a map of ids for faster lookup
+    const currentIds = new Set(currentCategories.map(c => c.id));
+    return newCategories.every(c => currentIds.has(c.id));
+  };
+
   const handleFilterChange = (e) => {
     setFilter(e.target.value);
   };
 
-  /**
-   * Handles changes to the new book form fields
-   * @param {Event} e - The change event
-   */
-  const handleNewBookChange = (e) => {
+  const handleNewBookChange = useCallback((e) => {
     const { name, value } = e.target;
     
     // If this is the image URL field, update the Cover_Image with the URL string
     if (name === 'Cover_Image_URL') {
       setNewBook((prev) => ({ ...prev, Cover_Image: value }));
-    } else {
-      setNewBook((prev) => ({ ...prev, [name]: value }));
+      return;
     }
-  };
+    
+    // For all fields, update immediately but batch state updates
+    setNewBook((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
   /**
    * Validates book data before submission
@@ -210,9 +232,10 @@ const BookSection = () => {
           Units: bookDetails.units.toString(),
           Description: bookDetails.description || '',
           ISBN: bookDetails.isbn || '',
-          Supplier_Id: bookDetails.supplierId || '',
-          Discount_Id: bookDetails.discountId || '',
-          Cover_Image: bookDetails.coverImage || bookDetails.CoverImage || null
+          Supplier_Id: bookDetails.supplier_Id || '',
+          Category_Id: bookDetails.category_Id || '',
+          Discount_Id: bookDetails.discount_Id || '',
+          Cover_Image: bookDetails.coverImage || ''
         });
         setIsEditingBook(true);
         setShowAddForm(true);
@@ -281,13 +304,93 @@ const BookSection = () => {
   };
 
   /**
-   * Cancels the current form operation
-   * Resets form state and validation errors
+   * Handles adding a new book or updating an existing one
+   * Validates data, makes API call, and handles response
    */
-  const handleCancel = () => {
-    setShowAddForm(false);
-    setIsEditingBook(false);
-    setBookToEdit(null);
+  const handleAddOrUpdateBook = async () => {
+    try {
+      // Validate book data
+      const errors = validateBook(newBook);
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      setLoading(true);
+      setValidationErrors({});
+
+      // Format book data for API
+      const bookData = {
+        title: newBook.Title,
+        author: newBook.Author,
+        price: parseFloat(newBook.Price),
+        units: parseInt(newBook.Units),
+        description: newBook.Description,
+        isbn: newBook.ISBN,
+        supplier_Id: newBook.Supplier_Id ? newBook.Supplier_Id : null,
+        category_Id: newBook.Category_Id ? newBook.Category_Id : null,
+        discount_Id: newBook.Discount_Id ? newBook.Discount_Id : null,
+        coverImage: newBook.Cover_Image
+      };
+      
+      let response;
+      if (isEditingBook) {
+        // Update existing book
+        response = await bookApi.updateBook(bookToEdit.id, bookData);
+        
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Book updated successfully',
+            severity: 'success'
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to update book',
+            severity: 'error'
+          });
+        }
+      } else {
+        // Add new book
+        response = await bookApi.createBook(bookData);
+        
+        if (response && response.success) {
+          setNotification({
+            open: true,
+            message: 'Book added successfully',
+            severity: 'success'
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: response.message || 'Failed to add book',
+            severity: 'error'
+          });
+        }
+      }
+      
+      // Refresh the book list
+      fetchBooks();
+      
+      // Reset form
+      resetBookForm();
+    } catch (err) {
+      console.error('Failed to save book:', err);
+      setNotification({
+        open: true,
+        message: 'Failed to save book. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Resets the book form to initial state
+   */
+  const resetBookForm = () => {
     setNewBook({ 
       Title: '', 
       Author: '', 
@@ -296,140 +399,22 @@ const BookSection = () => {
       Description: '', 
       ISBN: '',
       Supplier_Id: '',
+      Category_Id: '',
       Discount_Id: '',
-      Cover_Image: null 
+      Cover_Image: '' 
     });
     setValidationErrors({});
+    setShowAddForm(false);
+    setIsEditingBook(false);
+    setBookToEdit(null);
   };
 
   /**
-   * Validates and formats GUID strings
-   * @param {string} input - The GUID string to format
-   * @returns {string|null} Formatted GUID or null if invalid
+   * Cancels the current form operation
+   * Resets form state and validation errors
    */
-  const formatGuid = (input) => {
-    if (!input || input.trim() === '') return null;
-    
-    // If it's already a valid GUID with hyphens, return it
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input)) {
-      return input;
-    }
-    
-    // If it's a valid GUID without hyphens, format it
-    if (/^[0-9a-f]{32}$/i.test(input)) {
-      return `${input.substring(0, 8)}-${input.substring(8, 12)}-${input.substring(12, 16)}-${input.substring(16, 20)}-${input.substring(20)}`;
-    }
-    
-    // For "00000000" type inputs, expand to full zero GUID
-    if (/^0+$/.test(input) && input.length <= 8) {
-      return "00000000-0000-0000-0000-000000000000";
-    }
-    
-    // If not a recognizable GUID format, return null
-    return null;
-  };
-
-  /**
-   * Handles adding a new book or updating an existing one
-   * Validates data, makes API call, and handles response
-   */
-  const handleAddOrUpdateBook = async () => {
-    if (showAddForm) {
-      // Validate required fields
-      const errors = validateBook(newBook);
-      setValidationErrors(errors);
-      
-      if (Object.keys(errors).length > 0) {
-        return;
-      }
-      
-      // Prepare book data
-      const bookData = {
-        title: newBook.Title,
-        author: newBook.Author,
-        isbn: newBook.ISBN,
-        price: parseFloat(newBook.Price),
-        units: parseInt(newBook.Units),
-        description: newBook.Description || '',
-        supplierId: formatGuid(newBook.Supplier_Id),
-        discountId: formatGuid(newBook.Discount_Id),
-        coverImage: newBook.Cover_Image // Now this is always a URL string
-      };
-      
-      try {
-        setLoading(true);
-        let response;
-        
-        if (isEditingBook && bookToEdit) {
-          // Update existing book
-          response = await bookApi.updateBook(bookToEdit.id, bookData);
-          if (response && response.success) {
-            setNotification({
-              open: true,
-              message: 'Book updated successfully',
-              severity: 'success'
-            });
-          } else {
-            setNotification({
-              open: true,
-              message: response.message || 'Failed to update book',
-              severity: 'error'
-            });
-          }
-        } else {
-          // Add new book
-          response = await bookApi.createBook(bookData);
-          if (response && response.success) {
-            setNotification({
-              open: true,
-              message: 'Book added successfully',
-              severity: 'success'
-            });
-          } else {
-            setNotification({
-              open: true,
-              message: response.message || 'Failed to add book',
-              severity: 'error'
-            });
-          }
-        }
-        
-        // Refresh the book list
-        fetchBooks();
-        
-        // Reset form
-        setNewBook({ 
-          Title: '', 
-          Author: '', 
-          Price: '', 
-          Units: '', 
-          Description: '', 
-          ISBN: '',
-          Supplier_Id: '',
-          Discount_Id: '',
-          Cover_Image: '' // Reset to empty string instead of null
-        });
-        setValidationErrors({});
-        setShowAddForm(false);
-        setIsEditingBook(false);
-        setBookToEdit(null);
-      } catch (err) {
-        console.error('Failed to save book:', err);
-        setNotification({
-          open: true,
-          message: 'Failed to save book. Please try again.',
-          severity: 'error'
-        });
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // Show the form for adding a new book
-      setIsEditingBook(false);
-      setBookToEdit(null);
-      setShowAddForm(true);
-      setValidationErrors({});
-    }
+  const handleCancel = () => {
+    resetBookForm();
   };
 
   /**
@@ -465,10 +450,11 @@ const BookSection = () => {
           borderRadius: 1
         }}>
           <BookForm 
-            newBook={newBook}
-            handleNewBookChange={handleNewBookChange}
+            newBook={newBook} 
+            handleNewBookChange={handleNewBookChange} 
             validationErrors={validationErrors}
             suppliers={suppliers}
+            categories={categories}
           />
         </Paper>
       )}
@@ -486,7 +472,7 @@ const BookSection = () => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
               <TextField
-                placeholder="Search Books"
+                placeholder="Search by title, author, ISBN, supplier, or category..."
                 size="small"
                 value={filter}
                 onChange={handleFilterChange}
@@ -559,7 +545,7 @@ const BookSection = () => {
               <Button
                 variant="contained"
                 size="medium"
-                onClick={handleAddOrUpdateBook}
+                onClick={showAddForm ? handleAddOrUpdateBook : () => setShowAddForm(true)}
                 disabled={loading}
                 sx={{ 
                   minWidth: 120,
@@ -570,11 +556,7 @@ const BookSection = () => {
                   }
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'
-                )}
+                {isEditingBook ? 'UPDATE BOOK' : 'ADD BOOK'}
               </Button>
             </Box>
           </Box>

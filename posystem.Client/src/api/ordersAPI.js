@@ -55,29 +55,31 @@ const ordersApi = {
                 const order = response.data.order;
                 return {
                     id: order.id,
-                    orderDate: order.order_Date,
-                    deliveryDate: order.delivery_Date,
-                    status: order.order_Status || "Processing",
-                    customerId: order.customer_Id,
-                    customerEmail: order.customer_Email,
-                    customerName: order.customer_Name,
-                    customerPhone: order.customer_Phone,
-                    customerAddress: order.customer_Address,
+                    orderDate: order.orderDate,
+                    deliveryDate: order.deliveryDate,
+                    status: order.status || "Processing",
+                    customerId: order.customerId,
+                    customerEmail: order.customerEmail,
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone,
+                    customerAddress: order.customerAddress,
                     items: (order.items || []).map(item => ({
-                        id: item.id,
-                        bookId: item.bookId,
-                        name: item.name,
-                        isbn: item.isbn,
-                        quantity: item.quantity,
-                        price: item.price,
-                        total: item.total
+                      id: item.id,
+                      bookId: item.bookId,
+                      name: item.name,
+                      isbn: item.isbn,
+                      quantity: item.quantity,
+                      price: item.price,
+                      total: item.total
                     })),
                     subtotal: order.subtotal || 0,
                     tax: order.tax || 0,
                     total: order.total || 0,
-                    paymentMethod: order.payment_Method || "N/A",
-                    cardNumber: order.card_Number || "N/A"
-                };
+                    paymentMethod: order.paymentMethod || "N/A",
+                    cardNumber: order.cardNumber || "N/A"
+                  };
+                  
+                  
             }
             throw new Error('Invalid response format');
         } catch (error) {
@@ -92,55 +94,50 @@ const ordersApi = {
                 Id: id,
                 Order_Status: status
             });
+            
             if (response.data) {
+                // Normalize case for response properties to handle both camelCase and PascalCase
                 return {
-                    success: response.data.Success,
-                    message: response.data.Message,
-                    order: response.data.Order ? {
-                        id: response.data.Order.Id,
-                        orderDate: response.data.Order.Order_Date,
-                        deliveryDate: response.data.Order.Delivery_Date,
-                        customerId: response.data.Order.Customer_Id,
-                        customerEmail: response.data.Order.Customer_Email,
-                        status: response.data.Order.Order_Status,
-                        total: response.data.Order.Total_Amount,
-                        items: (response.data.Order.Items || []).map(item => ({
-                            id: item.Id,
-                            bookId: item.BookId,
-                            name: item.Name,
-                            isbn: item.ISBN,
-                            quantity: item.Quantity,
-                            price: item.Price,
-                            total: item.Total,
-                            discount: item.Discount
-                        }))
-                    } : null
+                    success: response.data.success ?? response.data.Success ?? false,
+                    message: response.data.message ?? response.data.Message ?? 'Status updated',
+                    order: response.data.order ?? response.data.Order
                 };
             }
-            return response.data;
+            return {
+                success: false,
+                message: 'Invalid response format from server'
+            };
         } catch (error) {
             console.error('Error updating order:', error);
-            throw error;
+            // Return a structured error instead of throwing
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Failed to update order status'
+            };
         }
     },
 
     deleteOrder: async (id) => {
         try {
-            const response = await axios.delete(`/orders/${id}`);
-
-            // Handle the response based on the updated DTO structure
-            if (response.data) {
-                return {
-                    success: response.data.Success,
-                    message: response.data.Message
-                };
-            }
-            return response.data;
+          const response = await axios.delete(`/orders/${id}`);
+          const data = response.data;
+      
+          // Normalize response to camelCase
+          return {
+            success: data.success ?? data.Success ?? false,
+            message: data.message ?? data.Message ?? 'Unknown response'
+          };
         } catch (error) {
-            console.error(`Error deleting order with ID ${id}:`, error);
-            throw error;
+          console.error(`Error deleting order with ID ${id}:`, error);
+      
+          // Return normalized failure
+          return {
+            success: false,
+            message: error?.response?.data?.message || error.message || 'Failed to delete order'
+          };
         }
-    },
+      },
+      
 
     placeOrder: async (orderData) => {
         const response = await axios.post('/orders/create', orderData);

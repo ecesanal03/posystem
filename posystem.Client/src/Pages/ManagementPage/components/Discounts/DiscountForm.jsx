@@ -3,10 +3,28 @@ import {
   Grid, 
   TextField, 
   Box,
-  InputAdornment
+  InputAdornment,
+  Button
 } from '@mui/material';
+import { useState, useEffect } from 'react';
 
-const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) => {
+const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onApplyToAll, onRemoveFromAll }) => {
+  const [discountApplied, setDiscountApplied] = useState(false);
+  
+  // Reset the state when discount changes
+  useEffect(() => {
+    setDiscountApplied(false);
+  }, [discount.id]);
+  
+  const handleToggleDiscount = () => {
+    if (discountApplied)
+      onRemoveFromAll(discount.id);
+    else
+      onApplyToAll(discount.id);
+
+    setDiscountApplied(!discountApplied);
+  };
+
   return (
     <Grid container spacing={2} sx={{ pt: 2 }}>
       <Grid item xs={9}>
@@ -30,6 +48,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+
       <Grid item xs={3}>
         <TextField
           fullWidth
@@ -55,7 +74,8 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
-      <Grid item xs={10} sm={6}>
+
+      <Grid item xs={10} sm={4.5}>
         <TextField
           fullWidth
           label="Start Date"
@@ -77,7 +97,8 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
-      <Grid item xs={10} sm={6}>
+
+      <Grid item xs={10} sm={4.5}>
         <TextField
           fullWidth
           label="End Date"
@@ -99,8 +120,31 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
           }}
         />
       </Grid>
+      {discount.id && (
+        <Grid item xs={12} sm={3}>
+          <Button 
+            variant="outlined"
+            onClick={handleToggleDiscount}
+            color={discountApplied ? "error" : "primary"}
+            sx={{ 
+              p: 0.4,
+              fontWeight: 'bold', 
+              color: '#fff', 
+              bgcolor: discountApplied ? '#d32f2f' : '#2a5885',
+              borderColor: discountApplied ? '#f44336' : '#3a7ab7',
+              '&:hover': {
+                bgcolor: discountApplied ? '#e33e3e' : '#3a6ea8',
+                borderColor: discountApplied ? '#f55a4e' : '#4a8bc7',
+              }
+            }}
+          >
+            {discountApplied ? 'Deactivate All Books' : 'Apply All Books'}
+          </Button>
+        </Grid>
+      )}
+
       {discount.employeeName && (
-        <Grid item xs={12}>
+        <Grid item xs={12} sm={6}>
           <Box sx={{ 
             p: 0, 
             color: 'rgba(255, 255, 255, 0.7)',
@@ -116,6 +160,7 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {} }) =>
 
 DiscountForm.propTypes = {
   discount: PropTypes.shape({
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     discountPercentage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     startDate: PropTypes.string.isRequired,
@@ -123,7 +168,9 @@ DiscountForm.propTypes = {
     employeeName: PropTypes.string
   }).isRequired,
   handleInputChange: PropTypes.func.isRequired,
-  validationErrors: PropTypes.object
+  validationErrors: PropTypes.object,
+  onApplyToAll: PropTypes.func.isRequired,
+  onRemoveFromAll: PropTypes.func.isRequired,
 };
 
-export default DiscountForm;  
+export default DiscountForm;

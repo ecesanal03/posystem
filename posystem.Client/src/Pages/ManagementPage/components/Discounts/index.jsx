@@ -371,6 +371,36 @@ const DiscountsSection = () => {
     setNotification({ ...notification, open: false });
   };
 
+  const handleApplyToAll = async (discountId) => {
+    try {
+      const response = await discountApi.applyToAllBooks(discountId);
+      if (response.success) {
+        setNotification({ open: true, message: response.message, severity: 'success' });
+      } else {
+        setNotification({ open: true, message: response.message, severity: 'warning' });
+      }
+    } catch (err) {
+      console.error('Failed to apply discount to all books:', err);
+      setNotification({ open: true, message: 'Failed to apply discount to all books.', severity: 'error' });
+    }
+  };
+
+  const handleRemoveFromAllBooks = async (discountId) => {
+    try {
+      const response = await discountApi.removeDiscountFromAllBooks(discountId);
+      if (response.success) {
+        setNotification({ open: true, message: response.message, severity: 'success' });
+        fetchDiscounts(); // refresh UI
+      } else {
+        setNotification({ open: true, message: response.message, severity: 'warning' });
+      }
+    } catch (err) {
+      console.error("Failed to remove discount from books:", err);
+      setNotification({ open: true, message: "Error removing discount from books.", severity: 'error' });
+    }
+  };
+  
+
   // Filter discounts based on search term (client-side filter as backup)
   const filteredDiscounts = discounts.filter(discount => 
     discount.name.toLowerCase().includes(filter.toLowerCase())
@@ -452,11 +482,13 @@ const DiscountsSection = () => {
       >
         <DialogTitle>{isEditing ? 'Edit Discount' : 'Add New Discount'}</DialogTitle>
         <DialogContent>
-          <DiscountForm 
-            discount={currentDiscount}
-            handleInputChange={handleInputChange}
-            validationErrors={validationErrors}
-          />
+        <DiscountForm 
+          discount={currentDiscount}
+          handleInputChange={handleInputChange}
+          validationErrors={validationErrors}
+          onApplyToAll={handleApplyToAll}
+          onRemoveFromAll={handleRemoveFromAllBooks}
+        />
         </DialogContent>
         <DialogActions>
           <Button 

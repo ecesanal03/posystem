@@ -14,7 +14,7 @@ import {
 import LinkIcon from '@mui/icons-material/Link';
 import ImageIcon from '@mui/icons-material/Image';
 
-const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = [] }) => {
+const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = [], categories = [] }) => {
   return (
     <Grid container spacing={3}>
       {/* Image Preview Section */}
@@ -77,13 +77,13 @@ const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = 
           {/* Image URL input */}
           <Box sx={{ p: 2, borderTop: '1px solid rgba(97, 103, 122, 0.3)' }}>
             <TextField
-              name="Cover_Image_URL"
+              name="Cover_Image"
               label="Image URL"
               value={newBook.Cover_Image || ''}
               onChange={handleNewBookChange}
               fullWidth
               required
-              error={!!validationErrors.Cover_Image_URL}
+              error={!!validationErrors.Cover_Image}
               InputLabelProps={{ shrink: true }}
               placeholder="https://example.com/book-cover.jpg"
               InputProps={{
@@ -126,7 +126,7 @@ const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = 
               }}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} md={6}>
             <TextField
               name="Author"
               label="Author"
@@ -211,6 +211,48 @@ const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = 
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
+            <FormControl 
+              fullWidth
+              error={!!validationErrors.Category_Id}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#2A2D2A',
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#61677A'
+                  }
+                }
+              }}
+            >
+              <InputLabel id="category-select-label" shrink>Category</InputLabel>
+              <Select
+                labelId="category-select-label"
+                id="category-select"
+                name="Category_Id"
+                value={newBook.Category_Id || ''}
+                onChange={handleNewBookChange}
+                displayEmpty
+                label="Category"
+                sx={{
+                  '& .MuiSelect-icon': {
+                    color: '#61677A'
+                  }
+                }}
+              >
+                <MenuItem value="">
+                  <em>N/A</em>
+                </MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {validationErrors.Category_Id && (
+                <FormHelperText>{validationErrors.Category_Id}</FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <TextField
               name="Price"
               label="Price"
@@ -254,6 +296,7 @@ const BookForm = ({ newBook, handleNewBookChange, validationErrors, suppliers = 
               }}
             />
           </Grid>
+          
           <Grid item xs={12}>
             <TextField
               name="Description"
@@ -286,6 +329,7 @@ BookForm.propTypes = {
     Author: PropTypes.string,
     ISBN: PropTypes.string,
     Supplier_Id: PropTypes.string,
+    Category_Id: PropTypes.string,
     Price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     Units: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     Description: PropTypes.string,
@@ -294,7 +338,8 @@ BookForm.propTypes = {
   }).isRequired,
   handleNewBookChange: PropTypes.func.isRequired,
   validationErrors: PropTypes.object.isRequired,
-  suppliers: PropTypes.array
+  suppliers: PropTypes.array,
+  categories: PropTypes.array
 };
 
 export default BookForm; 

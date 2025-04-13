@@ -257,6 +257,13 @@ namespace posystem.ServiceInterface.Services
                     };
                 }
 
+                // Optionally refresh the Discount_Id from the Books table
+                var book = db.SingleById<Books>(request.BookId);
+                if (book != null && book.Discount_Id != null)
+                {
+                    cartItem.Discount_Id = book.Discount_Id;
+                }
+
                 cartItem.Quantity = request.Quantity;
                 cartItem.Added_At = DateTime.UtcNow;
                 
@@ -269,6 +276,7 @@ namespace posystem.ServiceInterface.Services
                 };
             }
         }
+
 
         //simulate quantity drop
         public async Task SimulateLowStockAfterDelay(Guid bookId)
