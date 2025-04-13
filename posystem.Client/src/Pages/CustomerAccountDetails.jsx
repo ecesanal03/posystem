@@ -197,7 +197,12 @@ const AccountDetails = () => {
         message: 'Profile updated successfully',
         severity: 'success'
       });
-      await fetchData(); // Refresh the data after successful update
+      
+      // Navigate to homepage after successful update
+      setTimeout(() => {
+        navigate('/');
+      }, 1500); // Wait 1.5 seconds so user can see the success message
+      
     } catch (error) {
       console.error('Error updating profile:', error);
       setNotification({
