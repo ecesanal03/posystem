@@ -100,9 +100,22 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  // Local state for input handling
+  const [inputValue, setInputValue] = useState(searchTerm);
+  // State for suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  // State to track if suggestions are visible
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  // Create a ref for the search input
+  const searchInputRef = React.useRef(null);
 
   const open = Boolean(anchorEl);
   const notifOpen = Boolean(notifAnchorEl);
+
+  // Effect to sync input with searchTerm prop
+  useEffect(() => {
+    setInputValue(searchTerm);
+  }, [searchTerm]);
 
   const handleAccountMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleAccountMenuClose = () => setAnchorEl(null);
@@ -129,6 +142,75 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
     navigate('/login');
   };
 
+  // Fetch suggestions as user types
+  const fetchSuggestions = async (value) => {
+    if (!value.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      // Fetch a small number of suggestions
+      const response = await bookApi.getBooks({
+        SearchTerm: value,
+        Take: 10 // Limit to 10 suggestions
+      });
+
+      setSuggestions(response.books || []);
+    } catch (err) {
+      console.error("Error fetching suggestions:", err);
+      setSuggestions([]);
+    }
+  };
+
+  // Handle input change
+  const handleSearchChange = (e) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+
+    // If the search input is cleared, reset the search results
+    if (!newValue.trim()) {
+      setSearchTerm('');
+    }
+
+    // Fetch suggestions as user types
+    fetchSuggestions(newValue);
+
+    // Show suggestions panel
+    if (newValue.trim()) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle search submission (on Enter key)
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter') {
+      setSearchTerm(inputValue);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setInputValue(suggestion.title);
+    setSearchTerm(suggestion.title);
+    setShowSuggestions(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <Stack direction="row" >
       <Tooltip title="Search" enterDelay={1000}>
@@ -143,29 +225,103 @@ function ToolbarActionsSearch({ searchTerm, setSearchTerm }) {
         </div>
       </Tooltip>
 
-      <TextField
-        label="Search"
-        variant="outlined"
-        size="small"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        slotProps={{
-          input: {
-            endAdornment: (
-              <IconButton type="button" aria-label="search" size="small">
-                <SearchIcon />
-              </IconButton>
-            ),
-            sx: { pr: 0.5 },
-          },
-        }}
-        sx={{
-          flexGrow: 1,
-          mr: 30,
-          maxWidth: "700px",
-          minWidth: "500px",
-        }}
-      />
+      <Box sx={{ position: 'relative', flexGrow: 1 }} ref={searchInputRef}>
+        <TextField
+          label="Search"
+          variant="outlined"
+          size="small"
+          value={inputValue}
+          onChange={handleSearchChange}
+          onKeyPress={handleSearchSubmit}
+          placeholder="Press Enter to search"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton
+                  type="button"
+                  aria-label="search"
+                  size="small"
+                  onClick={() => {
+                    if (inputValue.trim()) {
+                      setSearchTerm(inputValue);
+                    } else {
+                      setSearchTerm('');
+                    }
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <SearchIcon />
+                </IconButton>
+              ),
+              sx: { pr: 0.5 },
+            },
+          }}
+          sx={{
+            flexGrow: 1,
+            mr: 30,
+            maxWidth: "700px",
+            minWidth: "500px",
+          }}
+        />
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              width: '100%',
+              maxWidth: "700px",
+              mt: 0.5,
+              zIndex: 1000,
+              maxHeight: '300px',
+              overflow: 'auto',
+              boxShadow: 3,
+              bgcolor: 'background.paper',
+              borderRadius: 1
+            }}
+          >
+            {suggestions.map((suggestion) => (
+              <Box
+                key={suggestion.id}
+                onClick={() => handleSuggestionClick(suggestion)}
+                sx={{
+                  p: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
+                  borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                }}
+              >
+                {suggestion.CoverImage && (
+                  <Box
+                    component="img"
+                    src={suggestion.CoverImage}
+                    alt={suggestion.title}
+                    sx={{
+                      width: 40,
+                      height: 60,
+                      objectFit: 'contain',
+                      mr: 2,
+                    }}
+                    onError={(e) => {
+                      e.target.src = "/defaultbookcover.png";
+                    }}
+                  />
+                )}
+                <Box>
+                  <Typography variant="subtitle2">{suggestion.title}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    by {suggestion.author}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
 
       <Tooltip title="Notifications">
         <IconButton color="primary" onClick={handleNotifClick}>
@@ -720,11 +876,21 @@ function Marketplace(props) {
   const { window } = props;
   const router = useDemoRouter('/featured');
   const [searchTerm, setSearchTerm] = useState('');
+  const [prevPath, setPrevPath] = useState(router.pathname);
+
   const selectedCategory = router.pathname?.replace('/', '') === 'featured'
     ? null
     : NAVIGATION.find(nav => nav.segment === router.pathname?.replace('/', ''))?.title ?? null;
 
   const demoWindow = window !== undefined ? window() : undefined;
+
+  // Reset search term when category changes
+  useEffect(() => {
+    if (router.pathname !== prevPath) {
+      setSearchTerm('');
+      setPrevPath(router.pathname);
+    }
+  }, [router.pathname, prevPath]);
 
   return (
     <AppProvider
@@ -749,9 +915,5 @@ function Marketplace(props) {
     </AppProvider>
   );
 }
-
-Marketplace.propTypes = {
-  window: PropTypes.func,
-};
 
 export default Marketplace;
