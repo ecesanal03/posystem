@@ -164,6 +164,66 @@ namespace posystem.ServiceInterface.Services
             };
         }
 
+        public async Task<UpdateOrderResponse> Put(UpdateOrderDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var order = await db.SingleByIdAsync<Orders>(request.Id);
+            if (order == null)
+            {
+                return new UpdateOrderResponse
+                {
+                    Success = false,
+                    Message = "Order not found"
+                };
+            }
+
+            try
+            {
+                // Update order status
+                order.Order_Status = request.Order_Status;
+                await db.UpdateAsync(order);
+
+                // Get customer info to build a complete response
+                var customer = await db.SingleByIdAsync<Customers>(order.Customer_Id);
+                if (customer == null)
+                    Console.WriteLine($"[UpdateOrder] Warning: Customer not found with ID: {order.Customer_Id}");
+
+                Console.WriteLine($"[UpdateOrder] Order status updated successfully for ID: {order.Id}");
+                
+                return new UpdateOrderResponse
+                {
+                    Success = true,
+                    Message = "Order status updated successfully",
+                    Order = new OrderDTO
+                    {
+                        Id = order.Id,
+                        OrderDate = order.Order_Date,
+                        DeliveryDate = order.Delivery_Date,
+                        CustomerId = order.Customer_Id,
+                        CustomerName = customer != null ? $"{customer.First_Name} {customer.Last_Name}" : "Unknown",
+                        CustomerEmail = customer?.Email ?? "unknown@example.com",
+                        CustomerPhone = customer?.PhoneNumber ?? "N/A",
+                        CustomerAddress = customer != null ? $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}" : "N/A",
+                        OrderStatus = order.Order_Status,
+                        Items = new List<OrderItemDTO>(),
+                        Subtotal = 0,
+                        Tax = 0,
+                        Total = 0,
+                        PaymentMethod = "N/A"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateOrder] Exception during update: {ex}");
+                return new UpdateOrderResponse
+                {
+                    Success = false,
+                    Message = $"Error updating order status: {ex.Message}"
+                };
+            }
+        }
 
         public async Task<DeleteOrderResponse> Delete(DeleteOrderDTO request)
         {
