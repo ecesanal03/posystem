@@ -225,26 +225,35 @@ const OrdersSection = () => {
     if (orderToDelete) {
       try {
         setLoading(true);
+        console.log("Delete call with ID:", orderToDelete.id);
+  
         const result = await ordersApi.deleteOrder(orderToDelete.id);
-        
-        if (result.success) {
+  
+        // Normalize response keys for both camelCase and PascalCase
+        const success = result.success ?? result.Success;
+        const message = result.message ?? result.Message;
+  
+        if (success) {
+          // Remove the order from UI list
           setOrders(orders.filter(order => order.id !== orderToDelete.id));
+  
+          // Close delete dialog and reset
           setDeleteOrderDialogOpen(false);
           setOrderToDelete(null);
-          
-          // If the deleted order is currently open in detail view, close it
+  
+          // If currently viewing the deleted order, close its dialog
           if (selectedOrder && selectedOrder.id === orderToDelete.id) {
             setOrderDetailOpen(false);
             setSelectedOrder(null);
           }
-
+  
           setNotification({
             open: true,
-            message: 'Order deleted successfully',
+            message: message || 'Order deleted successfully',
             severity: 'success'
           });
         } else {
-          throw new Error(result.message || 'Failed to delete order');
+          throw new Error(message || 'Failed to delete order');
         }
       } catch (err) {
         console.error('Failed to delete order:', err);
@@ -258,6 +267,7 @@ const OrdersSection = () => {
       }
     }
   };
+  
 
   /**
    * Closes the notification snackbar.

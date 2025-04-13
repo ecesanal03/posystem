@@ -126,21 +126,25 @@ const ordersApi = {
 
     deleteOrder: async (id) => {
         try {
-            const response = await axios.delete(`/orders/${id}`);
-
-            // Handle the response based on the updated DTO structure
-            if (response.data) {
-                return {
-                    success: response.data.Success,
-                    message: response.data.Message
-                };
-            }
-            return response.data;
+          const response = await axios.delete(`/orders/${id}`);
+          const data = response.data;
+      
+          // Normalize response to camelCase
+          return {
+            success: data.success ?? data.Success ?? false,
+            message: data.message ?? data.Message ?? 'Unknown response'
+          };
         } catch (error) {
-            console.error(`Error deleting order with ID ${id}:`, error);
-            throw error;
+          console.error(`Error deleting order with ID ${id}:`, error);
+      
+          // Return normalized failure
+          return {
+            success: false,
+            message: error?.response?.data?.message || error.message || 'Failed to delete order'
+          };
         }
-    },
+      },
+      
 
     placeOrder: async (orderData) => {
         const response = await axios.post('/orders/create', orderData);
