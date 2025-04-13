@@ -23,6 +23,13 @@ namespace posystem.ServiceModel.Types
     [Route("/customers/me", "GET")]
     public class GetMyCustomerProfile : IReturn<ReturnCustomerByIdResponse> { }
 
+    [Route("/customers/me/orders", "GET")]
+    public class GetMyOrdersDTO : IReturn<GetOrdersResponse>
+    {
+        public int Skip { get; set; }
+        public int Take { get; set; }
+    }
+
     [Route("/customers/me", "PUT")]
     public class UpdateMyProfileDTO : IReturn<UpdateProfileResponse>
     {

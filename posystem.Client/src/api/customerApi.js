@@ -133,6 +133,42 @@ const customerApi = {
       console.error('Error updating profile:', error.response?.data || error.message);
       throw error;
     }
+  },
+
+  getMyOrders: async (params = {}) => {
+    try {
+      console.log('Fetching orders from orders service...');
+      const queryParams = {
+        skip: params.skip || 0,
+        take: params.take || 100,
+        sortBy: 'Order_Date',
+        sortDesc: true
+      };
+      const response = await axios.get('/orders', { params: queryParams });
+      console.log('Orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching orders:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getMyInvoices: async (params = {}) => {
+    try {
+      console.log('Fetching invoices from invoices service...');
+      const queryParams = {
+        skip: params.skip || 0,
+        take: params.take || 100,
+        sortBy: 'Invoice_Date',
+        sortDesc: true
+      };
+      const response = await axios.get('/invoices', { params: queryParams });
+      console.log('Invoices response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching invoices:', error.response?.data || error.message);
+      throw error;
+    }
   }
 };
 

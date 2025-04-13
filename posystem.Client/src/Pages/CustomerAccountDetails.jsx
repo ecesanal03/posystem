@@ -1,18 +1,18 @@
 import * as React from 'react';
-import { Container, Grid, Paper, Typography, TextField, Button, Tabs, Tab, Box, AppBar, Toolbar, IconButton, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert } from '@mui/material';
+import { Container, Grid, Paper, Typography, TextField, Button, Tabs, Tab, Box, AppBar, Toolbar, IconButton, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress } from '@mui/material';
 import { AccountCircle, ArrowBack, Edit as EditIcon } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom'; // Using useNavigate for React Router v6
+import { useNavigate, useLocation } from 'react-router-dom'; 
 import { useState, useEffect } from 'react';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'; // Import DatePicker
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import customerApi from '../api/customerApi';
 
 const AccountDetails = () => {
   const [activeTab, setActiveTab] = React.useState(0);
-  const navigate = useNavigate(); // Initialize useNavigate hook to navigate
+  const navigate = useNavigate();
   const location = useLocation();
-  const { email, password } = location.state || {}; // Retrieve the email and password from the state
+  const { email, password } = location.state || {};
   const [isEditing, setIsEditing] = useState(false);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(true);
@@ -31,6 +31,11 @@ const AccountDetails = () => {
     Country: '',
     DateOfBirth: null
   });
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [userID, setUserID] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
   
   useEffect(() => {
     // Check if user is authenticated
@@ -40,7 +45,12 @@ const AccountDetails = () => {
       return;
     }
     fetchData();
-  }, [navigate, location.pathname]);
+    if (activeTab === 1) {
+      fetchOrders();
+    } else if (activeTab === 2) {
+      fetchInvoices();
+    }
+  }, [navigate, location.pathname, activeTab]);
 
   const fetchData = async () => {
     try {
@@ -80,6 +90,90 @@ const AccountDetails = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      console.log('Starting to fetch orders...');
+      
+      const response = await customerApi.getMyOrders({
+        skip: 0,
+        take: 100
+      });
+      
+      if (response && (response.Orders || response.orders)) {
+        const ordersArray = response.Orders || response.orders;
+        const userEmail = formData.Email; // Get the logged-in user's email from formData
+        
+        // Filter orders to only show those matching the user's email
+        const filteredOrders = ordersArray.filter(order => 
+          (order.Customer_Email || order.customer_Email)?.toLowerCase() === userEmail?.toLowerCase()
+        );
+        
+        const mappedOrders = filteredOrders.map(order => ({
+          id: order.Id || order.id,
+          order_Date: order.Order_Date || order.order_Date,
+          delivery_Date: order.Delivery_Date || order.delivery_Date,
+          order_Status: order.Order_Status || order.order_Status,
+          total_Amount: order.Total_Amount || order.total_Amount,
+          customer_Email: order.Customer_Email || order.customer_Email
+        }));
+        
+        console.log(`Found ${mappedOrders.length} orders for user ${userEmail}`);
+        setOrders(mappedOrders);
+      } else {
+        console.log('No orders found, setting empty array');
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setNotification({
+        open: true,
+        message: 'Failed to load order history',
+        severity: 'error'
+      });
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      setInvoicesLoading(true);
+      console.log('Starting to fetch invoices...');
+      
+      const response = await customerApi.getMyInvoices({
+        skip: 0,
+        take: 100
+      });
+      
+      if (response && response.Invoices) {
+        const mappedInvoices = response.Invoices.map(invoice => ({
+          id: invoice.Id,
+          order_Id: invoice.Order_Id,
+          invoice_Date: invoice.Invoice_Date,
+          due_Date: invoice.Due_Date,
+          status: invoice.Status,
+          total_Amount: invoice.Total_Amount
+        }));
+        
+        console.log(`Found ${mappedInvoices.length} invoices`);
+        setInvoices(mappedInvoices);
+      } else {
+        console.log('No invoices found, setting empty array');
+        setInvoices([]);
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      setNotification({
+        open: true,
+        message: 'Failed to load invoice history',
+        severity: 'error'
+      });
+    } finally {
+      setInvoicesLoading(false);
     }
   };
 
@@ -133,6 +227,27 @@ const AccountDetails = () => {
     navigate('/'); // Navigate back to the previous page
   };
 
+  // Helper function to safely format dates
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      // Parse the date string from the backend
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Invalid Date';
+    }
+  };
+
   const states = [
     { code: 'CA', name: 'California' },
     { code: 'NY', name: 'New York' },
@@ -149,7 +264,7 @@ const AccountDetails = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh', // Full height
+        minHeight: '100vh',
       }}
     >
       <Snackbar
@@ -168,7 +283,7 @@ const AccountDetails = () => {
       </Snackbar>
 
       {/* Top Bar */}
-      <AppBar  sx={{ backgroundColor: '#8499D9' }}>
+      <AppBar sx={{ backgroundColor: '#8499D9' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="back" onClick={goBack}>
             <ArrowBack />
@@ -188,7 +303,8 @@ const AccountDetails = () => {
       <Container maxWidth="lg" sx={{ paddingTop: 10 }}>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <Typography variant="h6">Loading profile information...</Typography>
+            <CircularProgress />
+            <Typography variant="h6" sx={{ ml: 2 }}>Loading profile information...</Typography>
           </Box>
         ) : (
         <Grid container spacing={3}>
@@ -215,7 +331,7 @@ const AccountDetails = () => {
                 <Tab label="Invoices" />
               </Tabs>
 
-              {/* Tab Panels */}
+              {/* Personal Information Tab */}
               {activeTab === 0 && (
                 <Grid container spacing={2} sx={{ marginTop: 2 }}>
                   <Grid item xs={12} md={4}>
@@ -370,16 +486,162 @@ const AccountDetails = () => {
 
               {/* Order History Tab */}
               {activeTab === 1 && (
-                <Grid container spacing={2} sx={{ marginTop: 2 }}>
-                  <Typography variant="h6">No recent orders</Typography>
-                </Grid>
+                <Box sx={{ marginTop: 2 }}>
+                  {ordersLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" padding={4}>
+                      <CircularProgress size={24} sx={{ mr: 1 }} />
+                      <Typography variant="h6">Loading order history...</Typography>
+                    </Box>
+                  ) : orders.length === 0 ? (
+                    <Box display="flex" flexDirection="column" alignItems="center" padding={4}>
+                      <Typography variant="h6" sx={{ mb: 2 }}>No order history found</Typography>
+                      <Button 
+                        variant="outlined" 
+                        onClick={fetchOrders}
+                      >
+                        Refresh
+                      </Button>
+                    </Box>
+                  ) : (
+                    <TableContainer component={Paper} sx={{ mt: 2 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Order ID</TableCell>
+                            <TableCell>Order Date</TableCell>
+                            <TableCell>Delivery Date</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell align="right">Total</TableCell>
+                            <TableCell>Customer Email</TableCell>
+                            <TableCell>Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {orders.map((order) => (
+                            <TableRow key={order.id}>
+                              <TableCell>{order.id || 'N/A'}</TableCell>
+                              <TableCell>{formatDate(order.order_Date)}</TableCell>
+                              <TableCell>{formatDate(order.delivery_Date)}</TableCell>
+                              <TableCell>
+                                <Box 
+                                  component="span" 
+                                  sx={{
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontWeight: 'medium',
+                                    backgroundColor: 
+                                      order.order_Status === 'Delivered' ? '#e8f5e9' :
+                                      order.order_Status === 'Shipped' ? '#e3f2fd' :
+                                      order.order_Status === 'Processing' ? '#fff8e1' : '#f5f5f5',
+                                    color: 
+                                      order.order_Status === 'Delivered' ? '#2e7d32' :
+                                      order.order_Status === 'Shipped' ? '#1565c0' :
+                                      order.order_Status === 'Processing' ? '#f57c00' : '#616161',
+                                  }}
+                                >
+                                  {order.order_Status || 'Processing'}
+                                </Box>
+                              </TableCell>
+                              <TableCell align="right">
+                                ${typeof order.total_Amount === 'number' ? Number(order.total_Amount).toFixed(2) : '0.00'}
+                              </TableCell>
+                              <TableCell>{order.customer_Email || 'N/A'}</TableCell>
+                              <TableCell>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => navigate(`/orders/${order.id}`)}
+                                >
+                                  View
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+                </Box>
               )}
 
-              {/* Payment Methods Tab */}
+              {/* Invoices Tab */}
               {activeTab === 2 && (
-                <Grid container spacing={2} sx={{ marginTop: 2 }}>
-                  <Typography variant="h6">No payment methods saved</Typography>
-                </Grid>
+                <Box sx={{ marginTop: 2 }}>
+                  {invoicesLoading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" padding={4}>
+                      <CircularProgress size={24} sx={{ mr: 1 }} />
+                      <Typography variant="h6">Loading invoices...</Typography>
+                    </Box>
+                  ) : invoices.length === 0 ? (
+                    <Box display="flex" flexDirection="column" alignItems="center" padding={4}>
+                      <Typography variant="h6" sx={{ mb: 2 }}>No invoices found</Typography>
+                      <Button 
+                        variant="outlined" 
+                        onClick={fetchInvoices}
+                      >
+                        Refresh
+                      </Button>
+                    </Box>
+                  ) : (
+                    <TableContainer component={Paper} sx={{ mt: 2 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Invoice ID</TableCell>
+                            <TableCell>Order ID</TableCell>
+                            <TableCell>Invoice Date</TableCell>
+                            <TableCell>Due Date</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell align="right">Total</TableCell>
+                            <TableCell>Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {invoices.map((invoice) => (
+                            <TableRow key={invoice.id}>
+                              <TableCell>{invoice.id}</TableCell>
+                              <TableCell>{invoice.order_Id}</TableCell>
+                              <TableCell>{formatDate(invoice.invoice_Date)}</TableCell>
+                              <TableCell>{formatDate(invoice.due_Date)}</TableCell>
+                              <TableCell>
+                                <Box 
+                                  component="span" 
+                                  sx={{
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontWeight: 'medium',
+                                    backgroundColor: 
+                                      invoice.status === 'Paid' ? '#e8f5e9' :
+                                      invoice.status === 'Overdue' ? '#ffebee' :
+                                      invoice.status === 'Pending' ? '#fff8e1' : '#f5f5f5',
+                                    color: 
+                                      invoice.status === 'Paid' ? '#2e7d32' :
+                                      invoice.status === 'Overdue' ? '#c62828' :
+                                      invoice.status === 'Pending' ? '#f57c00' : '#616161',
+                                  }}
+                                >
+                                  {invoice.status}
+                                </Box>
+                              </TableCell>
+                              <TableCell align="right">
+                                ${typeof invoice.total_Amount === 'number' ? invoice.total_Amount.toFixed(2) : '0.00'}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => navigate(`/invoices/${invoice.id}`)}
+                                >
+                                  View
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+                </Box>
               )}
             </Paper>
           </Grid>

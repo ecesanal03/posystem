@@ -13,6 +13,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
+using System.Data;
 
 namespace posystem.ServiceInterface.Services
 {
@@ -322,6 +323,71 @@ namespace posystem.ServiceInterface.Services
                 Success = true,
                 Message = "Profile updated successfully"
             };
+        }
+
+        [Authenticate]
+        public async Task<GetOrdersResponse> Get(GetMyOrdersDTO request)
+        {
+            using var db = _dbConnectionFactory.OpenDbConnection();
+
+            var email = base.GetSession().Email;
+            var customer = await db.SingleAsync<Customers>(c => c.Email == email);
+
+            if (customer == null)
+                throw HttpError.NotFound("Customer not found");
+
+            var query = db.From<Orders>()
+                .Where(o => o.Customer_Id == customer.Id)
+                .OrderByDescending(o => o.Order_Date);
+
+            // Apply pagination
+            query = query.Skip(request.Skip);
+            query = query.Take(request.Take);
+
+            var orders = await db.SelectAsync(query);
+
+            // Debug log the orders
+            Console.WriteLine($"Found {orders.Count} orders for customer {customer.Email}");
+            foreach (var order in orders)
+            {
+                var total = GetOrderTotal(db, order.Id);
+                Console.WriteLine($"Order {order.Id}: Date={order.Order_Date}, Delivery={order.Delivery_Date}, Status={order.Order_Status}, Total={total}");
+            }
+
+            var orderDTOs = orders.Select(o => new OrderListItemDTO
+            {
+                Id = o.Id,
+                Order_Date = o.Order_Date,
+                Delivery_Date = o.Delivery_Date,
+                Customer_Id = customer.Id,
+                Order_Status = o.Order_Status,
+                Customer_Email = customer.Email,
+                Total_Amount = GetOrderTotal(db, o.Id)
+            }).ToList();
+
+            // Debug log the DTOs
+            Console.WriteLine("Mapped to DTOs:");
+            foreach (var dto in orderDTOs)
+            {
+                Console.WriteLine($"DTO {dto.Id}: Date={dto.Order_Date}, Delivery={dto.Delivery_Date}, Status={dto.Order_Status}, Total={dto.Total_Amount}, Email={dto.Customer_Email}");
+            }
+
+            return new GetOrdersResponse
+            {
+                Orders = orderDTOs,
+                TotalCount = (int)await db.CountAsync<Orders>(o => o.Customer_Id == customer.Id)
+            };
+        }
+
+        private decimal GetOrderTotal(IDbConnection db, Guid orderId)
+        {
+            var sql = @"
+                SELECT COALESCE(SUM(b.Price * oi.Quantity), 0) as Total
+                FROM OrderItems oi 
+                JOIN Books b ON oi.Book_Id = b.Id 
+                WHERE oi.Order_Id = @OrderId";
+
+            return db.Scalar<decimal>(sql, new { OrderId = orderId });
         }
     }
 }
