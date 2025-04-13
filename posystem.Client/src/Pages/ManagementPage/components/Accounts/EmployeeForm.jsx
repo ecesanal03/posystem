@@ -10,9 +10,7 @@ import {
   Select, 
   MenuItem,
   FormHelperText,
-  Grid,
-  Switch,
-  FormControlLabel
+  Grid
 } from '@mui/material';
 
 const EmployeeForm = ({ employee, onSave, onCancel }) => {
@@ -79,13 +77,6 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
         [name]: null
       }));
     }
-  };
-  
-  const handleSwitchChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      IsActive: e.target.checked
-    }));
   };
   
   const handleSubmit = (e) => {
@@ -316,20 +307,6 @@ const EmployeeForm = ({ employee, onSave, onCancel }) => {
             </Select>
             {errors.Role && <FormHelperText>{errors.Role}</FormHelperText>}
           </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={Boolean(formData.IsActive)}
-                onChange={handleSwitchChange}
-                name="IsActive"
-                color="primary"
-              />
-            }
-            label="Active"
-            sx={{ mt: 2 }}
-          />
         </Grid>
         <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
           <Button variant="outlined" color="inherit" onClick={onCancel}>
