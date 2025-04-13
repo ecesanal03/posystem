@@ -430,6 +430,7 @@ function PageContent({ searchTerm, selectedCategory }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const booksPerPage = 12;
+  const [quantity, setQuantity] = useState(1);
   const isFeatured = !selectedCategory;
 
   const calculateAverageRating = (reviews) => {
@@ -520,16 +521,17 @@ function PageContent({ searchTerm, selectedCategory }) {
   const handleAddToCart = async () => {
     try {
       const discountId = selectedBook.discountId || selectedBook.Discount_Id || null;
-  
+
       await cartApi.addToCart(selectedBook.id, 1, discountId);
-  
+
       alert("Book added to cart!");
     } catch (error) {
       console.error("Failed to add to cart:", error);
       alert("Could not add book to cart.");
     }
   };
-  
+
+
 
   return (
     <Box sx={{ flexGrow: 1, p: 4 }}>
@@ -603,30 +605,30 @@ function PageContent({ searchTerm, selectedCategory }) {
                 </Typography>
 
                 {book.discountPercentage ? (
-                <>
-                  <Typography
-                    variant="body2"
-                    sx={{ textDecoration: 'line-through', color: '#888' }}
-                  >
-                    ${book.price.toFixed(2)}
-                  </Typography>
+                  <>
+                    <Typography
+                      variant="body2"
+                      sx={{ textDecoration: 'line-through', color: '#888' }}
+                    >
+                      ${book.price.toFixed(2)}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      sx={{ fontWeight: 'bold' }}
+                    >
+                      ${(book.price * (1 - book.discountPercentage / 100)).toFixed(2)}
+                    </Typography>
+                  </>
+                ) : (
                   <Typography
                     variant="body2"
                     color="primary"
                     sx={{ fontWeight: 'bold' }}
                   >
-                    ${(book.price * (1 - book.discountPercentage / 100)).toFixed(2)}
+                    ${book.price.toFixed(2)}
                   </Typography>
-                </>
-              ) : (
-                <Typography
-                  variant="body2"
-                  color="primary"
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  ${book.price.toFixed(2)}
-                </Typography>
-              )}
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -734,52 +736,70 @@ function PageContent({ searchTerm, selectedCategory }) {
 
           {/* Book Info Section */}
           <Box display="flex" gap={3} mb={3}>
-  <Avatar
-    variant="square"
-    src={selectedBook?.CoverImage || '/defaultbookcover.png'}
-    sx={{
-      width: 130,
-      height: 180,
-      borderRadius: 2,
-      boxShadow: 3,
-      bgcolor: '#f0f0f0',
-    }}
-  />
-  <Box display="flex" flexDirection="column" gap={1}>
-    <Typography variant="subtitle1">
-      <strong>Author:</strong> {selectedBook?.author || 'Unknown'}
-    </Typography>
+            <Avatar
+              variant="square"
+              src={selectedBook?.CoverImage || '/defaultbookcover.png'}
+              sx={{
+                width: 130,
+                height: 180,
+                borderRadius: 2,
+                boxShadow: 3,
+                bgcolor: '#f0f0f0',
+              }}
+            />
+            <Box display="flex" flexDirection="column" gap={0}>
+              <Typography variant="subtitle1" gutterBottom>
+                {reviews.length > 0 ? (
+                  <>
+                    {calculateAverageRating(reviews)}
+                    <Rating
+                      value={parseFloat(calculateAverageRating(reviews))}
+                      readOnly
+                      size="small"
+                      sx={{ ml: 1, verticalAlign: 'middle' }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                    </Typography>
+                  </>
+                ) : (
+                  'No reviews yet'
+                )}
+              </Typography>
+              <Typography variant="subtitle1">
+                <strong>Author:</strong> {selectedBook?.author || 'Unknown'}
+              </Typography>
 
-    {typeof selectedBook?.discountPercentage === 'number' && selectedBook.discountPercentage > 0 ? (
-      <>
-        <Typography variant="subtitle1">
-          <strong>Original Price:</strong>{' '}
-          <span style={{ textDecoration: 'line-through', color: '#999' }}>
-            ${selectedBook?.price?.toFixed(2) || '0.00'}
-          </span>
-        </Typography>
-        <Typography variant="subtitle1" sx={{ color: 'green', fontWeight: 'bold' }}>
-          <strong>Discounted Price:</strong> $
-          {(selectedBook?.price * (1 - selectedBook.discountPercentage / 100)).toFixed(2)}
-        </Typography>
-        <Typography variant="subtitle2" sx={{ color: 'green' }}>
-          ({selectedBook.discountPercentage}% OFF)
-        </Typography>
-      </>
-    ) : (
-      <Typography variant="subtitle1">
-        <strong>Price:</strong> ${selectedBook?.price?.toFixed(2) || '0.00'}
-      </Typography>
-    )}
+              {typeof selectedBook?.discountPercentage === 'number' && selectedBook.discountPercentage > 0 ? (
+                <>
+                  <Typography variant="subtitle1">
+                    <strong>Original Price:</strong>{' '}
+                    <span style={{ textDecoration: 'line-through', color: '#999' }}>
+                      ${selectedBook?.price?.toFixed(2) || '0.00'}
+                    </span>
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ color: 'green', fontWeight: 'bold' }}>
+                    <strong>Discounted Price:</strong> $
+                    {(selectedBook?.price * (1 - selectedBook.discountPercentage / 100)).toFixed(2)}
+                  </Typography>
+                  <Typography variant="subtitle2" sx={{ color: 'green' }}>
+                    ({selectedBook.discountPercentage}% OFF)
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="subtitle1">
+                  <strong>Price:</strong> ${selectedBook?.price?.toFixed(2) || '0.00'}
+                </Typography>
+              )}
 
-    <Typography variant="subtitle1">
-      <strong>Publisher:</strong> {selectedBook?.supplierName || 'Unknown'}
-    </Typography>
-    <Typography variant="subtitle1">
-      <strong>Quantity:</strong> {selectedBook?.units ?? 'Unknown'}
-    </Typography>
-  </Box>
-</Box>
+              <Typography variant="subtitle1">
+                <strong>Publisher:</strong> {selectedBook?.supplierName || 'Unknown'}
+              </Typography>
+              <Typography variant="subtitle1">
+                <strong>Quantity:</strong> {selectedBook?.units ?? 'Unknown'}
+              </Typography>
+            </Box>
+          </Box>
 
 
           <Divider sx={{ my: 2 }} />
