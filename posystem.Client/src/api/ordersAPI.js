@@ -94,35 +94,26 @@ const ordersApi = {
                 Id: id,
                 Order_Status: status
             });
+            
             if (response.data) {
+                // Normalize case for response properties to handle both camelCase and PascalCase
                 return {
-                    success: response.data.Success,
-                    message: response.data.Message,
-                    order: response.data.Order ? {
-                        id: response.data.Order.Id,
-                        orderDate: response.data.Order.Order_Date,
-                        deliveryDate: response.data.Order.Delivery_Date,
-                        customerId: response.data.Order.Customer_Id,
-                        customerEmail: response.data.Order.Customer_Email,
-                        status: response.data.Order.Order_Status,
-                        total: response.data.Order.Total_Amount,
-                        items: (response.data.Order.Items || []).map(item => ({
-                            id: item.Id,
-                            bookId: item.BookId,
-                            name: item.Name,
-                            isbn: item.ISBN,
-                            quantity: item.Quantity,
-                            price: item.Price,
-                            total: item.Total,
-                            discount: item.Discount
-                        }))
-                    } : null
+                    success: response.data.success ?? response.data.Success ?? false,
+                    message: response.data.message ?? response.data.Message ?? 'Status updated',
+                    order: response.data.order ?? response.data.Order
                 };
             }
-            return response.data;
+            return {
+                success: false,
+                message: 'Invalid response format from server'
+            };
         } catch (error) {
             console.error('Error updating order:', error);
-            throw error;
+            // Return a structured error instead of throwing
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Failed to update order status'
+            };
         }
     },
 

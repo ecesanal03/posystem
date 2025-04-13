@@ -85,14 +85,14 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
       }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 400, letterSpacing: '0.5px', mb: 0.5 }}>
-            INVOICE #{order.Id}
+            INVOICE
           </Typography>
         </Box>
         <Box display="flex" alignItems="center">
           <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 2 }}>
             <Select
-              value={order.orderStatus || "Processing"} // Default to "Processing" if undefined
-              onChange={(e) => onStatusChange(order.Id, e.target.value)}
+              value={order.status || "Processing"} // Default to "Processing" if undefined
+              onChange={(e) => onStatusChange(order.id, e.target.value)}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                 '& .MuiSelect-select': { py: 1 },
@@ -228,33 +228,38 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
   );
 };
 
-order: PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  orderDate: PropTypes.string.isRequired,
-  deliveryDate: PropTypes.string,
-  status: PropTypes.string.isRequired,
-  customerId: PropTypes.string.isRequired,
-  customerEmail: PropTypes.string.isRequired,
-  customerName: PropTypes.string.isRequired,
-  customerPhone: PropTypes.string.isRequired,
-  customerAddress: PropTypes.string.isRequired,
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      bookId: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      isbn: PropTypes.string.isRequired,
-      quantity: PropTypes.number.isRequired,
-      price: PropTypes.number.isRequired,
-      total: PropTypes.number.isRequired
-    })
-  ).isRequired,
-  subtotal: PropTypes.number.isRequired,
-  tax: PropTypes.number,
-  total: PropTypes.number,
-  paymentMethod: PropTypes.string.isRequired,
-  cardNumber: PropTypes.string
-}).isRequired
-
+OrderDetailDialog.propTypes = {
+  order: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    orderDate: PropTypes.string.isRequired,
+    deliveryDate: PropTypes.string,
+    status: PropTypes.string.isRequired,
+    customerId: PropTypes.string.isRequired,
+    customerEmail: PropTypes.string.isRequired,
+    customerName: PropTypes.string.isRequired,
+    customerPhone: PropTypes.string.isRequired,
+    customerAddress: PropTypes.string.isRequired,
+    items: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        bookId: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        isbn: PropTypes.string.isRequired,
+        quantity: PropTypes.number.isRequired,
+        price: PropTypes.number.isRequired,
+        total: PropTypes.number.isRequired
+      })
+    ).isRequired,
+    subtotal: PropTypes.number.isRequired,
+    tax: PropTypes.number,
+    total: PropTypes.number,
+    paymentMethod: PropTypes.string.isRequired,
+    cardNumber: PropTypes.string,
+    orderStatus: PropTypes.string
+  }).isRequired,
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onStatusChange: PropTypes.func.isRequired
+};
 
 export default OrderDetailDialog; 

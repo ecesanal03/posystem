@@ -543,11 +543,7 @@ const SuppliersSection = () => {
                 ml: 2
               }}
             >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                isEditingSupplier ? 'UPDATE SUPPLIER' : 'ADD SUPPLIER'
-              )}
+              {isEditingSupplier ? 'UPDATE SUPPLIER' : 'ADD SUPPLIER'}
             </Button>
           </Box>
         </Box>
