@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Container, Grid, Paper, Typography, TextField, Button, Tabs, Tab, Box, AppBar, Toolbar, IconButton, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress } from '@mui/material';
+import { Container, Grid, Paper, Typography, TextField, Button, Tabs, Tab, Box, AppBar, Toolbar, IconButton, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, TablePagination } from '@mui/material';
 import { AccountCircle, ArrowBack, Edit as EditIcon } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import { useState, useEffect } from 'react';
@@ -36,6 +36,9 @@ const AccountDetails = () => {
   const [userID, setUserID] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [invoicesLoading, setInvoicesLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
   
   useEffect(() => {
     // Check if user is authenticated
@@ -98,10 +101,7 @@ const AccountDetails = () => {
       setOrdersLoading(true);
       console.log('Starting to fetch orders...');
       
-      const response = await customerApi.getMyOrders({
-        skip: 0,
-        take: 100
-      });
+      const response = await customerApi.getMyOrders(page * rowsPerPage, rowsPerPage);
       
       if (response && (response.Orders || response.orders)) {
         const ordersArray = response.Orders || response.orders;
@@ -123,6 +123,7 @@ const AccountDetails = () => {
         
         console.log(`Found ${mappedOrders.length} orders for user ${userEmail}`);
         setOrders(mappedOrders);
+        setTotalCount(response.totalCount);
       } else {
         console.log('No orders found, setting empty array');
         setOrders([]);
@@ -144,26 +145,16 @@ const AccountDetails = () => {
       setInvoicesLoading(true);
       console.log('Starting to fetch invoices...');
       
-      const response = await customerApi.getMyInvoices({
-        skip: 0,
-        take: 100
-      });
+      const response = await customerApi.getMyInvoices(page * rowsPerPage, rowsPerPage);
       
-      if (response && response.Invoices) {
-        const mappedInvoices = response.Invoices.map(invoice => ({
-          id: invoice.Id,
-          order_Id: invoice.Order_Id,
-          invoice_Date: invoice.Invoice_Date,
-          due_Date: invoice.Due_Date,
-          status: invoice.Status,
-          total_Amount: invoice.Total_Amount
-        }));
-        
-        console.log(`Found ${mappedInvoices.length} invoices`);
-        setInvoices(mappedInvoices);
+      if (response && response.invoices) {
+        console.log(`Found ${response.invoices.length} invoices`);
+        setInvoices(response.invoices);
+        setTotalCount(response.totalCount);
       } else {
         console.log('No invoices found, setting empty array');
         setInvoices([]);
+        setTotalCount(0);
       }
     } catch (error) {
       console.error("Error fetching invoices:", error);
@@ -258,6 +249,15 @@ const AccountDetails = () => {
     { code: 'MI', name: 'Michigan' },
     { code: 'PA', name: 'Pennsylvania' },
   ];
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Box
@@ -559,6 +559,14 @@ const AccountDetails = () => {
                           ))}
                         </TableBody>
                       </Table>
+                      <TablePagination
+                        component="div"
+                        count={totalCount}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                      />
                     </TableContainer>
                   )}
                 </Box>
@@ -639,6 +647,14 @@ const AccountDetails = () => {
                           ))}
                         </TableBody>
                       </Table>
+                      <TablePagination
+                        component="div"
+                        count={totalCount}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                      />
                     </TableContainer>
                   )}
                 </Box>
