@@ -25,9 +25,9 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
   console.log("Order passed to dialog:", order); // Debug the order object
 
   // Calculate order totals - using the pre-calculated values from the backend
-  const subtotal = order.Subtotal || 0;
-  const tax = order.Tax || 0;
-  const total = order.Total || 0;
+  const subtotal = order.subtotal || 0;
+  const tax = order.tax || 0;
+  const total = order.total || 0;  
   
   // Format currency
   const formatCurrency = (amount) => {
@@ -91,7 +91,7 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
         <Box display="flex" alignItems="center">
           <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 2 }}>
             <Select
-              value={order.Order_Status || "Processing"} // Default to "Processing" if undefined
+              value={order.orderStatus || "Processing"} // Default to "Processing" if undefined
               onChange={(e) => onStatusChange(order.Id, e.target.value)}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
@@ -119,12 +119,13 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
               BILLED TO
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {order.Customer_Name} <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>ID# {order.Customer_Id}</Typography>
+              {order.customerName} 
             </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>ID# {order.customerId}</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-              {order.Customer_Phone}<br />
-              {order.Customer_Email}<br />
-              {order.Customer_Address}
+              {order.customerPhone}<br />
+              {order.customerEmail}<br />
+              {order.customerAddress}
             </Typography>
           </Box>
           
@@ -136,25 +137,25 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Invoice Date:</Typography>
               <Typography variant="body2">
-                {new Date(order.Order_Date).toLocaleDateString()}
+                {new Date(order.orderDate).toLocaleDateString()}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Status:</Typography>
-              <Typography variant="body2" sx={{ color: getStatusColor(order.Order_Status), fontWeight: 500 }}>
-                {order.Order_Status}
+              <Typography variant="body2" sx={{ color: getStatusColor(order.status), fontWeight: 500 }}>
+                {order.status}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Payment Method:</Typography>
               <Typography variant="body2">
-                {order.Payment_Method}
+                {order.paymentMethod}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Card Last 4-Digits:</Typography>
               <Typography variant="body2">
-                {order.Card_Number}
+                {order.cardNumber}
               </Typography>
             </Box>
           </Box>
@@ -180,19 +181,19 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(order.Items || []).map((item) => ( // Fallback to empty array if items is undefined
-                <TableRow key={item.id} sx={{ '& td': { borderColor: 'rgba(255, 255, 255, 0.05)' } }}>
-                  <TableCell sx={{ py: 2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{item.name}</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      ISBN: {item.isbn}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">{item.quantity}</TableCell>
-                  <TableCell align="right">{formatCurrency(item.price)}</TableCell>
-                  <TableCell align="right">{formatCurrency(item.total)}</TableCell>
-                </TableRow>
-              ))}
+            {(order.items || []).map((item) => (
+              <TableRow key={item.id}>
+                <TableCell sx={{ py: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{item.name}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    ISBN: {item.isbn}
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">{item.quantity}</TableCell>
+                <TableCell align="right">{formatCurrency(item.price)}</TableCell>
+                <TableCell align="right">{formatCurrency(item.total)}</TableCell>
+              </TableRow>
+            ))}
             </TableBody>
           </Table>
         </TableContainer>
@@ -227,37 +228,33 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
   );
 };
 
-OrderDetailDialog.propTypes = {
-  order: PropTypes.shape({
-    Id: PropTypes.string.isRequired,
-    Order_Date: PropTypes.string.isRequired,
-    Delivery_Date: PropTypes.string,
-    Order_Status: PropTypes.string.isRequired,
-    Customer_Id: PropTypes.string.isRequired,
-    Customer_Email: PropTypes.string.isRequired,
-    Customer_Name: PropTypes.string.isRequired,
-    Customer_Phone: PropTypes.string.isRequired,
-    Customer_Address: PropTypes.string.isRequired,
-    Items: PropTypes.arrayOf(
-      PropTypes.shape({
-        Id: PropTypes.string.isRequired,
-        BookId: PropTypes.string.isRequired,
-        Name: PropTypes.string.isRequired,
-        ISBN: PropTypes.string.isRequired,
-        Quantity: PropTypes.number.isRequired,
-        Price: PropTypes.number.isRequired,
-        Total: PropTypes.number.isRequired
-      })
-    ).isRequired,
-    Subtotal: PropTypes.number.isRequired,
-    Tax: PropTypes.number.isRequired,
-    Total: PropTypes.number.isRequired,
-    Payment_Method: PropTypes.string.isRequired,
-    Card_Number: PropTypes.string.isRequired
-  }).isRequired,
-  open: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onStatusChange: PropTypes.func.isRequired
-};
+order: PropTypes.shape({
+  id: PropTypes.string.isRequired,
+  orderDate: PropTypes.string.isRequired,
+  deliveryDate: PropTypes.string,
+  status: PropTypes.string.isRequired,
+  customerId: PropTypes.string.isRequired,
+  customerEmail: PropTypes.string.isRequired,
+  customerName: PropTypes.string.isRequired,
+  customerPhone: PropTypes.string.isRequired,
+  customerAddress: PropTypes.string.isRequired,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      bookId: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      isbn: PropTypes.string.isRequired,
+      quantity: PropTypes.number.isRequired,
+      price: PropTypes.number.isRequired,
+      total: PropTypes.number.isRequired
+    })
+  ).isRequired,
+  subtotal: PropTypes.number.isRequired,
+  tax: PropTypes.number,
+  total: PropTypes.number,
+  paymentMethod: PropTypes.string.isRequired,
+  cardNumber: PropTypes.string
+}).isRequired
+
 
 export default OrderDetailDialog; 

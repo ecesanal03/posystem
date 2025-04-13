@@ -103,7 +103,7 @@ namespace posystem.ServiceInterface.Services
             using var db = _dbConnectionFactory.OpenDbConnection();
 
             var order = await db.SingleByIdAsync<Orders>(request.Id);
-            if(order == null)
+            if (order == null)
                 return new GetOrderResponse { Order = null };
 
             var customer = await db.SingleByIdAsync<Customers>(order.Customer_Id);
@@ -113,7 +113,7 @@ namespace posystem.ServiceInterface.Services
             foreach (var item in orderItems)
             {
                 var book = await db.SingleByIdAsync<Books>(item.Book_Id);
-                if(book != null)
+                if (book != null)
                 {
                     items.Add(new OrderItemDTO
                     {
@@ -123,41 +123,47 @@ namespace posystem.ServiceInterface.Services
                         ISBN = book.ISBN,
                         Quantity = item.Quantity,
                         Price = book.Price,
-                        Total = item.Quantity * book.Price,
+                        Total = item.Quantity * book.Price
                     });
                 }
             }
+
+            var invoice = await db.SingleAsync<Invoices>(i => i.Order_Id == order.Id);
+            var payment = invoice != null
+                ? await db.SingleByIdAsync<Payments>(invoice.Payment_Id)
+                : null;
 
             var subtotal = items.Sum(i => i.Total);
             var taxRate = 0.085m;
             var tax = subtotal * taxRate;
             var total = subtotal + tax;
 
-            var response = new GetOrderResponse
+            return new GetOrderResponse
             {
                 Order = new OrderDTO
-                {
+{
                     Id = order.Id,
-                    Order_Date = order.Order_Date,
-                    Delivery_Date = order.Delivery_Date,
-                    Customer_Id = customer.Id,
-                    Customer_Email = customer.Email,
-                    Customer_Name = $"{customer.First_Name} {customer.Last_Name}",
-                    Customer_Phone = customer.PhoneNumber,
-                    Customer_Address = $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}",
-                    Order_Status = order.Order_Status,
+                    OrderDate = invoice?.Invoice_Date ?? order.Order_Date, 
+                    DeliveryDate = order.Delivery_Date,
+
+                    CustomerId = customer.Id,                              
+                    CustomerName = $"{customer.First_Name} {customer.Last_Name}",
+                    CustomerEmail = customer.Email,
+                    CustomerPhone = customer.PhoneNumber,
+                    CustomerAddress = $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}",
+
+                    OrderStatus = order.Order_Status,                      
                     Items = items,
+
                     Subtotal = subtotal,
                     Tax = tax,
                     Total = total,
-                    Payment_Method = "credit card",
-                    Card_Number = "1234"
+
+                    PaymentMethod = payment?.Payment_Method ?? "N/A"
                 }
             };
-
-            Console.WriteLine($"Response: {response.ToJson()}");
-            return response;
         }
+
 
         public async Task<DeleteOrderResponse> Delete(DeleteOrderDTO request)
         {

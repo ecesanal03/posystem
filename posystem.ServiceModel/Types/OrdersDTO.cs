@@ -130,16 +130,26 @@ namespace posystem.ServiceModel.Types
 
     public class OrderDTO : BaseOrderDTO
     {
-        public string Customer_Email { get; set; }
-        public string Customer_Name { get; set; }
-        public string Customer_Phone { get; set; }
-        public string Customer_Address { get; set; }
-        public List<OrderItemDTO> Items { get; set; } = new List<OrderItemDTO>();
+        public Guid Id { get; set; }
+
+        public DateTime OrderDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+
+        public Guid CustomerId { get; set; }          
+        public string CustomerName { get; set; }      
+        public string CustomerEmail { get; set; }
+        public string CustomerPhone { get; set; }
+        public string CustomerAddress { get; set; }
+
+        public string OrderStatus { get; set; }       
+        public List<OrderItemDTO> Items { get; set; } = new();
+
         public decimal Subtotal { get; set; }
         public decimal Tax { get; set; }
         public decimal Total { get; set; }
-        public string Payment_Method { get; set; }
-        public string Card_Number { get; set; }
+
+        public string PaymentMethod { get; set; }
+        public string CardNumber { get; set; }
     }
 
     public class OrderDetailDTO
