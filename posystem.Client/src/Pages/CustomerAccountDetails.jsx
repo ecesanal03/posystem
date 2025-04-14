@@ -7,6 +7,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import customerApi from '../api/customerApi';
+import invoicesApi from '../api/invoicesApi';
 
 const AccountDetails = () => {
   const [activeTab, setActiveTab] = React.useState(0);
@@ -145,7 +146,12 @@ const AccountDetails = () => {
       setInvoicesLoading(true);
       console.log('Starting to fetch invoices...');
       
-      const response = await customerApi.getMyInvoices(page * rowsPerPage, rowsPerPage);
+      const response = await invoicesApi.getMyInvoices({
+        skip: page * rowsPerPage,
+        take: rowsPerPage,
+        sortBy: 'Invoice_Date',
+        sortDesc: true
+      });
       
       if (response && response.invoices) {
         console.log(`Found ${response.invoices.length} invoices`);
@@ -167,6 +173,13 @@ const AccountDetails = () => {
       setInvoicesLoading(false);
     }
   };
+
+  // Update useEffect to refetch when pagination changes
+  useEffect(() => {
+    if (activeTab === 2) {
+      fetchInvoices();
+    }
+  }, [activeTab, page, rowsPerPage]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -263,6 +276,21 @@ const AccountDetails = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const orderColumns = [
+    { field: 'id', headerName: 'Order ID', flex: 1 },
+    { field: 'order_Date', headerName: 'Order Date', flex: 1,
+      valueFormatter: (params) => {
+        return new Date(params.value).toLocaleDateString();
+      }
+    },
+    { field: 'total_Amount', headerName: 'Total Amount', flex: 1,
+      valueFormatter: (params) => {
+        return `$${params.value.toFixed(2)}`;
+      }
+    },
+    { field: 'status', headerName: 'Status', flex: 1 }
+  ];
 
   return (
     <Box
@@ -518,7 +546,6 @@ const AccountDetails = () => {
                             <TableCell>Status</TableCell>
                             <TableCell align="right">Total</TableCell>
                             <TableCell>Customer Email</TableCell>
-                            <TableCell>Actions</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -551,15 +578,6 @@ const AccountDetails = () => {
                                 ${typeof order.total_Amount === 'number' ? Number(order.total_Amount).toFixed(2) : '0.00'}
                               </TableCell>
                               <TableCell>{order.customer_Email || 'N/A'}</TableCell>
-                              <TableCell>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => navigate(`/orders/${order.id}`)}
-                                >
-                                  View
-                                </Button>
-                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -601,53 +619,26 @@ const AccountDetails = () => {
                         <TableHead>
                           <TableRow>
                             <TableCell>Invoice ID</TableCell>
-                            <TableCell>Order ID</TableCell>
                             <TableCell>Invoice Date</TableCell>
-                            <TableCell>Due Date</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell align="right">Total</TableCell>
-                            <TableCell>Actions</TableCell>
+                            <TableCell>Customer ID</TableCell>
+                            <TableCell>Order ID</TableCell>
+                            <TableCell>Payment ID</TableCell>
+                            <TableCell align="right">Total Amount</TableCell>
+                            <TableCell>Generated At</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
                           {invoices.map((invoice) => (
                             <TableRow key={invoice.id}>
                               <TableCell>{invoice.id}</TableCell>
-                              <TableCell>{invoice.order_Id}</TableCell>
                               <TableCell>{formatDate(invoice.invoice_Date)}</TableCell>
-                              <TableCell>{formatDate(invoice.due_Date)}</TableCell>
-                              <TableCell>
-                                <Box 
-                                  component="span" 
-                                  sx={{
-                                    padding: '4px 8px',
-                                    borderRadius: '4px',
-                                    fontWeight: 'medium',
-                                    backgroundColor: 
-                                      invoice.status === 'Paid' ? '#e8f5e9' :
-                                      invoice.status === 'Overdue' ? '#ffebee' :
-                                      invoice.status === 'Pending' ? '#fff8e1' : '#f5f5f5',
-                                    color: 
-                                      invoice.status === 'Paid' ? '#2e7d32' :
-                                      invoice.status === 'Overdue' ? '#c62828' :
-                                      invoice.status === 'Pending' ? '#f57c00' : '#616161',
-                                  }}
-                                >
-                                  {invoice.status}
-                                </Box>
-                              </TableCell>
+                              <TableCell>{invoice.customer_Id}</TableCell>
+                              <TableCell>{invoice.order_Id}</TableCell>
+                              <TableCell>{invoice.payment_Id || 'Pending'}</TableCell>
                               <TableCell align="right">
                                 ${typeof invoice.total_Amount === 'number' ? invoice.total_Amount.toFixed(2) : '0.00'}
                               </TableCell>
-                              <TableCell>
-                                <Button 
-                                  size="small" 
-                                  variant="outlined" 
-                                  onClick={() => navigate(`/invoices/${invoice.id}`)}
-                                >
-                                  View
-                                </Button>
-                              </TableCell>
+                              <TableCell>{formatDate(invoice.generated_At) || 'N/A'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
