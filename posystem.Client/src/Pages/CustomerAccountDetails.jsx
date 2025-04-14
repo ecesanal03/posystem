@@ -620,7 +620,6 @@ const AccountDetails = () => {
                           <TableRow>
                             <TableCell>Invoice ID</TableCell>
                             <TableCell>Invoice Date</TableCell>
-                            <TableCell>Customer ID</TableCell>
                             <TableCell>Order ID</TableCell>
                             <TableCell>Payment ID</TableCell>
                             <TableCell align="right">Total Amount</TableCell>
@@ -632,7 +631,6 @@ const AccountDetails = () => {
                             <TableRow key={invoice.id}>
                               <TableCell>{invoice.id}</TableCell>
                               <TableCell>{formatDate(invoice.invoice_Date)}</TableCell>
-                              <TableCell>{invoice.customer_Id}</TableCell>
                               <TableCell>{invoice.order_Id}</TableCell>
                               <TableCell>{invoice.payment_Id || 'Pending'}</TableCell>
                               <TableCell align="right">

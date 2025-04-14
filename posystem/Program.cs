@@ -27,10 +27,12 @@ builder.Services.AddAuthentication("Bearer")
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ValidIssuer = "https://localhost",   
+            ValidAudience = "https://localhost", 
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("my-very-secure-secret-key-with-32-bytes-long"))
         };
     });
