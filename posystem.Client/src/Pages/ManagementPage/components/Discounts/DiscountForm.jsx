@@ -9,22 +9,7 @@ import {
 import { useState, useEffect } from 'react';
 
 const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onApplyToAll, onRemoveFromAll }) => {
-  const [discountApplied, setDiscountApplied] = useState(false);
   
-  // Reset the state when discount changes
-  useEffect(() => {
-    setDiscountApplied(false);
-  }, [discount.id]);
-  
-  const handleToggleDiscount = () => {
-    if (discountApplied)
-      onRemoveFromAll(discount.id);
-    else
-      onApplyToAll(discount.id);
-
-    setDiscountApplied(!discountApplied);
-  };
-
   return (
     <Grid container spacing={2} sx={{ pt: 2 }}>
       <Grid item xs={9}>
@@ -121,28 +106,51 @@ const DiscountForm = ({ discount, handleInputChange, validationErrors = {}, onAp
         />
       </Grid>
       {discount.id && (
-        <Grid item xs={12} sm={3}>
-          <Button 
-            variant="outlined"
-            onClick={handleToggleDiscount}
-            color={discountApplied ? "error" : "primary"}
-            sx={{ 
-              p: 0.4,
-              fontWeight: 'bold', 
-              color: '#fff', 
-              bgcolor: discountApplied ? '#d32f2f' : '#2a5885',
-              borderColor: discountApplied ? '#f44336' : '#3a7ab7',
-              '&:hover': {
-                bgcolor: discountApplied ? '#e33e3e' : '#3a6ea8',
-                borderColor: discountApplied ? '#f55a4e' : '#4a8bc7',
-              }
-            }}
-          >
-            {discountApplied ? 'Deactivate All Books' : 'Apply All Books'}
-          </Button>
+        <Grid item xs={12} sm={6}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button 
+              variant="outlined"
+              onClick={() => onApplyToAll(discount.id)}
+              sx={{ 
+                p: 0.4,
+                fontWeight: 'bold', 
+                color: '#fff', 
+                bgcolor: '#2a5885',
+                borderColor: '#61677A',
+                '&:hover': {
+                  bgcolor: '#3a6ea8',
+                  borderColor: '#4a8bc7',
+                }
+              }}
+            >
+              Apply All Books
+            </Button>
+          </Box>
         </Grid>
       )}
-
+      {discount.id && (
+        <Grid item xs={12} sm={6}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Button 
+              variant="outlined"
+              onClick={() => onRemoveFromAll(discount.id)}
+              sx={{ 
+                p: 0.4,
+                fontWeight: 'bold', 
+                color: '#fff', 
+                bgcolor: '#8B0000',
+                borderColor: '#61677A',
+                '&:hover': {
+                  bgcolor: '#B22222',
+                  borderColor: '#CD5C5C',
+                }
+              }}
+            >
+              Deactivate All
+            </Button>
+          </Box>
+        </Grid>
+      )}
       {discount.employeeName && (
         <Grid item xs={12} sm={6}>
           <Box sx={{ 
