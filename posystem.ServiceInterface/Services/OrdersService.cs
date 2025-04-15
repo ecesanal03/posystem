@@ -152,7 +152,7 @@ namespace posystem.ServiceInterface.Services
                     CustomerPhone = customer.PhoneNumber,
                     CustomerAddress = $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}",
 
-                    OrderStatus = order.Order_Status,                      
+                    Order_Status = order.Order_Status,                      
                     Items = items,
 
                     Subtotal = subtotal,
@@ -182,6 +182,12 @@ namespace posystem.ServiceInterface.Services
             {
                 // Update order status
                 order.Order_Status = request.Order_Status;
+
+                if (request.Order_Status?.Equals("Delivered", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    order.Delivery_Date = request.Delivery_Date ?? DateTime.UtcNow;
+                }
+
                 await db.UpdateAsync(order);
 
                 // Get customer info to build a complete response
@@ -205,7 +211,7 @@ namespace posystem.ServiceInterface.Services
                         CustomerEmail = customer?.Email ?? "unknown@example.com",
                         CustomerPhone = customer?.PhoneNumber ?? "N/A",
                         CustomerAddress = customer != null ? $"{customer.AddressLineOne}, {customer.City}, {customer.State} {customer.ZipCode}" : "N/A",
-                        OrderStatus = order.Order_Status,
+                        Order_Status = order.Order_Status,
                         Items = new List<OrderItemDTO>(),
                         Subtotal = 0,
                         Tax = 0,

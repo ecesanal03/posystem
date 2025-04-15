@@ -72,6 +72,7 @@ namespace posystem.ServiceModel.Types
     {
         public Guid Id { get; set; }
         public string Order_Status { get; set; }
+        public DateTime? Delivery_Date { get; set; } 
     }
 
 
@@ -141,7 +142,7 @@ namespace posystem.ServiceModel.Types
         public string CustomerPhone { get; set; }
         public string CustomerAddress { get; set; }
 
-        public string OrderStatus { get; set; }       
+        public string Order_Status { get; set; }       
         public List<OrderItemDTO> Items { get; set; } = new();
 
         public decimal Subtotal { get; set; }

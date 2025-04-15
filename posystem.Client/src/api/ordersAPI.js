@@ -29,7 +29,7 @@ const ordersApi = {
                         deliveryDate: order.Delivery_Date,
                         customerId: order.Customer_Id,
                         customerEmail: order.Customer_Email,
-                        status: order.Order_Status,
+                        status: order.status || order.Order_Status || order.OrderStatus || "Processing" || order.order_Status,
                         total: order.Total_Amount
                     })),
                     totalCount: response.data.TotalCount || 0
@@ -57,7 +57,7 @@ const ordersApi = {
                     id: order.id,
                     orderDate: order.orderDate,
                     deliveryDate: order.deliveryDate,
-                    status: order.status || "Processing",
+                    status: order.Order_Status || "Processing",
                     customerId: order.customerId,
                     customerEmail: order.customerEmail,
                     customerName: order.customerName,

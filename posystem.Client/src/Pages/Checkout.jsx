@@ -84,7 +84,7 @@ const Checkout = () => {
         return total + (discountedPrice * item.quantity);
       }, 0);
     const shipping = 8.0;
-    const tax = 0.0;
+    const tax = subtotal * 0.085;
     const total = subtotal + shipping + tax;
 
     useEffect(() => {

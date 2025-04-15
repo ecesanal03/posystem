@@ -91,7 +91,7 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
         <Box display="flex" alignItems="center">
           <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 2 }}>
             <Select
-              value={order.status || "Processing"} // Default to "Processing" if undefined
+              value={order.status || "Processing"}
               onChange={(e) => onStatusChange(order.id, e.target.value)}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
@@ -143,7 +143,7 @@ const OrderDetailDialog = ({ order, open, onClose, onStatusChange }) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>Status:</Typography>
               <Typography variant="body2" sx={{ color: getStatusColor(order.status), fontWeight: 500 }}>
-                {order.status}
+              {order.status || order.Order_Status || order.order_Status}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -233,6 +233,8 @@ OrderDetailDialog.propTypes = {
     id: PropTypes.string.isRequired,
     orderDate: PropTypes.string.isRequired,
     deliveryDate: PropTypes.string,
+    Order_Status: PropTypes.string.isRequired,
+    order_Status: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
     customerId: PropTypes.string.isRequired,
     customerEmail: PropTypes.string.isRequired,

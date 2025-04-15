@@ -178,13 +178,17 @@ const OrdersSection = () => {
       if (result.success) {
         // Update local state after successful API call
         const updatedOrders = orders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
+          order.id === orderId ? { ...order, Order_Status: newStatus } : order
         );
         setOrders(updatedOrders);
         
         // Update selected order if it's open
         if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus });
+          setSelectedOrder(prev => ({
+            ...prev,
+            status: newStatus,
+            Order_Status: newStatus // for consistency
+          }));
         }
 
         setNotification({
