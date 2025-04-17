@@ -98,6 +98,7 @@ const ManagementPage = () => {
   const menuOpen = Boolean(menuAnchorEl);
   const navigate = useNavigate();
   const isLoggedIn = Boolean(localStorage.getItem('authToken'));
+  const employeeRole = localStorage.getItem('employeeRole') || '';
 
   const handleDrawerOpen = () => setDrawerOpen(true);
   const handleDrawerClose = () => setDrawerOpen(false);
@@ -108,7 +109,7 @@ const ManagementPage = () => {
     navigate('/employeelogin');
   };
 
-  const navigation = [
+  const allNavigation = [
     { name: 'books', label: 'Books', icon: <BookIcon sx={{ color: '#536DFE' }} /> },
     { name: 'suppliers', label: 'Suppliers', icon: <LocalShippingIcon sx={{ color: '#FF9800' }} /> },
     { name: 'orders', label: 'Orders', icon: <ReceiptIcon sx={{ color: '#4CAF50' }} /> },
@@ -116,6 +117,13 @@ const ManagementPage = () => {
     { name: 'discounts', label: 'Discounts', icon: <PercentIcon sx={{ color: '#FFC107' }} /> },
     { name: 'reports', label: 'Reports', icon: <AssessmentIcon sx={{ color: '#9C27B0' }} /> },
   ];
+
+  const navigation = allNavigation.filter(item => {
+    if (item.name === 'reports') {
+      return employeeRole.toLowerCase() === 'manager';
+    }
+    return true;
+  });
 
   const renderContent = () => {
     switch (selectedTab) {

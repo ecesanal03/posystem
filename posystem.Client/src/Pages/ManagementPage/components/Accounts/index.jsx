@@ -491,7 +491,7 @@ const AccountsSection = () => {
           }}
         >
           <Tab label="CUSTOMERS" />
-          <Tab label="EMPLOYEES" />
+          {employeeRole.toLowerCase() !== 'associate' && <Tab label="EMPLOYEES" />}
         </Tabs>
       </Paper>
 
@@ -612,26 +612,12 @@ const AccountsSection = () => {
           customers={filteredCustomers} 
           onDelete={handleDeleteCustomer} 
         />
-      ) : employeeRole.toLowerCase() !== 'associate' ? (
+      ) : (
         <EmployeeTable 
           employees={filteredEmployees} 
           onEdit={handleEditEmployee} 
           onDelete={handleDeleteEmployee} 
         />
-      ) : (
-        <Box 
-          sx={{ 
-            mt: 4, 
-            p: 2, 
-            bgcolor: 'rgba(255, 193, 7, 0.1)', 
-            border: '1px solid #ffc107', 
-            color: '#ffc107', 
-            borderRadius: 1, 
-            textAlign: 'center' 
-          }}
-        >
-          You do not have access to view the employee table.
-        </Box>
       )}
 
       {/* Delete Customer Dialog */}

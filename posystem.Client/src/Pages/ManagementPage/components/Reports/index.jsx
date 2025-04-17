@@ -14,17 +14,6 @@ import AuthorSalesReport from './R3';
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
-  //Get employee role
-  const employeeRole = (localStorage.getItem('employeeRole') || '').toLowerCase();
-
-  if (employeeRole === 'associate') {
-    return (
-      <Box sx={{ p: 4, textAlign: 'center', color: '#ffc107' }}>
-        You do not have access to view reports.
-      </Box>
-    );
-  }
-
   return (
     <div
       role="tabpanel"
