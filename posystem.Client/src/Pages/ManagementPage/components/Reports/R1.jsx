@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Grid, TextField, MenuItem, Button, Divider, Stack, ToggleButton, ToggleButtonGroup
 } from '@mui/material';
@@ -28,6 +28,34 @@ const SalesReports = () => {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('summary');
   const [topCount, setTopCount] = useState(10);
+  const [detailedView, setDetailedView] = useState(false);
+  const [rawData, setRawData] = useState([]);
+
+  // ADD THIS USEEFFECT HOOK
+  useEffect(() => {
+    // If we have report results and detailed view is enabled, fetch raw data
+    if (reportResult.length > 0 && detailedView && rawData.length === 0) {
+      const fetchRawData = async () => {
+        try {
+          setLoading(true);
+          let reportName = 'Sales Summary Report';
+          if (filterType === 'customer') reportName = 'Sales by Customer';
+          else if (filterType === 'book') reportName = 'Sales by Book';
+          else if (filterType === 'supplier') reportName = 'Sales by Supplier';
+          else if (filterType === 'overall' && viewMode === 'graph') reportName = 'Sales Summary Over Time';
+
+          const rawDataResponse = await reportApi.generateReport(`${reportName} (RAW)`, startDate, endDate);
+          setRawData(rawDataResponse.data || []);
+        } catch (error) {
+          console.error("Failed to fetch raw data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchRawData();
+    }
+  }, [detailedView, reportResult, filterType, viewMode, startDate, endDate, rawData.length]);
 
   const handleGenerate = async () => {
     try {
@@ -36,9 +64,17 @@ const SalesReports = () => {
       if (filterType === 'customer') reportName = 'Sales by Customer';
       else if (filterType === 'book') reportName = 'Sales by Book';
       else if (filterType === 'supplier') reportName = 'Sales by Supplier';
-      else if (filterType === 'overall' && viewMode === 'graph') reportName = 'Sales Summary Over Time'; 
+      else if (filterType === 'overall' && viewMode === 'graph') reportName = 'Sales Summary Over Time';
 
       const response = await reportApi.generateReport(reportName, startDate, endDate);
+
+      if (detailedView) {
+        const rawDataResponse = await reportApi.generateReport(`${reportName} (RAW)`, startDate, endDate);
+        setRawData(rawDataResponse.data || []);
+      } else {
+        setRawData([]); // Clear raw data if detailed view is disabled
+      }
+
       setReportResult(response.data || []);
     } catch (error) {
       console.error("Failed to generate report:", error);
@@ -63,12 +99,12 @@ const SalesReports = () => {
       key.toLowerCase().includes('sales') ||
       key.toLowerCase().includes('value') ||
       key.toLowerCase().includes('amount');
-  
+
     const isNumericField =
       key.toLowerCase().includes('total') ||
       key.toLowerCase().includes('count') ||
       typeof reportResult[0][key] === 'number';
-  
+
     return {
       field: key,
       headerName: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), // Make headers prettier
@@ -82,11 +118,11 @@ const SalesReports = () => {
             maximumFractionDigits: 2
           }).format(value);
         }
-  
+
         if (isNumericField && typeof value === 'number') {
           return new Intl.NumberFormat('en-US').format(value);
         }
-  
+
         return value;
       }
     };
@@ -94,10 +130,10 @@ const SalesReports = () => {
 
   const rows = reportResult.map((row, i) => {
     const formattedRow = { id: i };
-  
+
     for (const [key, value] of Object.entries(row)) {
       const lowerKey = key.toLowerCase();
-  
+
       if (
         (lowerKey.includes('sales') || lowerKey.includes('value') || lowerKey.includes('amount') || lowerKey.includes('spent')) &&
         !isNaN(value)
@@ -120,14 +156,14 @@ const SalesReports = () => {
         formattedRow[key] = value;
       }
     }
-  
+
     return formattedRow;
   });
-  
-    
-    
-    
-    
+
+
+
+
+
 
   const renderBookSummary = () => {
     const topBooks = reportResult.slice(0, 3);
@@ -152,22 +188,22 @@ const SalesReports = () => {
 
   const renderSupplierSummary = () => {
     const supplierMap = {};
-  
+
     reportResult.forEach(entry => {
       const supplier = entry.SupplierName || 'Unknown Supplier';
       const book = entry.BookTitle || 'Untitled';
       const category = entry.Category || 'Uncategorized';
       const sales = Number(entry.TotalSales || 0);
-  
+
       if (!supplierMap[supplier]) {
         supplierMap[supplier] = {
           totalSales: 0,
           books: {}
         };
       }
-  
+
       supplierMap[supplier].totalSales += sales;
-  
+
       if (!supplierMap[supplier].books[book]) {
         supplierMap[supplier].books[book] = {
           title: book,
@@ -175,10 +211,10 @@ const SalesReports = () => {
           sales: 0
         };
       }
-  
+
       supplierMap[supplier].books[book].sales += sales;
     });
-  
+
     const topSuppliers = Object.entries(supplierMap)
       .map(([name, data]) => ({
         name,
@@ -189,7 +225,7 @@ const SalesReports = () => {
       }))
       .sort((a, b) => b.totalSales - a.totalSales)
       .slice(0, 3);
-  
+
     return (
       <>
         <Typography variant="h6" sx={{ color: '#ccc', mb: 2 }}>Top 3 Suppliers</Typography>
@@ -232,37 +268,153 @@ const SalesReports = () => {
       </>
     );
   };
-  
+
+  // This should be defined at the same level as renderBookSummary, renderSupplierSummary, etc.
+  const renderRawDataTable = () => {
+    if (!detailedView || rawData.length === 0) return null;
+
+    const rawColumns = Object.keys(rawData[0] || {}).map(key => {
+      // Check for specific fields that should be formatted as currency
+      const isCurrencyField =
+        key === 'Price' ||
+        key === 'LineItemAmount' ||
+        key === 'InvoiceTotal' ||
+        key === 'ItemTotal' ||
+        key.endsWith('Price') ||
+        key.endsWith('Amount') ||
+        key.includes('Total') && !key.includes('Quantity');
+
+      // Identify quantity fields - useful for distinguishing from other numbers
+      const isQuantityField =
+        key === 'Quantity' ||
+        key.endsWith('Quantity') ||
+        key.includes('Count') ||
+        key.includes('Units');
+
+      // Define appropriate width based on column content type
+      let width;
+      if (key.includes('Id')) {
+        width = 220;
+      } else if (key.includes('Date')) {
+        width = 120;
+      } else if (key.includes('Title') || key.includes('Author')) {
+        width = 180;
+      } else if (isCurrencyField || key.includes('Quantity')) {
+        width = 120;
+      } else {
+        width = 150;
+      }
+
+      return {
+        field: key,
+        headerName: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+        width: width,
+        minWidth: 80,
+        renderCell: (params) => {
+          const value = params.value;
+          
+          // Format currency fields
+          if (isCurrencyField) {
+            if (value !== null && value !== undefined) {
+              const numValue = typeof value === 'string' ? parseFloat(value) : value;
+              if (!isNaN(numValue)) {
+                return new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }).format(numValue);
+              }
+            }
+          }
+          
+          // Format other number fields with thousand separators
+          if (typeof value === 'number') {
+            return new Intl.NumberFormat('en-US').format(value);
+          }
+          
+          return value;
+        }
+      };
+    });
+
+    const rawRows = rawData.map((row, i) => ({ id: i, ...row }));
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#ccc' }}>
+          Raw Data ({formatDate(startDate)} - {formatDate(endDate)})
+        </Typography>
+        <Paper sx={{ p: 3, backgroundColor: '#1a1a1a', color: '#ccc' }}>
+          <Box sx={{ height: 400, width: '100%' }}>
+            <DataGrid
+              rows={rawRows}
+              columns={rawColumns}
+              pageSize={10}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              disableColumnMenu={false}
+              disableSelectionOnClick
+              scrollbarSize={12}
+              getRowHeight={() => 'auto'}
+              sx={{
+                color: '#fff',
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: '#333',
+                  color: '#fff',
+                  fontWeight: 'bold'
+                },
+                '& .MuiDataGrid-row:nth-of-type(even)': {
+                  backgroundColor: '#2a2a2a'
+                },
+                '& .MuiDataGrid-row:nth-of-type(odd)': {
+                  backgroundColor: '#1e1e1e'
+                },
+                '& .MuiDataGrid-cell': {
+                  whiteSpace: 'normal',
+                  overflow: 'auto',
+                  padding: '8px',
+                },
+                '& .MuiDataGrid-main': {
+                  overflow: 'auto',
+                },
+                border: '1px solid #444'
+              }}
+            />
+          </Box>
+        </Paper>
+      </Box>
+    );
+  };
 
   const renderGraph = () => {
     if (filterType === 'overall') {
       const monthlyTotals = {};
-  
+
       reportResult.forEach((entry) => {
         const rawDate = entry.Date;
         const totalSales = Number(entry.TotalSales);
-  
+
         if (!rawDate || isNaN(new Date(rawDate)) || isNaN(totalSales)) return;
-  
+
         const date = new Date(rawDate);
         const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
           .padStart(2, '0')}`; // e.g. "2024-04"
-  
+
         if (!monthlyTotals[monthKey]) {
           monthlyTotals[monthKey] = {
             month: monthKey,
             TotalSales: 0
           };
         }
-  
+
         monthlyTotals[monthKey].TotalSales += totalSales;
       });
-  
+
       const aggregatedData = Object.values(monthlyTotals).sort((a, b) =>
         a.month.localeCompare(b.month)
       );
-  
+
       return (
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={aggregatedData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
@@ -323,7 +475,7 @@ const SalesReports = () => {
       const key = filterType === 'customer' ? 'CustomerName' : 'SupplierName';
       const valueKey = filterType === 'customer' ? 'TotalSpent' : 'TotalSales';
       const graphData = topCount === 'All' ? reportResult : reportResult.slice(0, topCount);
-    
+
       return (
         <Box sx={{ overflowX: 'auto' }}>
           <ResponsiveContainer width={Math.max(600, graphData.length * 100)} height={400}>
@@ -378,7 +530,7 @@ const SalesReports = () => {
 
     if (filterType === 'supplier') {
       const supplierTotals = {};
-    
+
       reportResult.forEach(entry => {
         const name = entry.SupplierName || 'Unknown Supplier';
         const sales = Number(entry.TotalSales || 0);
@@ -387,13 +539,13 @@ const SalesReports = () => {
         }
         supplierTotals[name] += sales;
       });
-    
+
       const graphData = Object.entries(supplierTotals)
         .map(([name, totalSales]) => ({ SupplierName: name, TotalSales: totalSales }))
         .sort((a, b) => b.TotalSales - a.TotalSales);
-    
+
       const displayedData = topCount === 'All' ? graphData : graphData.slice(0, topCount);
-    
+
       return (
         <Box sx={{ overflowX: 'auto' }}>
           <ResponsiveContainer width={Math.max(600, displayedData.length * 100)} height={400}>
@@ -445,11 +597,11 @@ const SalesReports = () => {
         </Box>
       );
     }
-    
+
 
     else if (filterType === 'book') {
       const categoryTotals = {};
-    
+
       reportResult.forEach((entry) => {
         const category = entry.Category || 'Uncategorized';
         const sales = Number(entry.TotalSales || 0);
@@ -458,10 +610,10 @@ const SalesReports = () => {
         }
         categoryTotals[category].value += sales;
       });
-    
+
       const categoryData = Object.values(categoryTotals);
       const graphData = topCount === 'All' ? categoryData : categoryData.slice(0, topCount);
-    
+
       return (
         <Box sx={{ overflowX: 'auto' }}>
           <ResponsiveContainer width={Math.max(600, graphData.length * 100)} height={400}>
@@ -516,10 +668,10 @@ const SalesReports = () => {
         </Box>
       );
     }
-    
-    
+
+
     return null;
-  }    
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -558,7 +710,7 @@ const SalesReports = () => {
                 onChange={(newValue) => {
                   setStartDate(newValue);
                   setReportResult([]);
-                }}                
+                }}
                 renderInput={(params) => (
                   <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
                     InputLabelProps={{ style: { color: '#ccc' } }}
@@ -575,7 +727,7 @@ const SalesReports = () => {
                 onChange={(newValue) => {
                   setEndDate(newValue);
                   setReportResult([]);
-                }}              
+                }}
                 renderInput={(params) => (
                   <TextField {...params} fullWidth sx={{ backgroundColor: '#1f1f1f' }}
                     InputLabelProps={{ style: { color: '#ccc' } }}
@@ -604,23 +756,36 @@ const SalesReports = () => {
           <Box>
             <Typography variant="h6" gutterBottom>Report Preview</Typography>
 
-            <ToggleButtonGroup
-              color="primary"
-              value={viewMode}
-              exclusive
-              onChange={(e, val) => {
-                if (val && val !== viewMode) {
-                  setReportResult([]); // Clear the report data
-                  setViewMode(val);    // Update the view mode
-                }
-              }}
-              sx={{ mb: 2 }}
-            >
-              <ToggleButton value="summary">Summary</ToggleButton>
-              <ToggleButton value="table">Table</ToggleButton>
-              <ToggleButton value="graph">Graph</ToggleButton>
-            </ToggleButtonGroup>
-            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <ToggleButtonGroup
+                color="primary"
+                value={viewMode}
+                exclusive
+                onChange={(e, val) => {
+                  if (val && val !== viewMode) {
+                    setReportResult([]); // Clear the report data
+                    setViewMode(val);    // Update the view mode
+                  }
+                }}
+              >
+                <ToggleButton value="summary">Summary</ToggleButton>
+                <ToggleButton value="table">Table</ToggleButton>
+                <ToggleButton value="graph">Graph</ToggleButton>
+              </ToggleButtonGroup>
+
+              <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#ccc', mr: 1 }}>Detailed View:</Typography>
+                <ToggleButton
+                  value="detailed"
+                  selected={detailedView}
+                  onChange={() => setDetailedView(!detailedView)}
+                  size="small"
+                >
+                  {detailedView ? 'On' : 'Off'}
+                </ToggleButton>
+              </Box>
+            </Box>
+
             {viewMode === 'summary' && filterType === 'book' && reportResult.length > 0 && (
               <>
                 <Typography variant="body2" sx={{ mb: 2 }}>
@@ -648,6 +813,7 @@ const SalesReports = () => {
                 </Paper>
 
                 {renderBookSummary()}
+                {renderRawDataTable()}
               </>
             )}
 
@@ -674,6 +840,7 @@ const SalesReports = () => {
                 </Paper>
 
                 {renderSupplierSummary()}
+                {renderRawDataTable()}
               </>
             )}
 
@@ -702,7 +869,7 @@ const SalesReports = () => {
             {viewMode === 'summary' && filterType === 'customer' && reportResult.length > 0 && (
               <>
                 <Typography variant="body2" sx={{ mb: 2 }}>
-                  This report highlights the top-performing customers based on total spending within the selected date range. 
+                  This report highlights the top-performing customers based on total spending within the selected date range.
                   It helps identify loyal and high-value customers, guiding retention strategies, personalized offers, and marketing focus.
                 </Typography>
 
@@ -730,6 +897,7 @@ const SalesReports = () => {
                     </Box>
                   ))}
                 </Paper>
+                {renderRawDataTable()}
               </>
             )}
 
@@ -739,7 +907,7 @@ const SalesReports = () => {
                 {reportResult.length > 0 ? (
                   <Box>
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                      This report provides a comprehensive overview of total sales, average order value, and total number of orders placed within the selected date range. 
+                      This report provides a comprehensive overview of total sales, average order value, and total number of orders placed within the selected date range.
                       It is essential for tracking overall business performance, identifying revenue trends, and making informed decisions on marketing, inventory, and customer engagement strategies.
                     </Typography>
 
@@ -764,6 +932,7 @@ const SalesReports = () => {
                         })}
                       </Box>
                     ))}
+                    {renderRawDataTable()}
                   </Box>
                 ) : (
                   <Typography variant="body2">
@@ -780,28 +949,29 @@ const SalesReports = () => {
                   Table View ({formatDate(startDate)} - {formatDate(endDate)})
                 </Typography>
                 <Box sx={{ height: 400 }}>
-                <DataGrid
-                  rows={rows}
-                  columns={columns}
-                  sx={{
-                    color: '#fff',
-                    '& .MuiDataGrid-columnHeaders': {
-                      backgroundColor: '#333',
+                  <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    sx={{
                       color: '#fff',
-                      fontWeight: 'bold'
-                    },
-                    '& .MuiDataGrid-row:nth-of-type(even)': {
-                      backgroundColor: '#2a2a2a'
-                    },
-                    '& .MuiDataGrid-row:nth-of-type(odd)': {
-                      backgroundColor: '#1e1e1e'
-                    },
-                    border: '1px solid #444'
-                  }}
-                />
+                      '& .MuiDataGrid-columnHeaders': {
+                        backgroundColor: '#333',
+                        color: '#fff',
+                        fontWeight: 'bold'
+                      },
+                      '& .MuiDataGrid-row:nth-of-type(even)': {
+                        backgroundColor: '#2a2a2a'
+                      },
+                      '& .MuiDataGrid-row:nth-of-type(odd)': {
+                        backgroundColor: '#1e1e1e'
+                      },
+                      border: '1px solid #444'
+                    }}
+                  />
 
 
                 </Box>
+                {renderRawDataTable()}
               </Box>
             )}
 
@@ -811,12 +981,13 @@ const SalesReports = () => {
                   Graph View ({formatDate(startDate)} - {formatDate(endDate)})
                 </Typography>
                 {renderGraph()}
+                {renderRawDataTable()}
               </Box>
             )}
           </Box>
         </Paper>
-      </Box>
-    </LocalizationProvider>
+      </Box >
+    </LocalizationProvider >
   );
 };
 
