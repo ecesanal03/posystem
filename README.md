@@ -77,13 +77,28 @@ Note: This project does not contain actual frontend or backend code but instead 
 
 
 # How to run
-Since the backend and the frontend are not connected we have to run them seperatly.
+### First, ensure that you have installed all necessary dependencies. 
+Install .NET 8.0. Please follow this link: https://learn.microsoft.com/en-us/dotnet/core/install/. Select your operating system and follow the installation guide.
 
-- To run the frontend:
-  * cd posystem.Client
-  * npm run dev
+Install Node.JS through this link: https://nodejs.org/en/download and select your system's appropriate configuration and follow the installation guide. 
 
-- To run backend backend:
-  * cd posystem
-  * dotnet build
-  * dotnet run (after build)  
+After installing Node.js, please install the Material UI package library by running this command in terminal:
+```
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
+```
+
+
+Since the backend and the frontend are not connected we have to run them seperately.
+
+- In one terminal, run the commands below to run the frontend:
+```
+cd posystem.Client
+npm run dev
+```
+
+- In separate terminal (while keeping the other active), run the commands below to run the backend:
+```
+cd posystem
+dotnet build
+dotnet run (after build)
+```

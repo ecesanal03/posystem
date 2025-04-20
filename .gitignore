@@ -6,6 +6,8 @@
 # Custom
 dist/
 
+posystem/App_Data/
+
 # User-specific files
 *.suo
 *.user
