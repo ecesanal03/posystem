@@ -88,7 +88,9 @@ npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
 ```
 
 
-Since the backend and the frontend are not connected we have to run them seperately.
+Since the backend and the frontend are not connected we have to run them seperately. 
+
+Note: Please make sure to run these commands in the order provided below.
 
 - In one terminal, run the commands below to run the frontend:
 ```
@@ -100,5 +102,5 @@ npm run dev
 ```
 cd posystem
 dotnet build
-dotnet run (after build)
+dotnet run 
 ```
